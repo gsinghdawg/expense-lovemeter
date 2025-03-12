@@ -36,10 +36,14 @@ export function useExpenses() {
         return [];
       }
       
+      // Map the snake_case database fields to camelCase properties expected by the Expense type
       return data.map(expense => ({
-        ...expense,
         id: expense.id,
+        amount: expense.amount,
+        description: expense.description,
         date: new Date(expense.date),
+        categoryId: expense.category_id, // Map category_id to categoryId
+        // We don't include user_id and created_at as they're not part of the Expense type
       }));
     },
     enabled: !!userId,
@@ -206,7 +210,7 @@ export function useExpenses() {
           description: expense.description,
           amount: expense.amount,
           date: expense.date.toISOString(),
-          category_id: expense.categoryId,
+          category_id: expense.categoryId, // Map categoryId to category_id for database
           user_id: userId,
         })
         .select()
@@ -214,9 +218,13 @@ export function useExpenses() {
         
       if (error) throw error;
       
+      // Map back from database format to Expense type
       return {
-        ...data,
+        id: data.id,
+        amount: data.amount,
+        description: data.description,
         date: new Date(data.date),
+        categoryId: data.category_id, // Map category_id back to categoryId
       };
     },
     onSuccess: () => {
@@ -242,7 +250,7 @@ export function useExpenses() {
           description: expense.description,
           amount: expense.amount,
           date: expense.date.toISOString(),
-          category_id: expense.categoryId,
+          category_id: expense.categoryId, // Map categoryId to category_id for database
         })
         .eq('id', expense.id)
         .eq('user_id', userId);
