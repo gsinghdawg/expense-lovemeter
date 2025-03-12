@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ExpenseCategory } from "@/types/expense";
 import { Button } from "@/components/ui/button";
@@ -81,7 +80,11 @@ export function CategoryManager({
           description: `${data.name} category has been updated`,
         });
       } else {
-        const newCategory = onAddCategory(data);
+        // Fix: Ensure we're passing a non-optional object with required properties
+        const newCategory = onAddCategory({
+          name: data.name,
+          color: data.color
+        });
         toast({
           title: "Category added",
           description: `${data.name} category has been created`,
