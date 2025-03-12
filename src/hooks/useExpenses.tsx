@@ -24,12 +24,10 @@ export function useExpenses() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useSupabase();
 
-  // Fetch data when user changes
   useEffect(() => {
     if (user) {
       fetchData();
     } else {
-      // Reset to default values when user logs out
       setExpenses([]);
       setCategories(defaultCategories);
       const now = new Date();
@@ -49,7 +47,6 @@ export function useExpenses() {
     
     setIsLoading(true);
     try {
-      // Fetch categories
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
@@ -57,7 +54,6 @@ export function useExpenses() {
       
       if (categoriesError) throw categoriesError;
       
-      // Fetch expenses
       const { data: expensesData, error: expensesError } = await supabase
         .from('expenses')
         .select('*')
@@ -65,7 +61,6 @@ export function useExpenses() {
       
       if (expensesError) throw expensesError;
 
-      // Fetch savings goals
       const { data: savingsData, error: savingsError } = await supabase
         .from('savings_goals')
         .select('*')
@@ -74,7 +69,6 @@ export function useExpenses() {
         
       if (savingsError) throw savingsError;
 
-      // Process and set categories
       if (categoriesData && categoriesData.length > 0) {
         const processedCategories = categoriesData.map(cat => ({
           id: cat.id,
@@ -84,7 +78,6 @@ export function useExpenses() {
         }));
         setCategories(processedCategories);
       } else {
-        // If no categories found, create default categories
         for (const category of defaultCategories) {
           await supabase.from('categories').insert({
             name: category.name,
@@ -95,7 +88,6 @@ export function useExpenses() {
         setCategories(defaultCategories);
       }
 
-      // Process and set expenses
       if (expensesData) {
         const processedExpenses = expensesData.map(exp => ({
           id: exp.id,
@@ -108,19 +100,16 @@ export function useExpenses() {
         setExpenses(processedExpenses);
       }
 
-      // Process and set budget goal
       if (savingsData && savingsData.length > 0) {
         const latestGoal = savingsData[0];
         const date = new Date(latestGoal.month);
         
-        // Current budget goal
         setBudgetGoal({
           amount: Number(latestGoal.amount),
           month: date.getMonth(),
           year: date.getFullYear()
         });
         
-        // Budget history
         const processedHistory = savingsData.map(goal => {
           const goalDate = new Date(goal.month);
           return {
@@ -313,15 +302,12 @@ export function useExpenses() {
   };
 
   const getBudgetForMonth = (month: number, year: number) => {
-    // Sort budget history from newest to oldest
     const sortedHistory = [...budgetHistory].sort((a, b) => 
       b.startDate.getTime() - a.startDate.getTime()
     );
     
-    // Create date objects for comparison (use first day of month)
     const targetDate = new Date(year, month, 1);
     
-    // Find the most recent budget that was set before or on the target month
     for (const budget of sortedHistory) {
       const budgetDate = new Date(budget.year, budget.month, 1);
       
@@ -449,7 +435,7 @@ export function useExpenses() {
   };
 
   const getCategoryById = (id: string) => {
-    return categories.find(c => c.id === id) || defaultCategories[1]; // Default to subscription
+    return categories.find(c => c.id === id) || defaultCategories[1];
   };
 
   return {

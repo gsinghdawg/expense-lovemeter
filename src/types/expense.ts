@@ -11,6 +11,7 @@ export type Expense = {
   description: string;
   date: Date;
   categoryId: string;
+  type: string; // Added the type property
 };
 
 export type BudgetGoal = {
