@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useExpenses } from "@/hooks/useExpenses";
@@ -13,6 +12,7 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
+import { defaultCategories } from "@/data/categories";
 
 const Index = () => {
   const {

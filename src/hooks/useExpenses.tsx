@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
@@ -556,7 +555,20 @@ export function useExpenses() {
   };
 
   const getCategoryById = (id: string) => {
-    return fetchedCategories.find(c => c.id === id) || defaultCategories[7];
+    // First try to find the category in fetched categories
+    const category = fetchedCategories.find(c => c.id === id);
+    if (category) return category;
+    
+    // If not found, try to find it in default categories
+    const defaultCategory = defaultCategories.find(c => c.id === id);
+    if (defaultCategory) return defaultCategory;
+    
+    // If still not found, return the "Other" category as fallback
+    return defaultCategories.find(c => c.id === "other") || {
+      id: "unknown",
+      name: "Unknown Category",
+      color: "#CCCCCC"
+    };
   };
 
   const isLoading = isLoadingExpenses || isLoadingCategories || isLoadingBudgetGoal || isLoadingBudgetHistory;
