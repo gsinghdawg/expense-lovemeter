@@ -330,6 +330,18 @@ export function ExpenseSummary({
                       onClick={handleBarClick}
                       cursor="pointer"
                       isAnimationActive={true}
+                      onMouseOver={(data) => {
+                        if (data && data.tooltipPayload && data.tooltipPayload[0]) {
+                          const value = data.tooltipPayload[0].value;
+                          const color = value >= 0 ? "#4ade80" : "#ef4444";
+                          data.element.style.fill = color;
+                        }
+                      }}
+                      onMouseOut={(data) => {
+                        if (data && data.element) {
+                          data.element.style.fill = "#FEF7CD";
+                        }
+                      }}
                     />
                     <Line 
                       type="monotone" 
