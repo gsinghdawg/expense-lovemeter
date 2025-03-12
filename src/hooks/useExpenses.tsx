@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
+import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
 import { toast } from "@/hooks/use-toast";
 
@@ -50,6 +50,35 @@ export function useExpenses() {
     return { amount: 1000, month: now.getMonth(), year: now.getFullYear() };
   });
 
+  const [budgetHistory, setBudgetHistory] = useState<BudgetGoalHistory[]>(() => {
+    const saved = localStorage.getItem("budgetHistory");
+    if (saved) {
+      try {
+        // Convert the date strings back to Date objects
+        return JSON.parse(saved).map((budget: any) => ({
+          ...budget,
+          startDate: new Date(budget.startDate),
+        }));
+      } catch (e) {
+        console.error("Failed to parse budget history", e);
+        const now = new Date();
+        return [{ 
+          amount: 1000, 
+          month: now.getMonth(), 
+          year: now.getFullYear(),
+          startDate: now
+        }];
+      }
+    }
+    const now = new Date();
+    return [{ 
+      amount: 1000, 
+      month: now.getMonth(), 
+      year: now.getFullYear(),
+      startDate: now
+    }];
+  });
+
   // Save to localStorage whenever expenses, categories, or budgetGoal change
   useEffect(() => {
     localStorage.setItem("expenses", JSON.stringify(expenses));
@@ -62,6 +91,10 @@ export function useExpenses() {
   useEffect(() => {
     localStorage.setItem("budgetGoal", JSON.stringify(budgetGoal));
   }, [budgetGoal]);
+  
+  useEffect(() => {
+    localStorage.setItem("budgetHistory", JSON.stringify(budgetHistory));
+  }, [budgetHistory]);
 
   const addExpense = (expense: Omit<Expense, "id">) => {
     const newExpense = {
@@ -94,6 +127,16 @@ export function useExpenses() {
 
   const updateBudgetGoal = (newBudget: BudgetGoal) => {
     setBudgetGoal(newBudget);
+    
+    // Add to budget history
+    const now = new Date();
+    const newBudgetHistory: BudgetGoalHistory = {
+      ...newBudget,
+      startDate: now
+    };
+    
+    setBudgetHistory([...budgetHistory, newBudgetHistory]);
+    
     toast({
       title: "Budget updated",
       description: `Monthly budget set to $${newBudget.amount.toFixed(2)}`,
@@ -115,6 +158,29 @@ export function useExpenses() {
   const getCurrentMonthTotal = () => {
     const currentMonthExpenses = getCurrentMonthExpenses();
     return currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  };
+
+  // Get budget for a specific month and year
+  const getBudgetForMonth = (month: number, year: number) => {
+    // Sort budget history by date (newest first)
+    const sortedHistory = [...budgetHistory].sort((a, b) => 
+      b.startDate.getTime() - a.startDate.getTime()
+    );
+    
+    // Find the most recent budget that was set before or during the specified month
+    for (const budget of sortedHistory) {
+      const budgetDate = new Date(budget.year, budget.month);
+      const targetDate = new Date(year, month);
+      
+      if (budgetDate <= targetDate) {
+        return budget.amount;
+      }
+    }
+    
+    // If no budget found (unlikely), return the oldest budget
+    return sortedHistory.length > 0 
+      ? sortedHistory[sortedHistory.length - 1].amount 
+      : 1000; // Default fallback
   };
 
   // Additional functions
@@ -167,6 +233,7 @@ export function useExpenses() {
     expenses,
     categories,
     budgetGoal,
+    budgetHistory,
     addExpense,
     updateExpense,
     deleteExpense,
@@ -177,5 +244,6 @@ export function useExpenses() {
     updateBudgetGoal,
     getCurrentMonthExpenses,
     getCurrentMonthTotal,
+    getBudgetForMonth,
   };
 }

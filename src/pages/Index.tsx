@@ -22,6 +22,7 @@ const Index = () => {
     getCategoryById,
     updateBudgetGoal,
     getCurrentMonthTotal,
+    getBudgetForMonth,
   } = useExpenses();
 
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -55,6 +56,7 @@ const Index = () => {
               getCategoryById={getCategoryById}
               budgetGoal={budgetGoal}
               currentMonthTotal={getCurrentMonthTotal()}
+              getBudgetForMonth={getBudgetForMonth}
             />
           </div>
         </TabsContent>

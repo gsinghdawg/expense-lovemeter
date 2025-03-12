@@ -1,3 +1,4 @@
+
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ type ExpenseSummaryProps = {
   getCategoryById: (id: string) => ExpenseCategory;
   budgetGoal: BudgetGoal;
   currentMonthTotal: number;
+  getBudgetForMonth: (month: number, year: number) => number;
 };
 
 export function ExpenseSummary({
@@ -18,6 +20,7 @@ export function ExpenseSummary({
   getCategoryById,
   budgetGoal,
   currentMonthTotal,
+  getBudgetForMonth,
 }: ExpenseSummaryProps) {
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -97,16 +100,17 @@ export function ExpenseSummary({
       date.setMonth(date.getMonth() - i);
       const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
       const monthName = date.toLocaleString('default', { month: 'short' });
+      const monthBudget = getBudgetForMonth(date.getMonth(), date.getFullYear());
       
       monthlyData.unshift({
         month: monthName,
         spending: spendingByMonth[monthKey] || 0,
-        budget: budgetGoal.amount
+        budget: monthBudget
       });
     }
 
     return monthlyData;
-  }, [expenses, budgetGoal.amount]);
+  }, [expenses, getBudgetForMonth]);
 
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -194,45 +198,6 @@ export function ExpenseSummary({
             ))}
           </div>
           
-          {top3Categories.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Top 3 Spending Categories</h4>
-              <div className="h-[200px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={top3Categories}
-                    margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fontSize: 10 }}
-                      tickLine={false}
-                    />
-                    <YAxis 
-                      tickFormatter={(value) => `$${value}`}
-                      tick={{ fontSize: 10 }}
-                      tickLine={false}
-                      width={40}
-                    />
-                    <Tooltip 
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, "Amount"]}
-                      contentStyle={{ fontSize: 12 }}
-                    />
-                    <Bar 
-                      dataKey="amount" 
-                      radius={[4, 4, 0, 0]}
-                    >
-                      {top3Categories.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-
           {monthlySpending.length > 0 && (
             <div>
               <h4 className="text-sm font-medium mb-2">Monthly Spending History</h4>
@@ -276,6 +241,45 @@ export function ExpenseSummary({
                       name="Budget Goal"
                     />
                   </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+          
+          {top3Categories.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-2">Top 3 Spending Categories</h4>
+              <div className="h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={top3Categories}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tickFormatter={(value) => `$${value}`}
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                      width={40}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, "Amount"]}
+                      contentStyle={{ fontSize: 12 }}
+                    />
+                    <Bar 
+                      dataKey="amount" 
+                      radius={[4, 4, 0, 0]}
+                    >
+                      {top3Categories.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>

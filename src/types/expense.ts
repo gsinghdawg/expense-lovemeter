@@ -18,3 +18,11 @@ export type BudgetGoal = {
   month: number; // 0-11 (Jan-Dec)
   year: number;
 };
+
+// History of budget goals
+export type BudgetGoalHistory = {
+  amount: number;
+  month: number; // 0-11 (Jan-Dec)
+  year: number;
+  startDate: Date;
+};
