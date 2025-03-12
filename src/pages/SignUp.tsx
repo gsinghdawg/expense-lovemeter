@@ -1,11 +1,11 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Sparkles, Mail, Lock, User } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 import {
   Form,
@@ -42,9 +42,16 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const SignUp = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("signup");
+  const { signIn, signUp, user } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const signupForm = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -64,40 +71,30 @@ const SignUp = () => {
     },
   });
 
-  function onSignUp(values: SignUpFormValues) {
+  async function onSignUp(values: SignUpFormValues) {
     setIsLoading(true);
     
-    // Simulating API call
-    setTimeout(() => {
-      console.log("Sign up values:", values);
+    try {
+      await signUp(values.email, values.password, values.name);
+      signupForm.reset();
+    } catch (error) {
+      console.error("Sign up error:", error);
+    } finally {
       setIsLoading(false);
-      
-      toast({
-        title: "Account created!",
-        description: "You've successfully signed up for LadyLedger.",
-      });
-      
-      // Redirect to dashboard page after successful signup
-      navigate("/dashboard");
-    }, 1500);
+    }
   }
 
-  function onLogin(values: LoginFormValues) {
+  async function onLogin(values: LoginFormValues) {
     setIsLoading(true);
     
-    // Simulating API call
-    setTimeout(() => {
-      console.log("Login values:", values);
-      setIsLoading(false);
-      
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in to LadyLedger.",
-      });
-      
-      // Redirect to dashboard page after successful login
+    try {
+      await signIn(values.email, values.password);
       navigate("/dashboard");
-    }, 1500);
+    } catch (error) {
+      console.error("Login error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -311,4 +308,3 @@ const SignUp = () => {
 };
 
 export default SignUp;
-

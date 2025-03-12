@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles } from "lucide-react";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const {
@@ -30,6 +31,7 @@ const Index = () => {
   } = useExpenses();
 
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { signOut, user } = useAuth();
 
   return (
     <div className="py-8 px-4 sm:px-6">
@@ -45,12 +47,15 @@ const Index = () => {
           </h1>
           <h2 className="text-muted-foreground text-sm italic mb-2">Your Finance Companion</h2>
           
-          <div className="mt-2">
-            <Link to="/signup">
-              <Button variant="outline" size="sm">
-                Sign Out
-              </Button>
-            </Link>
+          <div className="mt-2 flex items-center">
+            {user && (
+              <div className="text-sm text-muted-foreground mr-3">
+                Logged in as: {user.email}
+              </div>
+            )}
+            <Button variant="outline" size="sm" onClick={signOut}>
+              Sign Out
+            </Button>
           </div>
         </div>
 
