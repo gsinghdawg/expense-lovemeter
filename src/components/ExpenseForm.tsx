@@ -32,26 +32,31 @@ type ExpenseFormProps = {
 };
 
 export function ExpenseForm({ 
-  categories = [], // Ensure categories is never undefined by providing default empty array 
+  categories, 
   onSubmit, 
-  defaultValues = { 
-    amount: 0, 
-    description: "", 
-    date: new Date(), 
-    categoryId: categories?.[0]?.id || (defaultCategories[0]?.id || "") 
-  },
+  defaultValues, 
   submitLabel = "Add Expense" 
 }: ExpenseFormProps) {
-  const form = useForm({
-    defaultValues,
-  });
-
-  // Use defaultCategories if categories array is undefined or empty
-  const availableCategories = Array.isArray(categories) && categories.length > 0
+  // Ensure we always have a valid array of categories
+  const availableCategories = categories && categories.length > 0 
     ? categories 
     : defaultCategories;
+  
+  // Ensure default values are properly set with valid categoryId
+  const initialDefaultValues = {
+    amount: 0,
+    description: "",
+    date: new Date(),
+    categoryId: availableCategories[0]?.id || "other"
+  };
+  
+  const form = useForm({
+    defaultValues: defaultValues || initialDefaultValues,
+  });
 
-  console.log("Available categories:", availableCategories);
+  console.log("ExpenseForm defaultCategories:", defaultCategories);
+  console.log("ExpenseForm categories prop:", categories);
+  console.log("ExpenseForm availableCategories:", availableCategories);
 
   const handleSubmit = (data: {
     amount: number;

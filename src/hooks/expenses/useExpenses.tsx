@@ -37,15 +37,17 @@ export function useExpenses() {
     getBudgetForMonth
   } = useBudgetGoals(userId);
 
-  // Ensure we always have categories, falling back to default if needed
-  const categories = (userCategories && userCategories.length > 0) 
-    ? userCategories 
-    : defaultCategories;
+  // Always ensure we have categories available
+  // If userCategories is undefined, empty, or still loading, use defaultCategories
+  const categories = (!userCategories || userCategories.length === 0 || isLoadingCategories) 
+    ? defaultCategories 
+    : userCategories;
 
-  // Log categories to debug
-  console.log("useExpenses categories:", categories);
+  console.log("useExpenses defaultCategories:", defaultCategories);
+  console.log("useExpenses userCategories:", userCategories);
+  console.log("useExpenses final categories:", categories);
 
-  const isLoading = isLoadingExpenses || isLoadingCategories || isLoadingBudgetGoal || isLoadingBudgetHistory;
+  const isLoading = isLoadingExpenses || isLoadingBudgetGoal || isLoadingBudgetHistory;
 
   return {
     // Expense data and methods
