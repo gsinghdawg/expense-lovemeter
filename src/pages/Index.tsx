@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useExpenses } from "@/hooks/useExpenses";
@@ -36,14 +35,12 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { signOut, user } = useAuth();
 
-  // Create a state for the selected budget month and year
   const [selectedBudgetPeriod, setSelectedBudgetPeriod] = useState<BudgetGoal>({
     amount: budgetGoal.amount,
     month: budgetGoal.month,
     year: budgetGoal.year
   });
 
-  // Update the selected budget period whenever the budget goal changes
   useEffect(() => {
     setSelectedBudgetPeriod({
       amount: budgetGoal.amount,
@@ -120,7 +117,7 @@ const Index = () => {
             <ExpenseList
               expenses={expenses}
               categories={categories}
-              getCategoryById={getCategoryById}
+              getCategoryById={(id) => getCategoryById(id) || defaultCategories[0]}
               onUpdateExpense={updateExpense}
               onDeleteExpense={deleteExpense}
             />

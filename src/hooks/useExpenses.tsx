@@ -509,7 +509,15 @@ export function useExpenses() {
   };
 
   const getCategoryById = (id: string) => {
-    return categories.find(c => c.id === id) || defaultCategories[7];
+    // First look in our categories array
+    const foundCategory = categories.find(c => c.id === id);
+    
+    // If found, return it
+    if (foundCategory) return foundCategory;
+    
+    // If not found, return a default category or undefined
+    // Using the first default category as a fallback
+    return defaultCategories.length > 0 ? defaultCategories[0] : undefined;
   };
 
   const isLoading = isLoadingExpenses;
