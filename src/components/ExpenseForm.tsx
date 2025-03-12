@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { defaultCategories } from "@/data/categories";
 
 type ExpenseFormProps = {
   categories: ExpenseCategory[];
@@ -37,13 +38,16 @@ export function ExpenseForm({
     amount: 0, 
     description: "", 
     date: new Date(), 
-    categoryId: categories[0]?.id || "" 
+    categoryId: categories[0]?.id || (defaultCategories[0]?.id || "") 
   },
   submitLabel = "Add Expense" 
 }: ExpenseFormProps) {
   const form = useForm({
     defaultValues,
   });
+
+  // Use available categories or fall back to default categories
+  const availableCategories = categories.length > 0 ? categories : defaultCategories;
 
   const handleSubmit = (data: {
     amount: number;
@@ -118,7 +122,7 @@ export function ExpenseForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories.map((category) => (
+                      {availableCategories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           <div className="flex items-center gap-2">
                             <div 

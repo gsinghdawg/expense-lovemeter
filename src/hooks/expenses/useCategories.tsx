@@ -16,7 +16,7 @@ export function useCategories(userId: string | undefined) {
   } = useQuery({
     queryKey: ['categories', userId],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!userId) return defaultCategories; // Return defaults if no user
       
       const { data, error } = await supabase
         .from('categories')
@@ -30,10 +30,11 @@ export function useCategories(userId: string | undefined) {
           description: error.message,
           variant: "destructive",
         });
-        return [];
+        return defaultCategories; // Return defaults on error
       }
 
       if (data.length === 0) {
+        // Initialize default categories if none exist
         await initializeDefaultCategories(userId);
         return defaultCategories;
       }
@@ -44,7 +45,7 @@ export function useCategories(userId: string | undefined) {
         color: category.color,
       }));
     },
-    enabled: !!userId,
+    enabled: true, // Always enable to ensure defaults are available
   });
 
   // Initialize default categories for new users
@@ -218,8 +219,11 @@ export function useCategories(userId: string | undefined) {
     };
   };
 
+  // If categories is empty, use defaultCategories
+  const finalCategories = categories.length > 0 ? categories : defaultCategories;
+
   return {
-    categories,
+    categories: finalCategories,
     isLoadingCategories,
     addCategory,
     updateCategory,
