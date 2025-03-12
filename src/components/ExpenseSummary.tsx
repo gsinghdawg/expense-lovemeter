@@ -129,13 +129,20 @@ export function ExpenseSummary({
   const averageMonthlyExpense = useMemo(() => {
     if (expenses.length === 0) return 0;
     
-    // Get months with spending from the monthly spending data
-    const monthsWithSpending = monthlySpending.filter(month => month.spending > 0).length;
+    // Get unique months where the user has tracked expenses
+    const uniqueMonths = new Set();
+    expenses.forEach(expense => {
+      const monthKey = `${expense.date.getFullYear()}-${expense.date.getMonth() + 1}`;
+      uniqueMonths.add(monthKey);
+    });
+    
+    // The number of months the user has been tracking expenses
+    const trackedMonths = uniqueMonths.size;
     
     // If we have spending data in the chart, use that for the average
-    if (monthsWithSpending > 0) {
-      const total = monthlySpending.reduce((sum, month) => sum + month.spending, 0);
-      return total / monthsWithSpending;
+    if (monthlySpending.length > 0 && trackedMonths > 0) {
+      const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      return total / trackedMonths;
     }
     
     // If no spending in the chart period but we have expenses, find the first expense date
