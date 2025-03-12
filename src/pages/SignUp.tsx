@@ -1,11 +1,11 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Sparkles, Mail, Lock, User, AlertCircle } from "lucide-react";
+import { Sparkles, Mail, Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useSupabase } from "@/providers/SupabaseProvider";
 
 import {
   Form,
@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Form validation schema for signup
 const signUpSchema = z.object({
@@ -46,8 +45,6 @@ const SignUp = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("signup");
-  const [authError, setAuthError] = useState<string | null>(null);
-  const { signUp, signIn } = useSupabase();
 
   const signupForm = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -67,52 +64,40 @@ const SignUp = () => {
     },
   });
 
-  async function onSignUp(values: SignUpFormValues) {
+  function onSignUp(values: SignUpFormValues) {
     setIsLoading(true);
-    setAuthError(null);
     
-    try {
-      const { success, error } = await signUp(values.email, values.password, { name: values.name });
-      
-      if (success) {
-        toast({
-          title: "Account created!",
-          description: "You've successfully signed up for LadyLedger.",
-        });
-        
-        navigate("/dashboard");
-      } else {
-        setAuthError(error || "An error occurred during sign up.");
-      }
-    } catch (error: any) {
-      setAuthError(error.message);
-    } finally {
+    // Simulating API call
+    setTimeout(() => {
+      console.log("Sign up values:", values);
       setIsLoading(false);
-    }
+      
+      toast({
+        title: "Account created!",
+        description: "You've successfully signed up for LadyLedger.",
+      });
+      
+      // Redirect to dashboard page after successful signup
+      navigate("/dashboard");
+    }, 1500);
   }
 
-  async function onLogin(values: LoginFormValues) {
+  function onLogin(values: LoginFormValues) {
     setIsLoading(true);
-    setAuthError(null);
     
-    try {
-      const { success, error } = await signIn(values.email, values.password);
-      
-      if (success) {
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully logged in to LadyLedger.",
-        });
-        
-        navigate("/dashboard");
-      } else {
-        setAuthError(error || "Invalid email or password.");
-      }
-    } catch (error: any) {
-      setAuthError(error.message);
-    } finally {
+    // Simulating API call
+    setTimeout(() => {
+      console.log("Login values:", values);
       setIsLoading(false);
-    }
+      
+      toast({
+        title: "Welcome back!",
+        description: "You've successfully logged in to LadyLedger.",
+      });
+      
+      // Redirect to dashboard page after successful login
+      navigate("/dashboard");
+    }, 1500);
   }
 
   return (
@@ -132,14 +117,6 @@ const SignUp = () => {
             <h2 className="text-muted-foreground text-sm italic mb-6">Your Finance Companion</h2>
           </div>
         </div>
-
-        {authError && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Authentication Error</AlertTitle>
-            <AlertDescription>{authError}</AlertDescription>
-          </Alert>
-        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-2 mb-6">
@@ -334,3 +311,4 @@ const SignUp = () => {
 };
 
 export default SignUp;
+
