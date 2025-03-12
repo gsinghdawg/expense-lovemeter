@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { ExpenseCategory } from "@/types/expense";
@@ -32,13 +31,13 @@ type ExpenseFormProps = {
 };
 
 export function ExpenseForm({ 
-  categories, 
+  categories = [], // Ensure categories is never undefined by providing default empty array 
   onSubmit, 
   defaultValues = { 
     amount: 0, 
     description: "", 
     date: new Date(), 
-    categoryId: categories[0]?.id || (defaultCategories[0]?.id || "") 
+    categoryId: categories?.[0]?.id || (defaultCategories[0]?.id || "") 
   },
   submitLabel = "Add Expense" 
 }: ExpenseFormProps) {
@@ -46,8 +45,8 @@ export function ExpenseForm({
     defaultValues,
   });
 
-  // Make sure we always have categories available
-  const availableCategories = categories && categories.length > 0 
+  // Use defaultCategories if categories array is undefined or empty
+  const availableCategories = Array.isArray(categories) && categories.length > 0
     ? categories 
     : defaultCategories;
 

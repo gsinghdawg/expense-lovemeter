@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useExpenseData } from "./useExpenseData";
 import { useCategories } from "./useCategories";
 import { useBudgetGoals } from "./useBudgetGoals";
+import { defaultCategories } from "@/data/categories";
 
 export function useExpenses() {
   const { user } = useAuth();
@@ -19,7 +20,7 @@ export function useExpenses() {
   } = useExpenseData(userId);
 
   const {
-    categories,
+    categories: userCategories,
     isLoadingCategories,
     addCategory,
     updateCategory,
@@ -35,6 +36,11 @@ export function useExpenses() {
     updateBudgetGoal,
     getBudgetForMonth
   } = useBudgetGoals(userId);
+
+  // Ensure we always have categories, falling back to default if needed
+  const categories = (userCategories && userCategories.length > 0) 
+    ? userCategories 
+    : defaultCategories;
 
   // Log categories to debug
   console.log("useExpenses categories:", categories);
