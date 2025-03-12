@@ -41,6 +41,7 @@ const Index = () => {
             LadyLedger
             <Sparkles className="h-6 w-6 text-amber-500" />
           </h1>
+          <h2 className="text-muted-foreground text-sm italic mb-2">Your Finance Companion</h2>
           <p className="text-muted-foreground text-sm">Track, manage, and optimize your personal finances</p>
         </div>
 
