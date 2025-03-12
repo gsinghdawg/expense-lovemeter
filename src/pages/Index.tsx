@@ -38,17 +38,17 @@ const Index = () => {
           </div>
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-amber-500" />
-            <span className="text-rainbow">LadyLedger</span>
+            LadyLedger
             <Sparkles className="h-6 w-6 text-amber-500" />
           </h1>
-          <h2 className="text-gradient-purple text-sm italic mb-2">Your Finance Companion</h2>
+          <h2 className="text-muted-foreground text-sm italic mb-2">Your Finance Companion</h2>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 mb-8 w-full max-w-md mx-auto">
-            <TabsTrigger value="dashboard" className="text-gradient-blue">Dashboard</TabsTrigger>
-            <TabsTrigger value="expenses" className="text-gradient-green">Expenses</TabsTrigger>
-            <TabsTrigger value="categories" className="text-gradient-amber">Categories</TabsTrigger>
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">

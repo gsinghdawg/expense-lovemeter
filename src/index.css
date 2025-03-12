@@ -108,43 +108,4 @@
   .accent-gradient {
     background: linear-gradient(109.6deg, rgba(var(--card)/0.9) 11.2%, rgba(var(--secondary)/0.9) 91.1%);
   }
-
-  /* Colorful text styles */
-  .text-gradient-purple {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #8B5CF6 0%, #D946EF 100%);
-  }
-  
-  .text-gradient-blue {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #3B82F6 0%, #0EA5E9 100%);
-  }
-  
-  .text-gradient-green {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #10B981 0%, #34D399 100%);
-  }
-  
-  .text-gradient-amber {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%);
-  }
-  
-  .text-gradient-pink {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #EC4899 0%, #F472B6 100%);
-  }
-  
-  .text-rainbow {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(
-      to right, 
-      #F87171, 
-      #FBBF24, 
-      #34D399, 
-      #60A5FA, 
-      #A78BFA, 
-      #F472B6
-    );
-  }
 }
