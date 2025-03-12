@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useExpenses } from "@/hooks/useExpenses";
 import { ExpenseForm } from "@/components/ExpenseForm";
@@ -13,6 +13,7 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
+import { BudgetGoal } from "@/types/expense";
 
 const Index = () => {
   const {
@@ -34,6 +35,22 @@ const Index = () => {
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const { signOut, user } = useAuth();
+
+  // Create a state for the selected budget month and year
+  const [selectedBudgetPeriod, setSelectedBudgetPeriod] = useState<BudgetGoal>({
+    amount: budgetGoal.amount,
+    month: budgetGoal.month,
+    year: budgetGoal.year
+  });
+
+  // Update the selected budget period whenever the budget goal changes
+  useEffect(() => {
+    setSelectedBudgetPeriod({
+      amount: budgetGoal.amount,
+      month: budgetGoal.month,
+      year: budgetGoal.year
+    });
+  }, [budgetGoal]);
 
   if (isLoading) {
     return (
@@ -84,7 +101,7 @@ const Index = () => {
                   onSubmit={addExpense}
                 />
                 <BudgetForm 
-                  currentBudget={budgetGoal}
+                  currentBudget={selectedBudgetPeriod}
                   onUpdateBudget={updateBudgetGoal}
                 />
               </div>
