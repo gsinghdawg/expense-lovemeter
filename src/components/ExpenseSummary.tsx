@@ -125,13 +125,42 @@ export function ExpenseSummary({
     return monthlyData;
   }, [expenses, getBudgetForMonth]);
 
-  // Calculate average monthly expense
+  // Calculate average monthly expense based on when user first tracked expenses
   const averageMonthlyExpense = useMemo(() => {
-    if (monthlySpending.length === 0) return 0;
+    if (expenses.length === 0) return 0;
+    
+    // Get months with spending from the monthly spending data
     const monthsWithSpending = monthlySpending.filter(month => month.spending > 0).length;
-    const total = monthlySpending.reduce((sum, month) => sum + month.spending, 0);
-    return monthsWithSpending > 0 ? total / monthsWithSpending : 0;
-  }, [monthlySpending]);
+    
+    // If we have spending data in the chart, use that for the average
+    if (monthsWithSpending > 0) {
+      const total = monthlySpending.reduce((sum, month) => sum + month.spending, 0);
+      return total / monthsWithSpending;
+    }
+    
+    // If no spending in the chart period but we have expenses, find the first expense date
+    if (expenses.length > 0) {
+      // Sort expenses by date (oldest first)
+      const sortedExpenses = [...expenses].sort((a, b) => 
+        a.date.getTime() - b.date.getTime()
+      );
+      
+      const firstExpenseDate = sortedExpenses[0].date;
+      const currentDate = new Date();
+      
+      // Calculate number of months between first expense and now
+      const monthDiff = 
+        (currentDate.getFullYear() - firstExpenseDate.getFullYear()) * 12 + 
+        (currentDate.getMonth() - firstExpenseDate.getMonth()) + 1; // +1 to include the current month
+      
+      const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      
+      // Ensure we don't divide by zero
+      return monthDiff > 0 ? totalSpent / monthDiff : totalSpent;
+    }
+    
+    return 0;
+  }, [expenses, monthlySpending]);
 
   // Get current monthly budget
   const currentMonthlyBudget = budgetGoal.amount;
