@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ExpenseCategory } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
@@ -211,7 +212,7 @@ export function useCategories(userId: string | undefined) {
     const defaultCategory = defaultCategories.find(c => c.id === id);
     if (defaultCategory) return defaultCategory;
     
-    return {
+    return defaultCategories.find(c => c.id === "other") || {
       id: "unknown",
       name: "Unknown Category",
       color: "#CCCCCC"

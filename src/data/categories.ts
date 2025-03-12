@@ -10,4 +10,5 @@ export const defaultCategories: ExpenseCategory[] = [
   { id: "entertainment", name: "Entertainment", color: "#D45CFF" },
   { id: "bills", name: "Bills", color: "#FF5C5C" },
   { id: "transportation", name: "Transportation", color: "#5CFFFF" },
+  { id: "other", name: "Other", color: "#999999" }, // Keeping the fallback category
 ];
