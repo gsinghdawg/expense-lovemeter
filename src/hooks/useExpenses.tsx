@@ -47,74 +47,9 @@ export function useExpenses() {
     enabled: !!userId,
   });
 
-  // Fetch categories from Supabase
-  const { 
-    data: fetchedCategories = [], 
-    isLoading: isLoadingCategories 
-  } = useQuery({
-    queryKey: ['categories', userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('user_id', userId);
-      
-      if (error) {
-        console.error("Error fetching categories:", error);
-        toast({
-          title: "Error loading categories",
-          description: error.message,
-          variant: "destructive",
-        });
-        return [];
-      }
-
-      if (data.length === 0) {
-        // If no categories exist for the user, create default ones
-        await initializeDefaultCategories(userId);
-        
-        // Return default categories since we just created them
-        return defaultCategories.map(category => ({
-          ...category,
-          user_id: userId,
-        }));
-      }
-      
-      return data.map(category => ({
-        id: category.id,
-        name: category.name,
-        color: category.color,
-      }));
-    },
-    enabled: !!userId,
-  });
-
-  // Initialize default categories for new users
-  const initializeDefaultCategories = async (userId: string) => {
-    try {
-      const categories = defaultCategories.map(category => ({
-        name: category.name,
-        color: category.color,
-        icon: 'default',
-        user_id: userId,
-      }));
-      
-      const { error } = await supabase.from('categories').insert(categories);
-      
-      if (error) {
-        console.error("Error creating default categories:", error);
-        toast({
-          title: "Error creating categories",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    } catch (e) {
-      console.error("Failed to initialize default categories", e);
-    }
-  };
+  // Use default categories directly
+  const fetchedCategories = defaultCategories;
+  const isLoadingCategories = false;
 
   // Fetch budget goal from Supabase
   const { 
@@ -293,111 +228,31 @@ export function useExpenses() {
     },
   });
 
-  // Add category mutation
-  const addCategoryMutation = useMutation({
-    mutationFn: async (category: Omit<ExpenseCategory, "id">) => {
-      if (!userId) throw new Error("User not authenticated");
-      
-      const { data, error } = await supabase
-        .from('categories')
-        .insert({
-          name: category.name,
-          color: category.color,
-          icon: 'default',
-          user_id: userId,
-        })
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      return {
-        id: data.id,
-        name: data.name,
-        color: data.color,
-      };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', userId] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error adding category",
-        description: error.message || "Failed to add category",
-        variant: "destructive",
-      });
-    },
-  });
+  // Add/Update/Delete category methods
+  const addCategory = (category: Omit<ExpenseCategory, "id">) => {
+    // Generate a client-side UUID
+    const newId = crypto.randomUUID();
+    return { ...category, id: newId };
+  };
 
-  // Update category mutation
-  const updateCategoryMutation = useMutation({
-    mutationFn: async (category: ExpenseCategory) => {
-      if (!userId) throw new Error("User not authenticated");
-      
-      const { error } = await supabase
-        .from('categories')
-        .update({
-          name: category.name,
-          color: category.color,
-        })
-        .eq('id', category.id)
-        .eq('user_id', userId);
-        
-      if (error) throw error;
-      
-      return category;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', userId] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error updating category",
-        description: error.message || "Failed to update category",
-        variant: "destructive",
-      });
-    },
-  });
+  const updateCategory = (category: ExpenseCategory) => {
+    // No-op in local version, just return the updated category
+    return category;
+  };
 
-  // Delete category mutation
-  const deleteCategoryMutation = useMutation({
-    mutationFn: async (id: string) => {
-      if (!userId) throw new Error("User not authenticated");
-      
-      // Check if the category is in use
-      const { data: expensesUsingCategory, error: checkError } = await supabase
-        .from('expenses')
-        .select('id')
-        .eq('category_id', id)
-        .eq('user_id', userId);
-      
-      if (checkError) throw checkError;
-      
-      if (expensesUsingCategory && expensesUsingCategory.length > 0) {
-        throw new Error("Category is in use by some expenses");
-      }
-      
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', userId);
-        
-      if (error) throw error;
-      
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', userId] });
-    },
-    onError: (error: any) => {
+  const deleteCategory = (id: string) => {
+    // Check if category is in use
+    const categoryInUse = expenses.some(expense => expense.categoryId === id);
+    if (categoryInUse) {
       toast({
-        title: "Error deleting category",
-        description: error.message || "Failed to delete category",
+        title: "Cannot delete category",
+        description: "This category is in use by some expenses",
         variant: "destructive",
       });
-    },
-  });
+      return false;
+    }
+    return true;
+  };
 
   // Update budget goal mutation
   const updateBudgetGoalMutation = useMutation({
@@ -497,24 +352,6 @@ export function useExpenses() {
     deleteExpenseMutation.mutate(id);
   };
 
-  const addCategory = (category: Omit<ExpenseCategory, "id">) => {
-    addCategoryMutation.mutate(category);
-    return { ...category, id: 'pending' }; // Return a temporary object with a placeholder ID
-  };
-
-  const updateCategory = (category: ExpenseCategory) => {
-    updateCategoryMutation.mutate(category);
-  };
-
-  const deleteCategory = (id: string) => {
-    try {
-      deleteCategoryMutation.mutate(id);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
-
   const updateBudgetGoal = (newBudget: BudgetGoal) => {
     updateBudgetGoalMutation.mutate(newBudget);
   };
@@ -561,7 +398,7 @@ export function useExpenses() {
     return fetchedCategories.find(c => c.id === id) || defaultCategories[7];
   };
 
-  const isLoading = isLoadingExpenses || isLoadingCategories || isLoadingBudgetGoal || isLoadingBudgetHistory;
+  const isLoading = isLoadingExpenses || isLoadingBudgetGoal || isLoadingBudgetHistory;
 
   return {
     expenses,
