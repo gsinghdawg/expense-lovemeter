@@ -1,3 +1,4 @@
+
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,6 +124,22 @@ export function ExpenseSummary({
 
     return monthlyData;
   }, [expenses, getBudgetForMonth]);
+
+  // Calculate average monthly expense
+  const averageMonthlyExpense = useMemo(() => {
+    if (monthlySpending.length === 0) return 0;
+    const total = monthlySpending.reduce((sum, month) => sum + month.spending, 0);
+    return total / monthlySpending.length;
+  }, [monthlySpending]);
+
+  // Get current monthly budget
+  const currentMonthlyBudget = budgetGoal.amount;
+
+  // Calculate average monthly savings (if budget exists)
+  const averageMonthlySavings = useMemo(() => {
+    if (currentMonthlyBudget === null) return null;
+    return currentMonthlyBudget - averageMonthlyExpense;
+  }, [currentMonthlyBudget, averageMonthlyExpense]);
 
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -281,6 +298,39 @@ export function ExpenseSummary({
                 <div className="flex items-center">
                   <div className="w-3 h-1 bg-red-500 mr-1 border-dashed border-t"></div>
                   <span>Budget Goal</span>
+                </div>
+              </div>
+              
+              {/* New section for monthly metrics */}
+              <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md">
+                  <p className="text-xs text-muted-foreground mb-1">Average Monthly Expense</p>
+                  <p className="text-sm font-medium">${averageMonthlyExpense.toFixed(2)}</p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md">
+                  <p className="text-xs text-muted-foreground mb-1">Current Monthly Budget</p>
+                  <p className="text-sm font-medium">
+                    {currentMonthlyBudget === null 
+                      ? "Not set" 
+                      : `$${currentMonthlyBudget.toFixed(2)}`}
+                  </p>
+                </div>
+                <div className={`bg-slate-50 dark:bg-slate-800 p-3 rounded-md ${
+                  averageMonthlySavings !== null && averageMonthlySavings < 0 
+                    ? "text-red-500" 
+                    : averageMonthlySavings !== null 
+                      ? "text-green-500" 
+                      : ""
+                }`}>
+                  <p className="text-xs text-muted-foreground mb-1">Average Monthly Savings</p>
+                  {averageMonthlySavings === null ? (
+                    <p className="text-sm font-medium">Budget not set</p>
+                  ) : (
+                    <p className="text-sm font-medium">
+                      ${Math.abs(averageMonthlySavings).toFixed(2)}
+                      {averageMonthlySavings < 0 ? " (Deficit)" : ""}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
