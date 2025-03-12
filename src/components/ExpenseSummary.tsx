@@ -1,3 +1,4 @@
+
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -324,7 +325,7 @@ export function ExpenseSummary({
                     />
                     <Bar
                       dataKey="savings"
-                      fill="#FEF7CD"  
+                      fill="#4B5563"  // Changed from #FEF7CD (soft yellow) to #4B5563 (dark grey)
                       name="Monthly Savings"
                       barSize={20}
                       onClick={handleBarClick}
@@ -339,7 +340,7 @@ export function ExpenseSummary({
                       }}
                       onMouseOut={(data) => {
                         if (data && data.element) {
-                          data.element.style.fill = "#FEF7CD";
+                          data.element.style.fill = "#4B5563"; // Changed from #FEF7CD to #4B5563
                         }
                       }}
                     />
@@ -367,7 +368,7 @@ export function ExpenseSummary({
               </div>
               <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-[#FEF7CD] mr-1 cursor-pointer"></div>
+                  <div className="w-3 h-3 bg-[#4B5563] mr-1 cursor-pointer"></div> {/* Changed from #FEF7CD to #4B5563 */}
                   <span>Monthly Savings</span>
                 </div>
                 <div className="flex items-center">
