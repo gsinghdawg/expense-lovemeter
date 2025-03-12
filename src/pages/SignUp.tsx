@@ -19,6 +19,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // Form validation schema for signup
 const signUpSchema = z.object({
@@ -37,14 +48,23 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: "Password is required." }),
 });
 
+// Form validation schema for password reset
+const resetPasswordSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
+});
+
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 type LoginFormValues = z.infer<typeof loginSchema>;
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 const SignUp = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [resetLoading, setResetLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState("signup");
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Redirect to dashboard if user is already logged in
   useEffect(() => {
@@ -71,6 +91,13 @@ const SignUp = () => {
     },
   });
 
+  const resetPasswordForm = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
   async function onSignUp(values: SignUpFormValues) {
     setIsLoading(true);
     
@@ -94,6 +121,36 @@ const SignUp = () => {
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function onResetPassword(values: ResetPasswordFormValues) {
+    setResetLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+        redirectTo: `${window.location.origin}/dashboard`,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Reset email sent",
+        description: "Check your email for a password reset link.",
+      });
+      
+      setResetDialogOpen(false);
+      resetPasswordForm.reset();
+    } catch (error: any) {
+      toast({
+        title: "Reset failed",
+        description: error.message || "Failed to send reset email",
+        variant: "destructive"
+      });
+    } finally {
+      setResetLoading(false);
     }
   }
 
@@ -270,6 +327,58 @@ const SignUp = () => {
                     </FormItem>
                   )}
                 />
+                
+                <div className="flex justify-end">
+                  <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="link" className="p-0 h-auto" type="button">
+                        Forgot password?
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogDescription>
+                          Enter your email to receive a password reset link.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Form {...resetPasswordForm}>
+                        <form onSubmit={resetPasswordForm.handleSubmit(onResetPassword)} className="space-y-4">
+                          <FormField
+                            control={resetPasswordForm.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                  <div className="flex items-center relative">
+                                    <Mail className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                      placeholder="Enter your email"
+                                      type="email"
+                                      className="pl-10"
+                                      {...field}
+                                      disabled={resetLoading}
+                                    />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex justify-end gap-2">
+                            <DialogClose asChild>
+                              <Button variant="outline" type="button">Cancel</Button>
+                            </DialogClose>
+                            <Button type="submit" disabled={resetLoading}>
+                              {resetLoading ? "Sending..." : "Send Reset Link"}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging In..." : "Login"}
