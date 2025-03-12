@@ -12,12 +12,14 @@ import { Sparkles } from "lucide-react";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { Spinner } from "@/components/ui/spinner";
 
 const Index = () => {
   const {
     expenses,
     categories,
     budgetGoal,
+    isLoading,
     addExpense,
     updateExpense,
     deleteExpense,
@@ -32,6 +34,14 @@ const Index = () => {
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const { signOut, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="py-8 px-4 sm:px-6">

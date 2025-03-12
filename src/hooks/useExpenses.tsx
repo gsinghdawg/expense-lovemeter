@@ -1,143 +1,520 @@
+
 import { useState, useEffect } from "react";
 import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useExpenses() {
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem("expenses");
-    if (saved) {
-      try {
-        return JSON.parse(saved).map((expense: any) => ({
-          ...expense,
-          date: new Date(expense.date),
-        }));
-      } catch (e) {
-        console.error("Failed to parse expenses", e);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const userId = user?.id;
+
+  // Fetch expenses from Supabase
+  const { 
+    data: expenses = [], 
+    isLoading: isLoadingExpenses 
+  } = useQuery({
+    queryKey: ['expenses', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false });
+      
+      if (error) {
+        console.error("Error fetching expenses:", error);
+        toast({
+          title: "Error loading expenses",
+          description: error.message,
+          variant: "destructive",
+        });
         return [];
       }
-    }
-    return [];
+      
+      return data.map(expense => ({
+        ...expense,
+        id: expense.id,
+        date: new Date(expense.date),
+      }));
+    },
+    enabled: !!userId,
   });
 
-  const [categories, setCategories] = useState<ExpenseCategory[]>(() => {
-    const saved = localStorage.getItem("categories");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to parse categories", e);
-        return defaultCategories;
+  // Fetch categories from Supabase
+  const { 
+    data: fetchedCategories = [], 
+    isLoading: isLoadingCategories 
+  } = useQuery({
+    queryKey: ['categories', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error("Error fetching categories:", error);
+        toast({
+          title: "Error loading categories",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
       }
-    }
-    return defaultCategories;
-  });
 
-  const [budgetGoal, setBudgetGoal] = useState<BudgetGoal>(() => {
-    const saved = localStorage.getItem("budgetGoal");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to parse budget goal", e);
-        const now = new Date();
-        return { amount: null, month: now.getMonth(), year: now.getFullYear() };
-      }
-    }
-    const now = new Date();
-    return { amount: null, month: now.getMonth(), year: now.getFullYear() };
-  });
-
-  const [budgetHistory, setBudgetHistory] = useState<BudgetGoalHistory[]>(() => {
-    const saved = localStorage.getItem("budgetHistory");
-    if (saved) {
-      try {
-        return JSON.parse(saved).map((budget: any) => ({
-          ...budget,
-          startDate: new Date(budget.startDate),
+      if (data.length === 0) {
+        // If no categories exist for the user, create default ones
+        await initializeDefaultCategories(userId);
+        
+        // Return default categories since we just created them
+        return defaultCategories.map(category => ({
+          ...category,
+          user_id: userId,
         }));
-      } catch (e) {
-        console.error("Failed to parse budget history", e);
-        const now = new Date();
-        return [{ 
-          amount: null, 
-          month: now.getMonth(), 
-          year: now.getFullYear(),
-          startDate: now
-        }];
       }
-    }
-    const now = new Date();
-    return [{ 
-      amount: null, 
-      month: now.getMonth(), 
-      year: now.getFullYear(),
-      startDate: now
-    }];
+      
+      return data.map(category => ({
+        id: category.id,
+        name: category.name,
+        color: category.color,
+      }));
+    },
+    enabled: !!userId,
   });
 
-  useEffect(() => {
-    localStorage.setItem("expenses", JSON.stringify(expenses));
-  }, [expenses]);
+  // Initialize default categories for new users
+  const initializeDefaultCategories = async (userId: string) => {
+    try {
+      const categories = defaultCategories.map(category => ({
+        name: category.name,
+        color: category.color,
+        icon: 'default',
+        user_id: userId,
+      }));
+      
+      const { error } = await supabase.from('categories').insert(categories);
+      
+      if (error) {
+        console.error("Error creating default categories:", error);
+        toast({
+          title: "Error creating categories",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      console.error("Failed to initialize default categories", e);
+    }
+  };
 
-  useEffect(() => {
-    localStorage.setItem("categories", JSON.stringify(categories));
-  }, [categories]);
-
-  useEffect(() => {
-    localStorage.setItem("budgetGoal", JSON.stringify(budgetGoal));
-  }, [budgetGoal]);
+  // Fetch budget goal from Supabase
+  const { 
+    data: budgetGoalData,
+    isLoading: isLoadingBudgetGoal 
+  } = useQuery({
+    queryKey: ['budget-goal', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      const { data, error } = await supabase
+        .from('budget_goals')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('month', currentMonth)
+        .eq('year', currentYear)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error fetching budget goal:", error);
+        toast({
+          title: "Error loading budget goal",
+          description: error.message,
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!userId,
+  });
   
-  useEffect(() => {
-    localStorage.setItem("budgetHistory", JSON.stringify(budgetHistory));
-  }, [budgetHistory]);
+  const budgetGoal: BudgetGoal = budgetGoalData 
+    ? { 
+        amount: budgetGoalData.amount, 
+        month: budgetGoalData.month, 
+        year: budgetGoalData.year 
+      } 
+    : { 
+        amount: null, 
+        month: new Date().getMonth(), 
+        year: new Date().getFullYear() 
+      };
+
+  // Fetch budget history from Supabase
+  const { 
+    data: budgetHistory = [], 
+    isLoading: isLoadingBudgetHistory 
+  } = useQuery({
+    queryKey: ['budget-history', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      
+      const { data, error } = await supabase
+        .from('budget_goal_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('start_date', { ascending: false });
+      
+      if (error) {
+        console.error("Error fetching budget history:", error);
+        toast({
+          title: "Error loading budget history",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
+      }
+      
+      return data.map(budget => ({
+        ...budget,
+        startDate: new Date(budget.start_date),
+      }));
+    },
+    enabled: !!userId,
+  });
+
+  // Add expense mutation
+  const addExpenseMutation = useMutation({
+    mutationFn: async (expense: Omit<Expense, "id">) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from('expenses')
+        .insert({
+          description: expense.description,
+          amount: expense.amount,
+          date: expense.date.toISOString(),
+          category_id: expense.categoryId,
+          user_id: userId,
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return {
+        ...data,
+        date: new Date(data.date),
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error adding expense",
+        description: error.message || "Failed to add expense",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update expense mutation
+  const updateExpenseMutation = useMutation({
+    mutationFn: async (expense: Expense) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      const { error } = await supabase
+        .from('expenses')
+        .update({
+          description: expense.description,
+          amount: expense.amount,
+          date: expense.date.toISOString(),
+          category_id: expense.categoryId,
+        })
+        .eq('id', expense.id)
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      return expense;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error updating expense",
+        description: error.message || "Failed to update expense",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete expense mutation
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error deleting expense",
+        description: error.message || "Failed to delete expense",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add category mutation
+  const addCategoryMutation = useMutation({
+    mutationFn: async (category: Omit<ExpenseCategory, "id">) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({
+          name: category.name,
+          color: category.color,
+          icon: 'default',
+          user_id: userId,
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        name: data.name,
+        color: data.color,
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', userId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error adding category",
+        description: error.message || "Failed to add category",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update category mutation
+  const updateCategoryMutation = useMutation({
+    mutationFn: async (category: ExpenseCategory) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      const { error } = await supabase
+        .from('categories')
+        .update({
+          name: category.name,
+          color: category.color,
+        })
+        .eq('id', category.id)
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      return category;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', userId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error updating category",
+        description: error.message || "Failed to update category",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete category mutation
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      // Check if the category is in use
+      const { data: expensesUsingCategory, error: checkError } = await supabase
+        .from('expenses')
+        .select('id')
+        .eq('category_id', id)
+        .eq('user_id', userId);
+      
+      if (checkError) throw checkError;
+      
+      if (expensesUsingCategory && expensesUsingCategory.length > 0) {
+        throw new Error("Category is in use by some expenses");
+      }
+      
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', userId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error deleting category",
+        description: error.message || "Failed to delete category",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update budget goal mutation
+  const updateBudgetGoalMutation = useMutation({
+    mutationFn: async (newBudget: BudgetGoal) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      const now = new Date();
+      
+      // First, check if we have an existing budget for this month/year
+      const { data: existingBudget, error: checkError } = await supabase
+        .from('budget_goals')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('month', newBudget.month)
+        .eq('year', newBudget.year)
+        .maybeSingle();
+      
+      if (checkError) throw checkError;
+      
+      let budgetResult;
+      
+      if (existingBudget) {
+        // Update existing budget
+        const { data, error } = await supabase
+          .from('budget_goals')
+          .update({
+            amount: newBudget.amount,
+          })
+          .eq('id', existingBudget.id)
+          .eq('user_id', userId)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        budgetResult = data;
+      } else {
+        // Create new budget
+        const { data, error } = await supabase
+          .from('budget_goals')
+          .insert({
+            amount: newBudget.amount,
+            month: newBudget.month,
+            year: newBudget.year,
+            user_id: userId,
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        budgetResult = data;
+      }
+      
+      // Add to budget history
+      const { error: historyError } = await supabase
+        .from('budget_goal_history')
+        .insert({
+          amount: newBudget.amount,
+          month: newBudget.month,
+          year: newBudget.year,
+          start_date: now.toISOString(),
+          user_id: userId,
+        });
+        
+      if (historyError) {
+        console.error("Error adding budget history:", historyError);
+      }
+      
+      return {
+        amount: budgetResult.amount,
+        month: budgetResult.month,
+        year: budgetResult.year,
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budget-goal', userId] });
+      queryClient.invalidateQueries({ queryKey: ['budget-history', userId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error updating budget",
+        description: error.message || "Failed to update budget",
+        variant: "destructive",
+      });
+    },
+  });
 
   const addExpense = (expense: Omit<Expense, "id">) => {
-    const newExpense = {
-      ...expense,
-      id: crypto.randomUUID(),
-    };
-    setExpenses([...expenses, newExpense]);
-    toast({
-      title: "Expense added",
-      description: `$${expense.amount.toFixed(2)} - ${expense.description}`,
-    });
-    return newExpense;
+    addExpenseMutation.mutate(expense);
+    return { ...expense, id: 'pending' }; // Return a temporary object with a placeholder ID
   };
 
   const updateExpense = (expense: Expense) => {
-    setExpenses(expenses.map(e => e.id === expense.id ? expense : e));
-    toast({
-      title: "Expense updated",
-      description: `$${expense.amount.toFixed(2)} - ${expense.description}`,
-    });
+    updateExpenseMutation.mutate(expense);
   };
 
   const deleteExpense = (id: string) => {
-    setExpenses(expenses.filter(e => e.id !== id));
-    toast({
-      title: "Expense deleted",
-      description: "The expense has been removed",
-    });
+    deleteExpenseMutation.mutate(id);
+  };
+
+  const addCategory = (category: Omit<ExpenseCategory, "id">) => {
+    addCategoryMutation.mutate(category);
+    return { ...category, id: 'pending' }; // Return a temporary object with a placeholder ID
+  };
+
+  const updateCategory = (category: ExpenseCategory) => {
+    updateCategoryMutation.mutate(category);
+  };
+
+  const deleteCategory = (id: string) => {
+    try {
+      deleteCategoryMutation.mutate(id);
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
 
   const updateBudgetGoal = (newBudget: BudgetGoal) => {
-    setBudgetGoal(newBudget);
-    
-    const now = new Date();
-    const newBudgetHistory: BudgetGoalHistory = {
-      ...newBudget,
-      startDate: now
-    };
-    
-    setBudgetHistory([...budgetHistory, newBudgetHistory]);
-    
-    toast({
-      title: "Budget updated",
-      description: newBudget.amount === null 
-        ? "Monthly budget cleared" 
-        : `Monthly budget set to $${newBudget.amount.toFixed(2)}`,
-    });
+    updateBudgetGoalMutation.mutate(newBudget);
   };
 
   const getCurrentMonthExpenses = () => {
@@ -178,55 +555,18 @@ export function useExpenses() {
     return null;
   };
 
-  const addCategory = (category: Omit<ExpenseCategory, "id">) => {
-    const newCategory = {
-      ...category,
-      id: crypto.randomUUID(),
-    };
-    setCategories([...categories, newCategory]);
-    toast({
-      title: "Category added",
-      description: `${category.name} category created`,
-    });
-    return newCategory;
-  };
-
-  const updateCategory = (category: ExpenseCategory) => {
-    setCategories(categories.map(c => c.id === category.id ? category : c));
-    toast({
-      title: "Category updated",
-      description: `${category.name} category updated`,
-    });
-  };
-
-  const deleteCategory = (id: string) => {
-    const inUse = expenses.some(e => e.categoryId === id);
-    if (inUse) {
-      toast({
-        title: "Cannot delete category",
-        description: "This category is being used by some expenses",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    setCategories(categories.filter(c => c.id !== id));
-    toast({
-      title: "Category deleted",
-      description: "The category has been removed",
-    });
-    return true;
-  };
-
   const getCategoryById = (id: string) => {
-    return categories.find(c => c.id === id) || defaultCategories[7];
+    return fetchedCategories.find(c => c.id === id) || defaultCategories[7];
   };
+
+  const isLoading = isLoadingExpenses || isLoadingCategories || isLoadingBudgetGoal || isLoadingBudgetHistory;
 
   return {
     expenses,
-    categories,
+    categories: fetchedCategories,
     budgetGoal,
     budgetHistory,
+    isLoading,
     addExpense,
     updateExpense,
     deleteExpense,
