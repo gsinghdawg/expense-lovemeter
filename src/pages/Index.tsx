@@ -38,7 +38,7 @@ const Index = () => {
           </div>
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-amber-500" />
-            Personal Expense Tracker
+            LadyLedger
             <Sparkles className="h-6 w-6 text-amber-500" />
           </h1>
           <p className="text-muted-foreground text-sm">Track, manage, and optimize your personal finances</p>
