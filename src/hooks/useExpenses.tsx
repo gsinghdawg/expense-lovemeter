@@ -134,7 +134,9 @@ export function useExpenses() {
     
     toast({
       title: "Budget updated",
-      description: `Monthly budget set to $${newBudget.amount?.toFixed(2)}`,
+      description: newBudget.amount === null 
+        ? "Monthly budget cleared" 
+        : `Monthly budget set to $${newBudget.amount.toFixed(2)}`,
     });
   };
 
@@ -161,10 +163,10 @@ export function useExpenses() {
     );
     
     for (const budget of sortedHistory) {
-      const budgetDate = new Date(budget.year, budget.month);
-      const targetDate = new Date(year, month);
+      const budgetDate = new Date(budget.year, budget.month, 1);
+      const targetDate = new Date(year, month, 1);
       
-      if (budgetDate <= targetDate) {
+      if (budgetDate.getTime() <= targetDate.getTime()) {
         return budget.amount;
       }
     }

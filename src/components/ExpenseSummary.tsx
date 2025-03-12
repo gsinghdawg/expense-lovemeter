@@ -1,3 +1,4 @@
+
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,14 +104,21 @@ export function ExpenseSummary({
     for (let i = 0; i < 6; i++) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
-      const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+      const month = date.getMonth();
+      const year = date.getFullYear();
+      const monthKey = `${year}-${month + 1}`;
       const monthName = date.toLocaleString('default', { month: 'short' });
-      const monthBudget = getBudgetForMonth(date.getMonth(), date.getFullYear());
+      
+      // Get the specific budget for this month and year
+      const monthBudget = getBudgetForMonth(month, year);
       
       monthlyData.unshift({
         month: monthName,
         spending: spendingByMonth[monthKey] || 0,
-        budget: monthBudget
+        budget: monthBudget,
+        // Add month and year as custom properties for tooltip use
+        fullMonth: date.toLocaleString('default', { month: 'long' }),
+        year: year
       });
     }
 
@@ -234,7 +242,14 @@ export function ExpenseSummary({
                       width={40}
                     />
                     <Tooltip 
-                      formatter={(value: number | null) => value === null ? ["Not set", "Amount"] : [`$${value.toFixed(2)}`, "Amount"]}
+                      formatter={(value: number | null, name: string, props: any) => {
+                        if (value === null) return ["Not set", name];
+                        return [`$${value.toFixed(2)}`, name];
+                      }}
+                      labelFormatter={(label: string, items: any[]) => {
+                        const item = items[0]?.payload;
+                        return item ? `${item.fullMonth} ${item.year}` : label;
+                      }}
                       contentStyle={{ fontSize: 12 }}
                     />
                     <Line 
@@ -253,6 +268,8 @@ export function ExpenseSummary({
                       strokeDasharray="5 5"
                       dot={false}
                       name="Budget Goal"
+                      // Only show the budget line for months with a budget
+                      connectNulls={true}
                     />
                   </LineChart>
                 </ResponsiveContainer>
