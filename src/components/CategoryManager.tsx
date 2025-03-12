@@ -45,11 +45,13 @@ export function CategoryManager({
   
   const handleOpenDialog = (category?: ExpenseCategory) => {
     setEditingCategory(category || null);
-    form.reset(
-      category 
-        ? { name: category.name, color: category.color }
-        : { name: "", color: "#000000" }
-    );
+    
+    // Fix: Ensure we're providing required values for both name and color
+    form.reset({
+      name: category ? category.name : "",
+      color: category ? category.color : "#000000"
+    });
+    
     setIsDialogOpen(true);
   };
 
@@ -173,7 +175,7 @@ export function CategoryManager({
                   <FormItem>
                     <FormLabel>Category Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Dating, Gifts" {...field} />
+                      <Input placeholder="e.g., Dating Apps, Subscription" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
