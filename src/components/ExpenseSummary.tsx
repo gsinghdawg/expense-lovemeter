@@ -1,3 +1,4 @@
+
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -342,13 +343,13 @@ export function ExpenseSummary({
                     <Line 
                       type="monotone" 
                       dataKey="budget" 
-                      stroke="#ef4444" 
+                      stroke="#4ade80" // Changed from #ef4444 (red) to #4ade80 (green)
                       strokeWidth={3}
                       strokeDasharray="5 5"
-                      dot={{ fill: "#ef4444", r: 4 }}
+                      dot={{ fill: "#4ade80", r: 4 }} // Changed from #ef4444 (red) to #4ade80 (green)
                       name="Budget Goal"
                       connectNulls={true}
-                      activeDot={{ r: 6, fill: "#ef4444" }}
+                      activeDot={{ r: 6, fill: "#4ade80" }} // Changed from #ef4444 (red) to #4ade80 (green)
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -363,7 +364,7 @@ export function ExpenseSummary({
                   <span>Monthly Spending</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-1 bg-red-500 mr-1 border-dashed border-t"></div>
+                  <div className="w-3 h-1 bg-green-500 mr-1 border-dashed border-t"></div>
                   <span>Budget Goal</span>
                 </div>
               </div>
@@ -445,4 +446,3 @@ export function ExpenseSummary({
     </Card>
   );
 }
-
