@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Update user profile in Supabase
+  const updateUserProfile = async (userId: string, userData: { name?: string }) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(userData)
+        .eq('id', userId);
+      
+      if (error) {
+        console.error("Error updating profile:", error);
+      }
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    }
+  };
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -31,10 +48,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
+        
+        // When user signs in or token is refreshed, update their profile data
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+          // Get user metadata
+          const name = session.user.user_metadata.name;
+          
+          // Update profile if we have user metadata
+          if (name) {
+            updateUserProfile(session.user.id, { name });
+          }
+        }
       }
     );
 
