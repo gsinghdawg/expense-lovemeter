@@ -24,7 +24,7 @@ export function ExpenseList({
 }: ExpenseListProps) {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [filterText, setFilterText] = useState("");
-  const [filterCategory, setFilterCategory] = useState<string>("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
 
   const handleEditExpense = (expense: Expense) => {
     setEditingExpense(expense);
@@ -50,9 +50,9 @@ export function ExpenseList({
     const matchesText = expense.description
       .toLowerCase()
       .includes(filterText.toLowerCase());
-    const matchesCategory = filterCategory
-      ? expense.categoryId === filterCategory
-      : true;
+    const matchesCategory = filterCategory === "all"
+      ? true
+      : expense.categoryId === filterCategory;
     return matchesText && matchesCategory;
   });
 
@@ -78,7 +78,7 @@ export function ExpenseList({
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 <div className="flex items-center gap-2">
