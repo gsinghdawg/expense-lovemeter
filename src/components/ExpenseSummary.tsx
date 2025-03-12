@@ -1,7 +1,8 @@
+
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ComposedChart } from "recharts";
 import { Progress } from "@/components/ui/progress";
 
 type ExpenseSummaryProps = {
