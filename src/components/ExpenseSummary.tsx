@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,11 +24,24 @@ export function ExpenseSummary({
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [expenses]);
 
-  // Calculate expenses by category
+  // Get current month expenses
+  const currentMonthExpenses = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return expenses.filter(expense => {
+      const expenseDate = expense.date;
+      return expenseDate.getMonth() === currentMonth && 
+             expenseDate.getFullYear() === currentYear;
+    });
+  }, [expenses]);
+
+  // Calculate current month expenses by category for pie chart
   const expensesByCategory = useMemo(() => {
     const result: Record<string, number> = {};
     
-    expenses.forEach((expense) => {
+    currentMonthExpenses.forEach((expense) => {
       const categoryId = expense.categoryId;
       result[categoryId] = (result[categoryId] || 0) + expense.amount;
     });
@@ -41,20 +53,30 @@ export function ExpenseSummary({
         value: amount,
         color: category.color,
       };
-    }).sort((a, b) => b.value - a.value); // Sort by amount (descending)
-  }, [expenses, getCategoryById]);
+    }).sort((a, b) => b.value - a.value);
+  }, [currentMonthExpenses, getCategoryById]);
 
-  // Get top 3 spending categories for bar chart
+  // Get top 3 spending categories for bar chart (all time)
   const top3Categories = useMemo(() => {
-    return expensesByCategory.slice(0, 3).map(category => ({
-      name: category.name,
-      amount: parseFloat(category.value.toFixed(2)),
-      color: category.color
-    }));
-  }, [expensesByCategory]);
-
-  // Format data for the pie chart
-  const pieChartData = expensesByCategory;
+    const result: Record<string, number> = {};
+    
+    expenses.forEach((expense) => {
+      const categoryId = expense.categoryId;
+      result[categoryId] = (result[categoryId] || 0) + expense.amount;
+    });
+    
+    return Object.entries(result)
+      .map(([categoryId, amount]) => {
+        const category = getCategoryById(categoryId);
+        return {
+          name: category.name,
+          amount: parseFloat(amount.toFixed(2)),
+          color: category.color
+        };
+      })
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 3);
+  }, [expenses, getCategoryById]);
 
   // Calculate budget progress percentage
   const budgetPercentage = Math.min(Math.round((currentMonthTotal / budgetGoal.amount) * 100), 100);
@@ -100,12 +122,12 @@ export function ExpenseSummary({
             )}
           </div>
 
-          {expenses.length > 0 ? (
+          {currentMonthExpenses.length > 0 ? (
             <div className="h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pieChartData}
+                    data={expensesByCategory}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -117,7 +139,7 @@ export function ExpenseSummary({
                     }
                     labelLine={false}
                   >
-                    {pieChartData.map((entry, index) => (
+                    {expensesByCategory.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -134,7 +156,7 @@ export function ExpenseSummary({
           )}
 
           <div className="space-y-2">
-            {pieChartData.map((item, index) => (
+            {expensesByCategory.map((item, index) => (
               <div key={index} className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div
