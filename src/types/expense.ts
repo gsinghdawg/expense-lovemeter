@@ -28,9 +28,10 @@ export type BudgetGoalHistory = {
 };
 
 // Extending DatabaseExpense interface for database interaction
-export interface DatabaseExpense extends Omit<Expense, 'date'> {
+export interface DatabaseExpense extends Omit<Expense, 'date' | 'categoryId'> {
   date: string; // Supabase stores dates as ISO strings
   user_id: string;
+  category_id: string; // Snake case for database column
 }
 
 // Extending DatabaseCategory interface for database interaction

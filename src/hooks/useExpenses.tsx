@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory } from "@/types/expense";
+import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory, DatabaseExpense } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,8 +40,9 @@ export function useExpenses() {
       return data.map(expense => ({
         ...expense,
         id: expense.id,
+        categoryId: expense.category_id, // Map from snake_case to camelCase
         date: new Date(expense.date),
-      }));
+      })) as Expense[];
     },
     enabled: !!userId,
   });
@@ -207,7 +208,7 @@ export function useExpenses() {
           description: expense.description,
           amount: expense.amount,
           date: expense.date.toISOString(),
-          category_id: expense.categoryId,
+          category_id: expense.categoryId, // Use categoryId from the expense object but store as category_id
           user_id: userId,
         })
         .select()
@@ -217,8 +218,9 @@ export function useExpenses() {
       
       return {
         ...data,
+        categoryId: data.category_id, // Map category_id to categoryId for frontend
         date: new Date(data.date),
-      };
+      } as Expense;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
@@ -243,7 +245,7 @@ export function useExpenses() {
           description: expense.description,
           amount: expense.amount,
           date: expense.date.toISOString(),
-          category_id: expense.categoryId,
+          category_id: expense.categoryId,  // Use categoryId but store as category_id
         })
         .eq('id', expense.id)
         .eq('user_id', userId);
