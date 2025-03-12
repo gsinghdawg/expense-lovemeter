@@ -158,13 +158,17 @@ export function useExpenses() {
   };
 
   const getBudgetForMonth = (month: number, year: number) => {
+    // Sort budget history from newest to oldest
     const sortedHistory = [...budgetHistory].sort((a, b) => 
       b.startDate.getTime() - a.startDate.getTime()
     );
     
+    // Create date objects for comparison (use first day of month)
+    const targetDate = new Date(year, month, 1);
+    
+    // Find the most recent budget that was set before or on the target month
     for (const budget of sortedHistory) {
       const budgetDate = new Date(budget.year, budget.month, 1);
-      const targetDate = new Date(year, month, 1);
       
       if (budgetDate.getTime() <= targetDate.getTime()) {
         return budget.amount;

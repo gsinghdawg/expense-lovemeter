@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -264,15 +263,25 @@ export function ExpenseSummary({
                       type="monotone" 
                       dataKey="budget" 
                       stroke="#ef4444" 
-                      strokeWidth={2}
+                      strokeWidth={3}
                       strokeDasharray="5 5"
-                      dot={false}
+                      dot={{ fill: "#ef4444", r: 4 }}
                       name="Budget Goal"
-                      // Only show the budget line for months with a budget
                       connectNulls={true}
+                      activeDot={{ r: 6, fill: "#ef4444" }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
+                <div className="flex items-center">
+                  <div className="w-3 h-1 bg-blue-600 mr-1"></div>
+                  <span>Monthly Spending</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-1 bg-red-500 mr-1 border-dashed border-t"></div>
+                  <span>Budget Goal</span>
+                </div>
               </div>
             </div>
           )}
