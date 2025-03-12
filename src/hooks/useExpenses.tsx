@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
@@ -78,10 +79,7 @@ export function useExpenses() {
         await initializeDefaultCategories(userId);
         
         // Return default categories since we just created them
-        return defaultCategories.map(category => ({
-          ...category,
-          user_id: userId,
-        }));
+        return defaultCategories;
       }
       
       return data.map(category => ({
@@ -97,22 +95,30 @@ export function useExpenses() {
   const initializeDefaultCategories = async (userId: string) => {
     try {
       const categories = defaultCategories.map(category => ({
+        id: category.id, // Include the id from defaultCategories
         name: category.name,
         color: category.color,
         icon: 'default',
         user_id: userId,
       }));
       
-      const { error } = await supabase.from('categories').insert(categories);
-      
-      if (error) {
-        console.error("Error creating default categories:", error);
-        toast({
-          title: "Error creating categories",
-          description: error.message,
-          variant: "destructive",
-        });
+      // Insert categories one by one to preserve IDs
+      for (const category of categories) {
+        const { error } = await supabase
+          .from('categories')
+          .insert(category);
+        
+        if (error) {
+          console.error(`Error creating category ${category.name}:`, error);
+          toast({
+            title: "Error creating category",
+            description: `Failed to create ${category.name}: ${error.message}`,
+            variant: "destructive",
+          });
+        }
       }
+      
+      console.log("Default categories initialized:", categories);
     } catch (e) {
       console.error("Failed to initialize default categories", e);
     }
