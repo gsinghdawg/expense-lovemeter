@@ -33,10 +33,27 @@ export function useCategories(userId: string | undefined) {
         return defaultCategories; // Return defaults on error
       }
 
-      if (data.length === 0) {
-        // Initialize default categories if none exist
+      // Check if we have all default categories
+      if (data.length === 0 || !areAllDefaultCategoriesPresent(data)) {
+        console.log("Initializing or ensuring all default categories are present");
         await initializeDefaultCategories(userId);
-        return defaultCategories;
+        
+        // Fetch again to get the updated list
+        const { data: refreshedData, error: refreshError } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('user_id', userId);
+          
+        if (refreshError) {
+          console.error("Error refreshing categories:", refreshError);
+          return defaultCategories;
+        }
+        
+        return refreshedData.map(category => ({
+          id: category.id,
+          name: category.name,
+          color: category.color,
+        }));
       }
       
       return data.map(category => ({
@@ -48,12 +65,39 @@ export function useCategories(userId: string | undefined) {
     enabled: true, // Always enable to ensure defaults are available
   });
 
+  // Check if all default categories are present
+  const areAllDefaultCategoriesPresent = (userCategories: any[]) => {
+    const categoryNames = userCategories.map(c => c.name.toLowerCase());
+    const defaultNames = defaultCategories.map(c => c.name.toLowerCase());
+    
+    return defaultNames.every(name => categoryNames.includes(name));
+  };
+
   // Initialize default categories for new users
   const initializeDefaultCategories = async (userId: string) => {
     try {
       console.log("Starting to initialize default categories:", defaultCategories);
       
+      // Get existing categories to avoid duplicates
+      const { data: existingCategories, error: fetchError } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('user_id', userId);
+        
+      if (fetchError) {
+        console.error("Error fetching existing categories:", fetchError);
+        return;
+      }
+      
+      const existingNames = new Set(existingCategories?.map(c => c.name.toLowerCase()) || []);
+      
       for (const category of defaultCategories) {
+        // Skip if category already exists
+        if (existingNames.has(category.name.toLowerCase())) {
+          console.log(`Category ${category.name} already exists, skipping`);
+          continue;
+        }
+        
         const { error } = await supabase
           .from('categories')
           .insert({
