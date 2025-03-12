@@ -104,7 +104,7 @@ export function ExpenseList({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">All Transactions</h2>
+        <h2 className="text-xl font-semibold text-gradient-pink">All Transactions</h2>
         <div className="text-sm text-muted-foreground">
           {filteredExpenses.length} {filteredExpenses.length === 1 ? 'expense' : 'expenses'} found
         </div>
@@ -149,7 +149,7 @@ export function ExpenseList({
         <div className="space-y-6">
           {groupedExpenses.map((group) => (
             <div key={format(group.date, 'yyyy-MM-dd')} className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background/90 backdrop-blur-sm py-2">
+              <h3 className="text-sm font-medium text-gradient-blue sticky top-0 bg-background/90 backdrop-blur-sm py-2">
                 {getDateHeaderText(group.date)}
               </h3>
               <div className="space-y-3">
@@ -171,7 +171,7 @@ export function ExpenseList({
       <Dialog open={!!editingExpense} onOpenChange={(open) => !open && setEditingExpense(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Expense</DialogTitle>
+            <DialogTitle className="text-gradient-green">Edit Expense</DialogTitle>
           </DialogHeader>
           {editingExpense && (
             <ExpenseForm

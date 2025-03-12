@@ -31,3 +31,17 @@
     animation: logo-spin infinite 20s linear;
   }
 }
+
+/* Adding some animated color cycling for special elements */
+@keyframes colorCycle {
+  0% { color: #F87171; }
+  20% { color: #FBBF24; }
+  40% { color: #34D399; }
+  60% { color: #60A5FA; }
+  80% { color: #A78BFA; }
+  100% { color: #F472B6; }
+}
+
+.color-cycle {
+  animation: colorCycle 8s infinite;
+}
