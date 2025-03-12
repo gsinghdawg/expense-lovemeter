@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
@@ -37,14 +36,12 @@ export function useExpenses() {
         return [];
       }
       
-      // Map the snake_case database fields to camelCase properties expected by the Expense type
       return data.map(expense => ({
         id: expense.id,
         amount: expense.amount,
         description: expense.description,
         date: new Date(expense.date),
-        categoryId: expense.category_id, // Map category_id to categoryId
-        // We don't include user_id and created_at as they're not part of the Expense type
+        categoryId: expense.category_id,
       }));
     },
     enabled: !!userId,
@@ -75,10 +72,7 @@ export function useExpenses() {
       }
 
       if (data.length === 0) {
-        // If no categories exist for the user, create default ones
         await initializeDefaultCategories(userId);
-        
-        // Return default categories since we just created them
         return defaultCategories;
       }
       
@@ -94,19 +88,18 @@ export function useExpenses() {
   // Initialize default categories for new users
   const initializeDefaultCategories = async (userId: string) => {
     try {
-      const categories = defaultCategories.map(category => ({
-        id: category.id, // Include the id from defaultCategories
-        name: category.name,
-        color: category.color,
-        icon: 'default',
-        user_id: userId,
-      }));
+      console.log("Starting to initialize default categories:", defaultCategories);
       
-      // Insert categories one by one to preserve IDs
-      for (const category of categories) {
+      for (const category of defaultCategories) {
         const { error } = await supabase
           .from('categories')
-          .insert(category);
+          .insert({
+            id: category.id,
+            name: category.name,
+            color: category.color,
+            icon: 'default',
+            user_id: userId,
+          });
         
         if (error) {
           console.error(`Error creating category ${category.name}:`, error);
@@ -115,10 +108,12 @@ export function useExpenses() {
             description: `Failed to create ${category.name}: ${error.message}`,
             variant: "destructive",
           });
+        } else {
+          console.log(`Successfully created category: ${category.name} with ID: ${category.id}`);
         }
       }
       
-      console.log("Default categories initialized:", categories);
+      console.log("Default categories initialization complete");
     } catch (e) {
       console.error("Failed to initialize default categories", e);
     }
@@ -216,7 +211,7 @@ export function useExpenses() {
           description: expense.description,
           amount: expense.amount,
           date: expense.date.toISOString(),
-          category_id: expense.categoryId, // Map categoryId to category_id for database
+          category_id: expense.categoryId,
           user_id: userId,
         })
         .select()
@@ -224,13 +219,12 @@ export function useExpenses() {
         
       if (error) throw error;
       
-      // Map back from database format to Expense type
       return {
         id: data.id,
         amount: data.amount,
         description: data.description,
         date: new Date(data.date),
-        categoryId: data.category_id, // Map category_id back to categoryId
+        categoryId: data.category_id,
       };
     },
     onSuccess: () => {
@@ -256,7 +250,7 @@ export function useExpenses() {
           description: expense.description,
           amount: expense.amount,
           date: expense.date.toISOString(),
-          category_id: expense.categoryId, // Map categoryId to category_id for database
+          category_id: expense.categoryId,
         })
         .eq('id', expense.id)
         .eq('user_id', userId);
@@ -375,7 +369,6 @@ export function useExpenses() {
     mutationFn: async (id: string) => {
       if (!userId) throw new Error("User not authenticated");
       
-      // Check if the category is in use
       const { data: expensesUsingCategory, error: checkError } = await supabase
         .from('expenses')
         .select('id')
@@ -417,7 +410,6 @@ export function useExpenses() {
       
       const now = new Date();
       
-      // First, check if we have an existing budget for this month/year
       const { data: existingBudget, error: checkError } = await supabase
         .from('budget_goals')
         .select('id')
@@ -431,7 +423,6 @@ export function useExpenses() {
       let budgetResult;
       
       if (existingBudget) {
-        // Update existing budget
         const { data, error } = await supabase
           .from('budget_goals')
           .update({
@@ -445,7 +436,6 @@ export function useExpenses() {
         if (error) throw error;
         budgetResult = data;
       } else {
-        // Create new budget
         const { data, error } = await supabase
           .from('budget_goals')
           .insert({
@@ -461,7 +451,6 @@ export function useExpenses() {
         budgetResult = data;
       }
       
-      // Add to budget history
       const { error: historyError } = await supabase
         .from('budget_goal_history')
         .insert({
@@ -497,7 +486,7 @@ export function useExpenses() {
 
   const addExpense = (expense: Omit<Expense, "id">) => {
     addExpenseMutation.mutate(expense);
-    return { ...expense, id: 'pending' }; // Return a temporary object with a placeholder ID
+    return { ...expense, id: 'pending' };
   };
 
   const updateExpense = (expense: Expense) => {
@@ -510,7 +499,7 @@ export function useExpenses() {
 
   const addCategory = (category: Omit<ExpenseCategory, "id">) => {
     addCategoryMutation.mutate(category);
-    return { ...category, id: 'pending' }; // Return a temporary object with a placeholder ID
+    return { ...category, id: 'pending' };
   };
 
   const updateCategory = (category: ExpenseCategory) => {
@@ -548,15 +537,12 @@ export function useExpenses() {
   };
 
   const getBudgetForMonth = (month: number, year: number) => {
-    // Sort budget history from newest to oldest
     const sortedHistory = [...budgetHistory].sort((a, b) => 
       b.startDate.getTime() - a.startDate.getTime()
     );
     
-    // Create date objects for comparison (use first day of month)
     const targetDate = new Date(year, month, 1);
     
-    // Find the most recent budget that was set before or on the target month
     for (const budget of sortedHistory) {
       const budgetDate = new Date(budget.year, budget.month, 1);
       
@@ -569,15 +555,12 @@ export function useExpenses() {
   };
 
   const getCategoryById = (id: string) => {
-    // First try to find the category in fetched categories
     const category = fetchedCategories.find(c => c.id === id);
     if (category) return category;
     
-    // If not found, try to find it in default categories
     const defaultCategory = defaultCategories.find(c => c.id === id);
     if (defaultCategory) return defaultCategory;
     
-    // If still not found, return the "Other" category as fallback
     return defaultCategories.find(c => c.id === "other") || {
       id: "unknown",
       name: "Unknown Category",
