@@ -91,21 +91,21 @@
 
   body {
     @apply bg-background text-foreground;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
     min-height: 100vh;
   }
 }
 
 @layer components {
   .app-container {
-    @apply max-w-4xl mx-auto bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-white/20 p-6;
+    @apply max-w-4xl mx-auto bg-card/80 backdrop-blur-sm rounded-xl shadow-xl border border-border p-6;
   }
   
   .gradient-card {
-    @apply bg-white/90 backdrop-blur-sm border border-white/40 shadow-md transition-all duration-300 hover:shadow-lg;
+    @apply bg-card/90 backdrop-blur-sm border border-border shadow-md transition-all duration-300 hover:shadow-lg;
   }
   
   .accent-gradient {
-    background: linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%);
+    background: linear-gradient(109.6deg, rgba(var(--card)/0.9) 11.2%, rgba(var(--secondary)/0.9) 91.1%);
   }
 }

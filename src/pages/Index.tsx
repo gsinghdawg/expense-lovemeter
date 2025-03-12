@@ -8,6 +8,7 @@ import { CategoryManager } from "@/components/CategoryManager";
 import { BudgetForm } from "@/components/BudgetForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles } from "lucide-react";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 const Index = () => {
   const {
@@ -31,7 +32,10 @@ const Index = () => {
   return (
     <div className="py-8 px-4 sm:px-6">
       <div className="app-container">
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-8 relative">
+          <div className="absolute right-0 top-0">
+            <ThemeSwitcher />
+          </div>
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-amber-500" />
             Personal Expense Tracker
