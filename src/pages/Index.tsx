@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useExpenses } from "@/hooks/useExpenses";
 import { ExpenseForm } from "@/components/ExpenseForm";
@@ -42,7 +41,6 @@ const Index = () => {
             <Sparkles className="h-6 w-6 text-amber-500" />
           </h1>
           <h2 className="text-muted-foreground text-sm italic mb-2">Your Finance Companion</h2>
-          <p className="text-muted-foreground text-sm">Track, manage, and optimize your personal finances</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
