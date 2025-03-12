@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,6 +167,34 @@ export function ExpenseSummary({
     return currentMonthlyBudget - averageMonthlyExpense;
   }, [currentMonthlyBudget, averageMonthlyExpense]);
 
+  const handleBarClick = (data: any) => {
+    if (data && data.payload) {
+      const { fullMonth, year, budget, spending, savings } = data.payload;
+      const message = budget === null 
+        ? `${fullMonth} ${year}: No budget set. Spent $${spending.toFixed(2)}`
+        : `${fullMonth} ${year}: Budget $${budget.toFixed(2)}, Spent $${spending.toFixed(2)}, ${
+            savings >= 0 
+              ? `Saved $${savings.toFixed(2)}` 
+              : `Overspent $${Math.abs(savings).toFixed(2)}`
+          }`;
+          
+      console.log(message);
+      // Show a toast with the savings information
+      const { toast } = require("@/hooks/use-toast");
+      toast({
+        title: `${fullMonth} ${year}`,
+        description: budget === null 
+          ? `No budget set. Spent $${spending.toFixed(2)}`
+          : `Budget: $${budget.toFixed(2)}\nSpent: $${spending.toFixed(2)}\n${
+              savings >= 0 
+                ? `Saved: $${savings.toFixed(2)}` 
+                : `Overspent: $${Math.abs(savings).toFixed(2)}`
+            }`,
+        duration: 5000,
+      });
+    }
+  };
+
   const months = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -297,9 +324,12 @@ export function ExpenseSummary({
                     />
                     <Bar
                       dataKey="savings"
-                      fill="#f3f3f3"
+                      fill="#f3f3f3"  
                       name="Monthly Savings"
                       barSize={20}
+                      onClick={handleBarClick}
+                      cursor="pointer"
+                      isAnimationActive={true}
                     />
                     <Line 
                       type="monotone" 
@@ -324,6 +354,10 @@ export function ExpenseSummary({
                 </ResponsiveContainer>
               </div>
               <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-[#f3f3f3] mr-1 cursor-pointer"></div>
+                  <span>Monthly Savings</span>
+                </div>
                 <div className="flex items-center">
                   <div className="w-3 h-1 bg-blue-600 mr-1"></div>
                   <span>Monthly Spending</span>
@@ -411,3 +445,4 @@ export function ExpenseSummary({
     </Card>
   );
 }
+
