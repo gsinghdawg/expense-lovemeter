@@ -27,6 +27,9 @@ export function ExpenseList({
   const [filterText, setFilterText] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
+  // For debugging
+  console.log("Categories in ExpenseList:", categories);
+
   const handleEditExpense = (expense: Expense) => {
     setEditingExpense(expense);
   };
@@ -124,7 +127,7 @@ export function ExpenseList({
           <SelectTrigger className="sm:w-[180px]">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background">
             <SelectItem value="all">All Categories</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
@@ -169,7 +172,7 @@ export function ExpenseList({
       )}
 
       <Dialog open={!!editingExpense} onOpenChange={(open) => !open && setEditingExpense(null)}>
-        <DialogContent>
+        <DialogContent className="bg-background">
           <DialogHeader>
             <DialogTitle>Edit Expense</DialogTitle>
           </DialogHeader>
