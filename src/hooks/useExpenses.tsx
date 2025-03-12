@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
@@ -9,7 +8,6 @@ export function useExpenses() {
     const saved = localStorage.getItem("expenses");
     if (saved) {
       try {
-        // Convert the date strings back to Date objects
         return JSON.parse(saved).map((expense: any) => ({
           ...expense,
           date: new Date(expense.date),
@@ -43,18 +41,17 @@ export function useExpenses() {
       } catch (e) {
         console.error("Failed to parse budget goal", e);
         const now = new Date();
-        return { amount: 1000, month: now.getMonth(), year: now.getFullYear() };
+        return { amount: null, month: now.getMonth(), year: now.getFullYear() };
       }
     }
     const now = new Date();
-    return { amount: 1000, month: now.getMonth(), year: now.getFullYear() };
+    return { amount: null, month: now.getMonth(), year: now.getFullYear() };
   });
 
   const [budgetHistory, setBudgetHistory] = useState<BudgetGoalHistory[]>(() => {
     const saved = localStorage.getItem("budgetHistory");
     if (saved) {
       try {
-        // Convert the date strings back to Date objects
         return JSON.parse(saved).map((budget: any) => ({
           ...budget,
           startDate: new Date(budget.startDate),
@@ -63,7 +60,7 @@ export function useExpenses() {
         console.error("Failed to parse budget history", e);
         const now = new Date();
         return [{ 
-          amount: 1000, 
+          amount: null, 
           month: now.getMonth(), 
           year: now.getFullYear(),
           startDate: now
@@ -72,14 +69,13 @@ export function useExpenses() {
     }
     const now = new Date();
     return [{ 
-      amount: 1000, 
+      amount: null, 
       month: now.getMonth(), 
       year: now.getFullYear(),
       startDate: now
     }];
   });
 
-  // Save to localStorage whenever expenses, categories, or budgetGoal change
   useEffect(() => {
     localStorage.setItem("expenses", JSON.stringify(expenses));
   }, [expenses]);
@@ -128,7 +124,6 @@ export function useExpenses() {
   const updateBudgetGoal = (newBudget: BudgetGoal) => {
     setBudgetGoal(newBudget);
     
-    // Add to budget history
     const now = new Date();
     const newBudgetHistory: BudgetGoalHistory = {
       ...newBudget,
@@ -139,7 +134,7 @@ export function useExpenses() {
     
     toast({
       title: "Budget updated",
-      description: `Monthly budget set to $${newBudget.amount.toFixed(2)}`,
+      description: `Monthly budget set to $${newBudget.amount?.toFixed(2)}`,
     });
   };
 
@@ -160,14 +155,11 @@ export function useExpenses() {
     return currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   };
 
-  // Get budget for a specific month and year
   const getBudgetForMonth = (month: number, year: number) => {
-    // Sort budget history by date (newest first)
     const sortedHistory = [...budgetHistory].sort((a, b) => 
       b.startDate.getTime() - a.startDate.getTime()
     );
     
-    // Find the most recent budget that was set before or during the specified month
     for (const budget of sortedHistory) {
       const budgetDate = new Date(budget.year, budget.month);
       const targetDate = new Date(year, month);
@@ -177,13 +169,9 @@ export function useExpenses() {
       }
     }
     
-    // If no budget found (unlikely), return the oldest budget
-    return sortedHistory.length > 0 
-      ? sortedHistory[sortedHistory.length - 1].amount 
-      : 1000; // Default fallback
+    return null;
   };
 
-  // Additional functions
   const addCategory = (category: Omit<ExpenseCategory, "id">) => {
     const newCategory = {
       ...category,
@@ -206,7 +194,6 @@ export function useExpenses() {
   };
 
   const deleteCategory = (id: string) => {
-    // Check if category is in use
     const inUse = expenses.some(e => e.categoryId === id);
     if (inUse) {
       toast({
@@ -226,7 +213,7 @@ export function useExpenses() {
   };
 
   const getCategoryById = (id: string) => {
-    return categories.find(c => c.id === id) || defaultCategories[7]; // Return "Other" if not found
+    return categories.find(c => c.id === id) || defaultCategories[7];
   };
 
   return {

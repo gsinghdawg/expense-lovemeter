@@ -14,14 +14,14 @@ export type Expense = {
 };
 
 export type BudgetGoal = {
-  amount: number;
+  amount: number | null;
   month: number; // 0-11 (Jan-Dec)
   year: number;
 };
 
 // History of budget goals
 export type BudgetGoalHistory = {
-  amount: number;
+  amount: number | null;
   month: number; // 0-11 (Jan-Dec)
   year: number;
   startDate: Date;

@@ -17,10 +17,14 @@ interface BudgetFormProps {
 }
 
 export function BudgetForm({ currentBudget, onUpdateBudget }: BudgetFormProps) {
-  const [amount, setAmount] = useState(currentBudget.amount);
+  const [amount, setAmount] = useState<number | null>(currentBudget.amount);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (amount === null || isNaN(Number(amount))) {
+      return;
+    }
     
     const now = new Date();
     onUpdateBudget({
@@ -28,6 +32,11 @@ export function BudgetForm({ currentBudget, onUpdateBudget }: BudgetFormProps) {
       month: now.getMonth(),
       year: now.getFullYear()
     });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setAmount(value === '' ? null : parseFloat(value));
   };
 
   return (
@@ -46,13 +55,16 @@ export function BudgetForm({ currentBudget, onUpdateBudget }: BudgetFormProps) {
               type="number"
               min="0"
               step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+              value={amount === null ? '' : amount}
+              onChange={handleInputChange}
+              placeholder="Enter monthly budget"
             />
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" className="w-full">Update Budget</Button>
+          <Button type="submit" className="w-full" disabled={amount === null}>
+            {currentBudget.amount === null ? "Set Budget" : "Update Budget"}
+          </Button>
         </CardFooter>
       </form>
     </Card>

@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +10,7 @@ type ExpenseSummaryProps = {
   getCategoryById: (id: string) => ExpenseCategory;
   budgetGoal: BudgetGoal;
   currentMonthTotal: number;
-  getBudgetForMonth: (month: number, year: number) => number;
+  getBudgetForMonth: (month: number, year: number) => number | null;
 };
 
 export function ExpenseSummary({
@@ -77,9 +76,15 @@ export function ExpenseSummary({
       .slice(0, 3);
   }, [expenses, getCategoryById]);
 
-  const budgetPercentage = Math.min(Math.round((currentMonthTotal / budgetGoal.amount) * 100), 100);
+  const budgetPercentage = useMemo(() => {
+    if (budgetGoal.amount === null) return 0;
+    return Math.min(Math.round((currentMonthTotal / budgetGoal.amount) * 100), 100);
+  }, [currentMonthTotal, budgetGoal.amount]);
   
-  const isOverBudget = currentMonthTotal > budgetGoal.amount;
+  const isOverBudget = useMemo(() => {
+    if (budgetGoal.amount === null) return false;
+    return currentMonthTotal > budgetGoal.amount;
+  }, [currentMonthTotal, budgetGoal.amount]);
 
   const monthlySpending = useMemo(() => {
     const spendingByMonth: Record<string, number> = {};
@@ -135,17 +140,26 @@ export function ExpenseSummary({
                 Budget for {months[budgetGoal.month]} {budgetGoal.year}
               </p>
               <p className="text-sm font-medium">
-                ${currentMonthTotal.toFixed(2)} / ${budgetGoal.amount.toFixed(2)}
+                ${currentMonthTotal.toFixed(2)} 
+                {budgetGoal.amount !== null && ` / $${budgetGoal.amount.toFixed(2)}`}
               </p>
             </div>
-            <Progress 
-              value={budgetPercentage} 
-              className={isOverBudget ? "bg-red-200" : ""}
-              indicatorClassName={isOverBudget ? "bg-red-500" : ""}
-            />
-            {isOverBudget && (
-              <p className="text-sm text-red-500 font-medium">
-                You've exceeded your monthly budget by ${(currentMonthTotal - budgetGoal.amount).toFixed(2)}
+            {budgetGoal.amount !== null ? (
+              <>
+                <Progress 
+                  value={budgetPercentage} 
+                  className={isOverBudget ? "bg-red-200" : ""}
+                  indicatorClassName={isOverBudget ? "bg-red-500" : ""}
+                />
+                {isOverBudget && (
+                  <p className="text-sm text-red-500 font-medium">
+                    You've exceeded your monthly budget by ${(currentMonthTotal - budgetGoal.amount).toFixed(2)}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No budget set for this month. Set a budget to track your spending.
               </p>
             )}
           </div>
@@ -220,7 +234,7 @@ export function ExpenseSummary({
                       width={40}
                     />
                     <Tooltip 
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, "Amount"]}
+                      formatter={(value: number | null) => value === null ? ["Not set", "Amount"] : [`$${value.toFixed(2)}`, "Amount"]}
                       contentStyle={{ fontSize: 12 }}
                     />
                     <Line 
