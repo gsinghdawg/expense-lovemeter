@@ -57,6 +57,6 @@ export function useCategoryQuery(userId: string | undefined) {
         color: category.color,
       }));
     },
-    enabled: true, // Always enable to ensure defaults are available
+    enabled: !!userId, // Only enable if userId exists
   });
 }

@@ -37,10 +37,11 @@ export const initializeDefaultCategories = async (userId: string) => {
         continue;
       }
       
+      // Important: Don't use the string ID from defaultCategories
+      // Let Supabase generate a UUID automatically
       const { error } = await supabase
         .from('categories')
         .insert({
-          id: category.id,
           name: category.name,
           color: category.color,
           icon: 'default',
@@ -55,7 +56,7 @@ export const initializeDefaultCategories = async (userId: string) => {
           variant: "destructive",
         });
       } else {
-        console.log(`Successfully created category: ${category.name} with ID: ${category.id}`);
+        console.log(`Successfully created category: ${category.name}`);
       }
     }
     
