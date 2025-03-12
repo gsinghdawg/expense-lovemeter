@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,14 +108,14 @@ export function ExpenseSummary({
       const monthKey = `${year}-${month + 1}`;
       const monthName = date.toLocaleString('default', { month: 'short' });
       
-      // Get the specific budget for this month and year
       const monthBudget = getBudgetForMonth(month, year);
+      const monthSpending = spendingByMonth[monthKey] || 0;
       
       monthlyData.unshift({
         month: monthName,
-        spending: spendingByMonth[monthKey] || 0,
+        spending: monthSpending,
         budget: monthBudget,
-        // Add month and year as custom properties for tooltip use
+        savings: monthBudget !== null ? monthBudget - monthSpending : null,
         fullMonth: date.toLocaleString('default', { month: 'long' }),
         year: year
       });
@@ -125,29 +124,23 @@ export function ExpenseSummary({
     return monthlyData;
   }, [expenses, getBudgetForMonth]);
 
-  // Calculate average monthly expense based on when user first tracked expenses
   const averageMonthlyExpense = useMemo(() => {
     if (expenses.length === 0) return 0;
     
-    // Get unique months where the user has tracked expenses
     const uniqueMonths = new Set();
     expenses.forEach(expense => {
       const monthKey = `${expense.date.getFullYear()}-${expense.date.getMonth() + 1}`;
       uniqueMonths.add(monthKey);
     });
     
-    // The number of months the user has been tracking expenses
     const trackedMonths = uniqueMonths.size;
     
-    // If we have spending data in the chart, use that for the average
     if (monthlySpending.length > 0 && trackedMonths > 0) {
       const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
       return total / trackedMonths;
     }
     
-    // If no spending in the chart period but we have expenses, find the first expense date
     if (expenses.length > 0) {
-      // Sort expenses by date (oldest first)
       const sortedExpenses = [...expenses].sort((a, b) => 
         a.date.getTime() - b.date.getTime()
       );
@@ -155,24 +148,20 @@ export function ExpenseSummary({
       const firstExpenseDate = sortedExpenses[0].date;
       const currentDate = new Date();
       
-      // Calculate number of months between first expense and now
       const monthDiff = 
         (currentDate.getFullYear() - firstExpenseDate.getFullYear()) * 12 + 
-        (currentDate.getMonth() - firstExpenseDate.getMonth()) + 1; // +1 to include the current month
+        (currentDate.getMonth() - firstExpenseDate.getMonth()) + 1;
       
       const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
       
-      // Ensure we don't divide by zero
       return monthDiff > 0 ? totalSpent / monthDiff : totalSpent;
     }
     
     return 0;
   }, [expenses, monthlySpending]);
 
-  // Get current monthly budget
   const currentMonthlyBudget = budgetGoal.amount;
 
-  // Calculate average monthly savings (if budget exists)
   const averageMonthlySavings = useMemo(() => {
     if (currentMonthlyBudget === null) return null;
     return currentMonthlyBudget - averageMonthlyExpense;
@@ -278,7 +267,7 @@ export function ExpenseSummary({
               <h4 className="text-sm font-medium mb-2">Monthly Spending History</h4>
               <div className="h-[200px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
+                  <ComposedChart
                     data={monthlySpending}
                     margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
                   >
@@ -305,6 +294,12 @@ export function ExpenseSummary({
                       }}
                       contentStyle={{ fontSize: 12 }}
                     />
+                    <Bar
+                      dataKey="savings"
+                      fill="#f3f3f3"
+                      name="Monthly Savings"
+                      barSize={20}
+                    />
                     <Line 
                       type="monotone" 
                       dataKey="spending" 
@@ -324,7 +319,7 @@ export function ExpenseSummary({
                       connectNulls={true}
                       activeDot={{ r: 6, fill: "#ef4444" }}
                     />
-                  </LineChart>
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
               <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
@@ -338,7 +333,6 @@ export function ExpenseSummary({
                 </div>
               </div>
               
-              {/* New section for monthly metrics */}
               <div className="mt-4 grid grid-cols-3 gap-4 text-center">
                 <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md">
                   <p className="text-xs text-muted-foreground mb-1">Average Monthly Expense</p>
