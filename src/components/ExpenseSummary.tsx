@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -325,7 +324,7 @@ export function ExpenseSummary({
                     />
                     <Bar
                       dataKey="savings"
-                      fill="#f3f3f3"  
+                      fill="#FEF7CD"  
                       name="Monthly Savings"
                       barSize={20}
                       onClick={handleBarClick}
@@ -356,7 +355,7 @@ export function ExpenseSummary({
               </div>
               <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-[#f3f3f3] mr-1 cursor-pointer"></div>
+                  <div className="w-3 h-3 bg-[#FEF7CD] mr-1 cursor-pointer"></div>
                   <span>Monthly Savings</span>
                 </div>
                 <div className="flex items-center">
