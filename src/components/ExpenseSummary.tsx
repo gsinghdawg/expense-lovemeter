@@ -1,19 +1,24 @@
 
 import { useMemo } from "react";
-import { Expense, ExpenseCategory } from "@/types/expense";
+import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { Progress } from "@/components/ui/progress";
 
 type ExpenseSummaryProps = {
   expenses: Expense[];
   categories: ExpenseCategory[];
   getCategoryById: (id: string) => ExpenseCategory;
+  budgetGoal: BudgetGoal;
+  currentMonthTotal: number;
 };
 
 export function ExpenseSummary({
   expenses,
   categories,
   getCategoryById,
+  budgetGoal,
+  currentMonthTotal,
 }: ExpenseSummaryProps) {
   // Calculate total spent
   const totalSpent = useMemo(() => {
@@ -42,6 +47,17 @@ export function ExpenseSummary({
   // Format data for the pie chart
   const pieChartData = expensesByCategory;
 
+  // Calculate budget progress percentage
+  const budgetPercentage = Math.min(Math.round((currentMonthTotal / budgetGoal.amount) * 100), 100);
+  
+  // Determine if over budget
+  const isOverBudget = currentMonthTotal > budgetGoal.amount;
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
   return (
     <Card>
       <CardHeader>
@@ -52,6 +68,27 @@ export function ExpenseSummary({
           <div className="text-center">
             <p className="text-sm text-muted-foreground">Total Spent</p>
             <p className="text-2xl font-bold">${totalSpent.toFixed(2)}</p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <p className="text-sm font-medium">
+                Budget for {months[budgetGoal.month]} {budgetGoal.year}
+              </p>
+              <p className="text-sm font-medium">
+                ${currentMonthTotal.toFixed(2)} / ${budgetGoal.amount.toFixed(2)}
+              </p>
+            </div>
+            <Progress 
+              value={budgetPercentage} 
+              className={isOverBudget ? "bg-red-200" : ""}
+              indicatorClassName={isOverBudget ? "bg-red-500" : ""}
+            />
+            {isOverBudget && (
+              <p className="text-sm text-red-500 font-medium">
+                You've exceeded your monthly budget by ${(currentMonthTotal - budgetGoal.amount).toFixed(2)}
+              </p>
+            )}
           </div>
 
           {expenses.length > 0 ? (

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Expense, ExpenseCategory } from "@/types/expense";
+import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
 import { toast } from "@/hooks/use-toast";
 
@@ -35,7 +35,22 @@ export function useExpenses() {
     return defaultCategories;
   });
 
-  // Save to localStorage whenever expenses or categories change
+  const [budgetGoal, setBudgetGoal] = useState<BudgetGoal>(() => {
+    const saved = localStorage.getItem("budgetGoal");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse budget goal", e);
+        const now = new Date();
+        return { amount: 1000, month: now.getMonth(), year: now.getFullYear() };
+      }
+    }
+    const now = new Date();
+    return { amount: 1000, month: now.getMonth(), year: now.getFullYear() };
+  });
+
+  // Save to localStorage whenever expenses, categories, or budgetGoal change
   useEffect(() => {
     localStorage.setItem("expenses", JSON.stringify(expenses));
   }, [expenses]);
@@ -43,6 +58,10 @@ export function useExpenses() {
   useEffect(() => {
     localStorage.setItem("categories", JSON.stringify(categories));
   }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem("budgetGoal", JSON.stringify(budgetGoal));
+  }, [budgetGoal]);
 
   const addExpense = (expense: Omit<Expense, "id">) => {
     const newExpense = {
@@ -73,6 +92,32 @@ export function useExpenses() {
     });
   };
 
+  const updateBudgetGoal = (newBudget: BudgetGoal) => {
+    setBudgetGoal(newBudget);
+    toast({
+      title: "Budget updated",
+      description: `Monthly budget set to $${newBudget.amount.toFixed(2)}`,
+    });
+  };
+
+  const getCurrentMonthExpenses = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return expenses.filter(expense => {
+      const expenseDate = expense.date;
+      return expenseDate.getMonth() === currentMonth && 
+             expenseDate.getFullYear() === currentYear;
+    });
+  };
+
+  const getCurrentMonthTotal = () => {
+    const currentMonthExpenses = getCurrentMonthExpenses();
+    return currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  };
+
+  // Additional functions
   const addCategory = (category: Omit<ExpenseCategory, "id">) => {
     const newCategory = {
       ...category,
@@ -121,6 +166,7 @@ export function useExpenses() {
   return {
     expenses,
     categories,
+    budgetGoal,
     addExpense,
     updateExpense,
     deleteExpense,
@@ -128,5 +174,8 @@ export function useExpenses() {
     updateCategory,
     deleteCategory,
     getCategoryById,
+    updateBudgetGoal,
+    getCurrentMonthExpenses,
+    getCurrentMonthTotal,
   };
 }

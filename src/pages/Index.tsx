@@ -5,12 +5,14 @@ import { ExpenseForm } from "@/components/ExpenseForm";
 import { ExpenseList } from "@/components/ExpenseList";
 import { ExpenseSummary } from "@/components/ExpenseSummary";
 import { CategoryManager } from "@/components/CategoryManager";
+import { BudgetForm } from "@/components/BudgetForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const {
     expenses,
     categories,
+    budgetGoal,
     addExpense,
     updateExpense,
     deleteExpense,
@@ -18,6 +20,8 @@ const Index = () => {
     updateCategory,
     deleteCategory,
     getCategoryById,
+    updateBudgetGoal,
+    getCurrentMonthTotal,
   } = useExpenses();
 
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -35,14 +39,22 @@ const Index = () => {
 
         <TabsContent value="dashboard" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ExpenseForm
-              categories={categories}
-              onSubmit={addExpense}
-            />
+            <div className="space-y-6">
+              <ExpenseForm
+                categories={categories}
+                onSubmit={addExpense}
+              />
+              <BudgetForm 
+                currentBudget={budgetGoal}
+                onUpdateBudget={updateBudgetGoal}
+              />
+            </div>
             <ExpenseSummary
               expenses={expenses}
               categories={categories}
               getCategoryById={getCategoryById}
+              budgetGoal={budgetGoal}
+              currentMonthTotal={getCurrentMonthTotal()}
             />
           </div>
         </TabsContent>

@@ -12,3 +12,9 @@ export type Expense = {
   date: Date;
   categoryId: string;
 };
+
+export type BudgetGoal = {
+  amount: number;
+  month: number; // 0-11 (Jan-Dec)
+  year: number;
+};
