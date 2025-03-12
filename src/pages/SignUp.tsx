@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Sparkles, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Sparkles, Mail, Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 import {
@@ -18,8 +18,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Form validation schema
+// Form validation schema for signup
 const signUpSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -30,14 +31,22 @@ const signUpSchema = z.object({
   path: ["confirmPassword"],
 });
 
+// Form validation schema for login
+const loginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(1, { message: "Password is required." }),
+});
+
 type SignUpFormValues = z.infer<typeof signUpSchema>;
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const SignUp = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("signup");
 
-  const form = useForm<SignUpFormValues>({
+  const signupForm = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       name: "",
@@ -47,7 +56,15 @@ const SignUp = () => {
     },
   });
 
-  function onSubmit(values: SignUpFormValues) {
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  function onSignUp(values: SignUpFormValues) {
     setIsLoading(true);
     
     // Simulating API call
@@ -61,6 +78,24 @@ const SignUp = () => {
       });
       
       // Redirect to dashboard page after successful signup
+      navigate("/dashboard");
+    }, 1500);
+  }
+
+  function onLogin(values: LoginFormValues) {
+    setIsLoading(true);
+    
+    // Simulating API call
+    setTimeout(() => {
+      console.log("Login values:", values);
+      setIsLoading(false);
+      
+      toast({
+        title: "Welcome back!",
+        description: "You've successfully logged in to LadyLedger.",
+      });
+      
+      // Redirect to dashboard page after successful login
       navigate("/dashboard");
     }, 1500);
   }
@@ -79,118 +114,201 @@ const SignUp = () => {
               LadyLedger
               <Sparkles className="h-6 w-6 text-amber-500" />
             </h1>
-            <h2 className="text-muted-foreground text-sm italic mb-6">Create Your Account</h2>
+            <h2 className="text-muted-foreground text-sm italic mb-6">Your Finance Companion</h2>
           </div>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center relative">
-                      <User className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Enter your name"
-                        className="pl-10"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center relative">
-                      <Mail className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Enter your email"
-                        type="email"
-                        className="pl-10"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center relative">
-                      <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Create a password"
-                        type="password"
-                        className="pl-10"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center relative">
-                      <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Confirm your password"
-                        type="password"
-                        className="pl-10"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating Account..." : "Sign Up"}
-            </Button>
-            
-            <div className="text-center text-sm">
-              <span className="text-muted-foreground">Already have an account?</span>{" "}
-              <Link to="/dashboard" className="text-primary hover:underline">
-                Go to Dashboard
-              </Link>
-            </div>
-          </form>
-        </Form>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-2 mb-6">
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="login">Login</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="signup">
+            <Form {...signupForm}>
+              <form onSubmit={signupForm.handleSubmit(onSignUp)} className="space-y-6">
+                <FormField
+                  control={signupForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center relative">
+                          <User className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Enter your name"
+                            className="pl-10"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={signupForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center relative">
+                          <Mail className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Enter your email"
+                            type="email"
+                            className="pl-10"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={signupForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center relative">
+                          <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Create a password"
+                            type="password"
+                            className="pl-10"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={signupForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center relative">
+                          <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Confirm your password"
+                            type="password"
+                            className="pl-10"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Creating Account..." : "Sign Up"}
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+
+          <TabsContent value="login">
+            <Form {...loginForm}>
+              <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-6">
+                <FormField
+                  control={loginForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center relative">
+                          <Mail className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Enter your email"
+                            type="email"
+                            className="pl-10"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={loginForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center relative">
+                          <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Enter your password"
+                            type="password"
+                            className="pl-10"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Logging In..." : "Login"}
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+        </Tabs>
+
+        <div className="mt-6 text-center text-sm text-muted-foreground">
+          {activeTab === "signup" ? (
+            <>
+              Already have an account?{" "}
+              <button 
+                className="text-primary hover:underline font-medium"
+                onClick={() => setActiveTab("login")}
+              >
+                Login here
+              </button>
+            </>
+          ) : (
+            <>
+              Don't have an account?{" "}
+              <button 
+                className="text-primary hover:underline font-medium"
+                onClick={() => setActiveTab("signup")}
+              >
+                Create one now
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 export default SignUp;
+
