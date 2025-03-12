@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
 import { Progress } from "@/components/ui/progress";
 
 type ExpenseSummaryProps = {
@@ -19,12 +19,10 @@ export function ExpenseSummary({
   budgetGoal,
   currentMonthTotal,
 }: ExpenseSummaryProps) {
-  // Calculate total spent
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [expenses]);
 
-  // Get current month expenses
   const currentMonthExpenses = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -37,7 +35,6 @@ export function ExpenseSummary({
     });
   }, [expenses]);
 
-  // Calculate current month expenses by category for pie chart
   const expensesByCategory = useMemo(() => {
     const result: Record<string, number> = {};
     
@@ -56,7 +53,6 @@ export function ExpenseSummary({
     }).sort((a, b) => b.value - a.value);
   }, [currentMonthExpenses, getCategoryById]);
 
-  // Get top 3 spending categories for bar chart (all time)
   const top3Categories = useMemo(() => {
     const result: Record<string, number> = {};
     
@@ -78,11 +74,39 @@ export function ExpenseSummary({
       .slice(0, 3);
   }, [expenses, getCategoryById]);
 
-  // Calculate budget progress percentage
   const budgetPercentage = Math.min(Math.round((currentMonthTotal / budgetGoal.amount) * 100), 100);
   
-  // Determine if over budget
   const isOverBudget = currentMonthTotal > budgetGoal.amount;
+
+  const monthlySpending = useMemo(() => {
+    const spendingByMonth: Record<string, number> = {};
+    const now = new Date();
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(now.getMonth() - 5); // Show last 6 months
+
+    expenses.forEach((expense) => {
+      if (expense.date >= sixMonthsAgo) {
+        const monthKey = `${expense.date.getFullYear()}-${expense.date.getMonth() + 1}`;
+        spendingByMonth[monthKey] = (spendingByMonth[monthKey] || 0) + expense.amount;
+      }
+    });
+
+    const monthlyData = [];
+    for (let i = 0; i < 6; i++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+      const monthName = date.toLocaleString('default', { month: 'short' });
+      
+      monthlyData.unshift({
+        month: monthName,
+        spending: spendingByMonth[monthKey] || 0,
+        budget: budgetGoal.amount
+      });
+    }
+
+    return monthlyData;
+  }, [expenses, budgetGoal.amount]);
 
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -204,6 +228,54 @@ export function ExpenseSummary({
                       ))}
                     </Bar>
                   </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {monthlySpending.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-2">Monthly Spending History</h4>
+              <div className="h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={monthlySpending}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tickFormatter={(value) => `$${value}`}
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                      width={40}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, "Amount"]}
+                      contentStyle={{ fontSize: 12 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="spending" 
+                      stroke="#2563eb" 
+                      strokeWidth={2}
+                      dot={{ fill: "#2563eb" }}
+                      name="Monthly Spending"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="budget" 
+                      stroke="#ef4444" 
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      name="Budget Goal"
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
