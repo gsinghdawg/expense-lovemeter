@@ -129,7 +129,8 @@ export function ExpenseSummary({
   const averageMonthlyExpense = useMemo(() => {
     if (monthlySpending.length === 0) return 0;
     const total = monthlySpending.reduce((sum, month) => sum + month.spending, 0);
-    return total / monthlySpending.length;
+    // Always divide by 6 for the six-month period shown in the chart
+    return total / 6;
   }, [monthlySpending]);
 
   // Get current monthly budget
