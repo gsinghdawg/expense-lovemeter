@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ExpenseCategory } from "@/types/expense";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,6 @@ export function CategoryManager({
   const handleOpenDialog = (category?: ExpenseCategory) => {
     setEditingCategory(category || null);
     
-    // Fix: Ensure we're providing required values for both name and color
     form.reset({
       name: category ? category.name : "",
       color: category ? category.color : "#000000"
@@ -80,11 +80,14 @@ export function CategoryManager({
           description: `${data.name} category has been updated`,
         });
       } else {
-        // Fix: Ensure we're passing a non-optional object with required properties
-        const newCategory = onAddCategory({
+        // The data from the form is already validated by Zod, so name and color are guaranteed to be defined
+        // But we need to explicitly type them as non-optional for TypeScript
+        const categoryToAdd: Omit<ExpenseCategory, "id"> = {
           name: data.name,
           color: data.color
-        });
+        };
+        
+        const newCategory = onAddCategory(categoryToAdd);
         toast({
           title: "Category added",
           description: `${data.name} category has been created`,
