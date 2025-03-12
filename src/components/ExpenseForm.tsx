@@ -46,8 +46,12 @@ export function ExpenseForm({
     defaultValues,
   });
 
-  // Use available categories or fall back to default categories
-  const availableCategories = categories.length > 0 ? categories : defaultCategories;
+  // Make sure we always have categories available
+  const availableCategories = categories && categories.length > 0 
+    ? categories 
+    : defaultCategories;
+
+  console.log("Available categories:", availableCategories);
 
   const handleSubmit = (data: {
     amount: number;

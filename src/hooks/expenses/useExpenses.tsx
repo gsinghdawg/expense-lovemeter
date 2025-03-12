@@ -36,6 +36,9 @@ export function useExpenses() {
     getBudgetForMonth
   } = useBudgetGoals(userId);
 
+  // Log categories to debug
+  console.log("useExpenses categories:", categories);
+
   const isLoading = isLoadingExpenses || isLoadingCategories || isLoadingBudgetGoal || isLoadingBudgetHistory;
 
   return {
