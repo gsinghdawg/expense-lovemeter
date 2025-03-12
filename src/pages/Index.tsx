@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useExpenses } from "@/hooks/useExpenses";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { ExpenseList } from "@/components/ExpenseList";
@@ -9,6 +10,7 @@ import { BudgetForm } from "@/components/BudgetForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles } from "lucide-react";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const {
@@ -42,6 +44,14 @@ const Index = () => {
             <Sparkles className="h-6 w-6 text-amber-500" />
           </h1>
           <h2 className="text-muted-foreground text-sm italic mb-2">Your Finance Companion</h2>
+          
+          <div className="mt-2">
+            <Link to="/signup">
+              <Button variant="outline" size="sm">
+                Create Account
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
