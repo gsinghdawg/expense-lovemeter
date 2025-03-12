@@ -22,54 +22,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Check if profile exists and create if it doesn't
-  const ensureProfileExists = async (userId: string, email: string, name?: string) => {
-    try {
-      // Check if profile exists
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error("Error checking profile:", fetchError);
-        return;
-      }
-      
-      // If profile doesn't exist, create it
-      if (!existingProfile) {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            email: email,
-            name: name || email.split('@')[0],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        
-        if (insertError) {
-          console.error("Error creating profile:", insertError);
-        }
-      } else if (name) {
-        // Update profile if we have a name
-        await updateUserProfile(userId, { name });
-      }
-    } catch (error) {
-      console.error("Failed to ensure profile exists:", error);
-    }
-  };
-
   // Update user profile in Supabase
   const updateUserProfile = async (userId: string, userData: { name?: string }) => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({
-          ...userData,
-          updated_at: new Date().toISOString()
-        })
+        .update(userData)
         .eq('id', userId);
       
       if (error) {
@@ -85,28 +43,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const email = session.user.email || '';
-        const name = session.user.user_metadata.name;
-        ensureProfileExists(session.user.id, email, name);
-      }
-      
       setIsLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
         
         // When user signs in or token is refreshed, update their profile data
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-          const email = session.user.email || '';
+          // Get user metadata
           const name = session.user.user_metadata.name;
-          await ensureProfileExists(session.user.id, email, name);
+          
+          // Update profile if we have user metadata
+          if (name) {
+            updateUserProfile(session.user.id, { name });
+          }
         }
       }
     );
@@ -140,7 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign up with email and password
   const signUp = async (email: string, password: string, name: string) => {
     try {
-      const { error, data } = await supabase.auth.signUp({ 
+      const { error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
@@ -152,11 +107,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         throw error;
-      }
-      
-      // If we have a user after signup, ensure their profile exists
-      if (data.user) {
-        await ensureProfileExists(data.user.id, email, name);
       }
       
       toast({

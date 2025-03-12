@@ -37,7 +37,7 @@ export function ExpenseForm({
     amount: 0, 
     description: "", 
     date: new Date(), 
-    categoryId: categories.length > 0 ? categories[0].id : "" 
+    categoryId: categories[0]?.id || "" 
   },
   submitLabel = "Add Expense" 
 }: ExpenseFormProps) {
@@ -61,9 +61,6 @@ export function ExpenseForm({
       });
     }
   };
-
-  // For debugging
-  console.log("Available categories:", categories);
 
   return (
     <Card>
@@ -120,7 +117,7 @@ export function ExpenseForm({
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent className="bg-background">
+                    <SelectContent>
                       {categories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           <div className="flex items-center gap-2">
@@ -164,7 +161,7 @@ export function ExpenseForm({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-background" align="start">
+                    <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={field.value}

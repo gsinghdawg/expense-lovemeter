@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useExpenses } from "@/hooks/useExpenses";
 import { ExpenseForm } from "@/components/ExpenseForm";
@@ -13,8 +13,6 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
-import { BudgetGoal } from "@/types/expense";
-import { defaultCategories } from "@/data/categories";
 
 const Index = () => {
   const {
@@ -36,20 +34,6 @@ const Index = () => {
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const { signOut, user } = useAuth();
-
-  const [selectedBudgetPeriod, setSelectedBudgetPeriod] = useState<BudgetGoal>({
-    amount: budgetGoal.amount,
-    month: budgetGoal.month,
-    year: budgetGoal.year
-  });
-
-  useEffect(() => {
-    setSelectedBudgetPeriod({
-      amount: budgetGoal.amount,
-      month: budgetGoal.month,
-      year: budgetGoal.year
-    });
-  }, [budgetGoal]);
 
   if (isLoading) {
     return (
@@ -100,7 +84,7 @@ const Index = () => {
                   onSubmit={addExpense}
                 />
                 <BudgetForm 
-                  currentBudget={selectedBudgetPeriod}
+                  currentBudget={budgetGoal}
                   onUpdateBudget={updateBudgetGoal}
                 />
               </div>
@@ -119,7 +103,7 @@ const Index = () => {
             <ExpenseList
               expenses={expenses}
               categories={categories}
-              getCategoryById={(id) => getCategoryById(id) || defaultCategories[0]}
+              getCategoryById={getCategoryById}
               onUpdateExpense={updateExpense}
               onDeleteExpense={deleteExpense}
             />

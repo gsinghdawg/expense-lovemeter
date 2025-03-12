@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory, DatabaseExpense } from "@/types/expense";
+import { Expense, ExpenseCategory, BudgetGoal, BudgetGoalHistory } from "@/types/expense";
 import { defaultCategories } from "@/data/categories";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,11 +11,6 @@ export function useExpenses() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const userId = user?.id;
-
-  // Use default categories directly instead of fetching from Supabase
-  const [categories, setCategories] = useState<ExpenseCategory[]>(defaultCategories);
-
-  console.log("Default categories:", defaultCategories);
 
   // Fetch expenses from Supabase
   const { 
@@ -44,12 +40,80 @@ export function useExpenses() {
       return data.map(expense => ({
         ...expense,
         id: expense.id,
-        categoryId: expense.category_id, // Map from snake_case to camelCase
         date: new Date(expense.date),
-      })) as Expense[];
+      }));
     },
     enabled: !!userId,
   });
+
+  // Fetch categories from Supabase
+  const { 
+    data: fetchedCategories = [], 
+    isLoading: isLoadingCategories 
+  } = useQuery({
+    queryKey: ['categories', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error("Error fetching categories:", error);
+        toast({
+          title: "Error loading categories",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
+      }
+
+      if (data.length === 0) {
+        // If no categories exist for the user, create default ones
+        await initializeDefaultCategories(userId);
+        
+        // Return default categories since we just created them
+        return defaultCategories.map(category => ({
+          ...category,
+          user_id: userId,
+        }));
+      }
+      
+      return data.map(category => ({
+        id: category.id,
+        name: category.name,
+        color: category.color,
+      }));
+    },
+    enabled: !!userId,
+  });
+
+  // Initialize default categories for new users
+  const initializeDefaultCategories = async (userId: string) => {
+    try {
+      const categories = defaultCategories.map(category => ({
+        name: category.name,
+        color: category.color,
+        icon: 'default',
+        user_id: userId,
+      }));
+      
+      const { error } = await supabase.from('categories').insert(categories);
+      
+      if (error) {
+        console.error("Error creating default categories:", error);
+        toast({
+          title: "Error creating categories",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      console.error("Failed to initialize default categories", e);
+    }
+  };
 
   // Fetch budget goal from Supabase
   const { 
@@ -143,7 +207,7 @@ export function useExpenses() {
           description: expense.description,
           amount: expense.amount,
           date: expense.date.toISOString(),
-          category_id: expense.categoryId, // Use categoryId from the expense object but store as category_id
+          category_id: expense.categoryId,
           user_id: userId,
         })
         .select()
@@ -153,9 +217,8 @@ export function useExpenses() {
       
       return {
         ...data,
-        categoryId: data.category_id, // Map category_id to categoryId for frontend
         date: new Date(data.date),
-      } as Expense;
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
@@ -180,7 +243,7 @@ export function useExpenses() {
           description: expense.description,
           amount: expense.amount,
           date: expense.date.toISOString(),
-          category_id: expense.categoryId,  // Use categoryId but store as category_id
+          category_id: expense.categoryId,
         })
         .eq('id', expense.id)
         .eq('user_id', userId);
@@ -433,37 +496,21 @@ export function useExpenses() {
   };
 
   const addCategory = (category: Omit<ExpenseCategory, "id">) => {
-    const newCategory = { 
-      ...category, 
-      id: Math.random().toString(36).substring(2, 9) 
-    };
-    setCategories(prev => [...prev, newCategory]);
-    return newCategory;
+    addCategoryMutation.mutate(category);
+    return { ...category, id: 'pending' }; // Return a temporary object with a placeholder ID
   };
 
-  const updateCategory = (updatedCategory: ExpenseCategory) => {
-    setCategories(prev => 
-      prev.map(category => 
-        category.id === updatedCategory.id ? updatedCategory : category
-      )
-    );
+  const updateCategory = (category: ExpenseCategory) => {
+    updateCategoryMutation.mutate(category);
   };
 
   const deleteCategory = (id: string) => {
-    // Check if category is in use by any expense
-    const categoryInUse = expenses.some(expense => expense.categoryId === id);
-    
-    if (categoryInUse) {
-      toast({
-        title: "Cannot delete category",
-        description: "This category is being used by some expenses",
-        variant: "destructive",
-      });
+    try {
+      deleteCategoryMutation.mutate(id);
+      return true;
+    } catch (error) {
       return false;
     }
-    
-    setCategories(prev => prev.filter(category => category.id !== id));
-    return true;
   };
 
   const updateBudgetGoal = (newBudget: BudgetGoal) => {
@@ -509,22 +556,14 @@ export function useExpenses() {
   };
 
   const getCategoryById = (id: string) => {
-    // First look in our categories array
-    const foundCategory = categories.find(c => c.id === id);
-    
-    // If found, return it
-    if (foundCategory) return foundCategory;
-    
-    // If not found, return a default category or undefined
-    // Using the first default category as a fallback
-    return defaultCategories.length > 0 ? defaultCategories[0] : undefined;
+    return fetchedCategories.find(c => c.id === id) || defaultCategories[7];
   };
 
-  const isLoading = isLoadingExpenses;
+  const isLoading = isLoadingExpenses || isLoadingCategories || isLoadingBudgetGoal || isLoadingBudgetHistory;
 
   return {
     expenses,
-    categories,
+    categories: fetchedCategories,
     budgetGoal,
     budgetHistory,
     isLoading,
