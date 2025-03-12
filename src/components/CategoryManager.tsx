@@ -9,6 +9,15 @@ import { Edit2, Trash2, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const categorySchema = z.object({
+  name: z.string().min(1, { message: "Category name is required" }).max(50, { message: "Category name is too long" }),
+  color: z.string().regex(/^#([0-9A-F]{3}){1,2}$/i, { message: "Must be a valid hex color code" }),
+});
+
+type CategoryFormValues = z.infer<typeof categorySchema>;
 
 type CategoryManagerProps = {
   categories: ExpenseCategory[];
@@ -26,10 +35,8 @@ export function CategoryManager({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ExpenseCategory | null>(null);
 
-  const form = useForm<{
-    name: string;
-    color: string;
-  }>({
+  const form = useForm<CategoryFormValues>({
+    resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
       color: "#000000",
@@ -51,16 +58,41 @@ export function CategoryManager({
     setEditingCategory(null);
   };
 
-  const handleSubmit = (data: { name: string; color: string }) => {
-    if (editingCategory) {
-      onUpdateCategory({
-        ...editingCategory,
-        ...data,
+  const handleSubmit = (data: CategoryFormValues) => {
+    try {
+      // Check if category name already exists (only for new categories)
+      if (!editingCategory && categories.some(c => c.name.toLowerCase() === data.name.toLowerCase())) {
+        form.setError("name", {
+          type: "manual",
+          message: "Category with this name already exists"
+        });
+        return;
+      }
+
+      if (editingCategory) {
+        onUpdateCategory({
+          ...editingCategory,
+          ...data,
+        });
+        toast({
+          title: "Category updated",
+          description: `${data.name} category has been updated`,
+        });
+      } else {
+        const newCategory = onAddCategory(data);
+        toast({
+          title: "Category added",
+          description: `${data.name} category has been created`,
+        });
+      }
+      handleCloseDialog();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was a problem saving the category",
+        variant: "destructive",
       });
-    } else {
-      onAddCategory(data);
     }
-    handleCloseDialog();
   };
 
   const handleDeleteCategory = (id: string) => {
@@ -83,40 +115,46 @@ export function CategoryManager({
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
-          {categories.map((category) => (
-            <div
-              key={category.id}
-              className="flex items-center justify-between p-2 rounded border"
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: category.color }}
-                />
-                <span>{category.name}</span>
+        {categories.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            No categories yet. Add your first category to start tracking expenses.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                className="flex items-center justify-between p-2 rounded border"
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-4 h-4 rounded-full"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  <span>{category.name}</span>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleOpenDialog(category)}
+                    className="h-8 w-8"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteCategory(category.id)}
+                    className="h-8 w-8 text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleOpenDialog(category)}
-                  className="h-8 w-8"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteCategory(category.id)}
-                  className="h-8 w-8 text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
