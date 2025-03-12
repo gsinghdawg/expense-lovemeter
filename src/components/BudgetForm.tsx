@@ -10,6 +10,8 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatCurrency } from "@/lib/utils";
 
 interface BudgetFormProps {
   currentBudget: BudgetGoal;
@@ -18,6 +20,16 @@ interface BudgetFormProps {
 
 export function BudgetForm({ currentBudget, onUpdateBudget }: BudgetFormProps) {
   const [amount, setAmount] = useState<number | null>(currentBudget.amount);
+  const [month, setMonth] = useState<number>(currentBudget.month);
+  const [year, setYear] = useState<number>(currentBudget.year);
+  
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear - 1, currentYear, currentYear + 1];
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,17 +38,24 @@ export function BudgetForm({ currentBudget, onUpdateBudget }: BudgetFormProps) {
       return;
     }
     
-    const now = new Date();
     onUpdateBudget({
       amount,
-      month: now.getMonth(),
-      year: now.getFullYear()
+      month,
+      year
     });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setAmount(value === '' ? null : parseFloat(value));
+  };
+
+  const handleMonthChange = (value: string) => {
+    setMonth(parseInt(value));
+  };
+
+  const handleYearChange = (value: string) => {
+    setYear(parseInt(value));
   };
 
   return (
@@ -46,19 +65,59 @@ export function BudgetForm({ currentBudget, onUpdateBudget }: BudgetFormProps) {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent>
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="budget-amount">
-              Budget Amount ($)
-            </label>
-            <Input
-              id="budget-amount"
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount === null ? '' : amount}
-              onChange={handleInputChange}
-              placeholder="Enter monthly budget"
-            />
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="budget-month">
+                  Month
+                </label>
+                <Select value={month.toString()} onValueChange={handleMonthChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map((monthName, index) => (
+                      <SelectItem key={index} value={index.toString()}>
+                        {monthName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="budget-year">
+                  Year
+                </label>
+                <Select value={year.toString()} onValueChange={handleYearChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((yearValue) => (
+                      <SelectItem key={yearValue} value={yearValue.toString()}>
+                        {yearValue}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="budget-amount">
+                Budget Amount
+              </label>
+              <Input
+                id="budget-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={amount === null ? '' : amount}
+                onChange={handleInputChange}
+                placeholder="Enter monthly budget"
+              />
+            </div>
           </div>
         </CardContent>
         <CardFooter>
