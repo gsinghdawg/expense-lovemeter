@@ -60,8 +60,8 @@ const SignUp = () => {
         description: "You've successfully signed up for LadyLedger.",
       });
       
-      // Redirect to main page after successful signup
-      navigate("/");
+      // Redirect to dashboard page after successful signup
+      navigate("/dashboard");
     }, 1500);
   }
 
@@ -73,16 +73,6 @@ const SignUp = () => {
         </div>
         
         <div className="mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-4"
-            onClick={() => navigate("/")}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to home
-          </Button>
-          
           <div className="flex flex-col items-center">
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-amber-500" />
@@ -192,8 +182,8 @@ const SignUp = () => {
             
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Already have an account?</span>{" "}
-              <Link to="/" className="text-primary hover:underline">
-                Sign In
+              <Link to="/dashboard" className="text-primary hover:underline">
+                Go to Dashboard
               </Link>
             </div>
           </form>

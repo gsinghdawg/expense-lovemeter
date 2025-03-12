@@ -48,7 +48,7 @@ const Index = () => {
           <div className="mt-2">
             <Link to="/signup">
               <Button variant="outline" size="sm">
-                Create Account
+                Sign Out
               </Button>
             </Link>
           </div>
