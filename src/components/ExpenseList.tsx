@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format, isSameDay, isSameMonth, isSameYear } from "date-fns";
 
 type ExpenseListProps = {
   expenses: Expense[];
@@ -61,8 +62,54 @@ export function ExpenseList({
     (a, b) => b.date.getTime() - a.date.getTime()
   );
 
+  // Group expenses by date
+  const groupExpensesByDate = (expenses: Expense[]) => {
+    const groups: { [key: string]: { date: Date; expenses: Expense[] } } = {};
+    
+    expenses.forEach((expense) => {
+      const dateKey = format(expense.date, 'yyyy-MM-dd');
+      if (!groups[dateKey]) {
+        groups[dateKey] = {
+          date: expense.date,
+          expenses: []
+        };
+      }
+      groups[dateKey].expenses.push(expense);
+    });
+    
+    return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime());
+  };
+  
+  const groupedExpenses = groupExpensesByDate(sortedExpenses);
+
+  // Get date header text based on date
+  const getDateHeaderText = (date: Date) => {
+    const today = new Date();
+    
+    if (isSameDay(date, today)) {
+      return 'Today';
+    } 
+    
+    if (isSameDay(new Date(today.setDate(today.getDate() - 1)), date)) {
+      return 'Yesterday';
+    }
+    
+    if (isSameYear(date, new Date()) && isSameMonth(date, new Date())) {
+      return `This Month • ${format(date, 'EEEE, MMMM d')}`;
+    }
+    
+    return format(date, 'MMMM d, yyyy');
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">All Transactions</h2>
+        <div className="text-sm text-muted-foreground">
+          {filteredExpenses.length} {filteredExpenses.length === 1 ? 'expense' : 'expenses'} found
+        </div>
+      </div>
+      
       <div className="flex flex-col sm:flex-row gap-2">
         <Input
           placeholder="Search expenses..."
@@ -99,15 +146,24 @@ export function ExpenseList({
           No expenses found. Add your first expense!
         </div>
       ) : (
-        <div>
-          {sortedExpenses.map((expense) => (
-            <ExpenseItem
-              key={expense.id}
-              expense={expense}
-              category={getCategoryById(expense.categoryId)}
-              onEdit={handleEditExpense}
-              onDelete={onDeleteExpense}
-            />
+        <div className="space-y-6">
+          {groupedExpenses.map((group) => (
+            <div key={format(group.date, 'yyyy-MM-dd')} className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background/90 backdrop-blur-sm py-2">
+                {getDateHeaderText(group.date)}
+              </h3>
+              <div className="space-y-3">
+                {group.expenses.map((expense) => (
+                  <ExpenseItem
+                    key={expense.id}
+                    expense={expense}
+                    category={getCategoryById(expense.categoryId)}
+                    onEdit={handleEditExpense}
+                    onDelete={onDeleteExpense}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
