@@ -64,13 +64,9 @@ const Home = () => {
           </Card>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex justify-center">
           <Button asChild size="lg" className="px-8">
             <Link to="/signup">Get Started</Link>
-          </Button>
-          
-          <Button asChild variant="outline" size="lg" className="px-8">
-            <Link to="/dashboard">Go to Dashboard</Link>
           </Button>
         </div>
       </div>
