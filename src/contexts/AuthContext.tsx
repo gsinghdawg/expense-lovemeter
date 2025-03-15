@@ -9,7 +9,7 @@ interface AuthContextProps {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string, options?: { rememberMe?: boolean }) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -72,24 +72,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   // Sign in with email and password
-  const signIn = async (email: string, password: string, options?: { rememberMe?: boolean }) => {
+  const signIn = async (email: string, password: string) => {
     try {
-      // If rememberMe is true, set session to persist for 30 days
-      // If false or undefined, don't pass any session options (use default)
-      let authOptions = {};
-      
-      if (options?.rememberMe) {
-        // Use a persistent session if "remember me" is checked
-        authOptions = { 
-          persistSession: true 
-        };
-      }
-      
-      const { error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password,
-        ...authOptions
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
         throw error;
