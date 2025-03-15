@@ -68,6 +68,40 @@ const Home = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* App Showcase Section */}
+        <div className="my-16">
+          <h2 className="text-3xl font-bold text-center mb-8">See How It Works</h2>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="md:w-1/2">
+              <h3 className="text-2xl font-semibold mb-4">Easy Expense Tracking</h3>
+              <p className="text-lg mb-4">
+                Adding expenses is simple and quick. Just enter the amount, description, 
+                select a category, and pick a date - all in a few seconds!
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-6">
+                <li>Intuitive interface designed for daily use</li>
+                <li>Organize expenses with customizable categories</li>
+                <li>Track spending patterns to improve your habits</li>
+                <li>Stay on budget with real-time updates</li>
+              </ul>
+              <Button asChild size="lg" className="w-full md:w-auto">
+                <Link to="/signup">Try It Now - Free!</Link>
+              </Button>
+            </div>
+            <div className="md:w-1/2 mt-8 md:mt-0">
+              <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                <CardContent className="p-0">
+                  <img 
+                    src="/lovable-uploads/8e8e7db1-e8a5-4c71-bc2a-16e671f1d0f7.png" 
+                    alt="LadyLedger Expense Form" 
+                    className="w-full h-auto"
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
