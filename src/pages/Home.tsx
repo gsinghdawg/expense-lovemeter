@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -134,6 +135,50 @@ const Home = () => {
           </div>
         </div>
 
+        {/* Expense Management Showcase Section */}
+        <div className="my-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Effortless Organization</h2>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="md:w-1/2">
+              <h3 className="text-2xl font-semibold mb-4">Complete Expense Management</h3>
+              <p className="text-lg mb-4">
+                Keep track of all your expenses and organize them with custom categories that make sense for your lifestyle.
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-6">
+                <li>Create and manage custom expense categories</li>
+                <li>View transactions organized by date</li>
+                <li>Search and filter expenses with ease</li>
+                <li>Edit or delete entries with a single click</li>
+              </ul>
+              <Button asChild size="lg" className="w-full md:w-auto">
+                <Link to="/signup">Get Organized Now</Link>
+              </Button>
+            </div>
+            <div className="md:w-1/2 mt-8 md:mt-0">
+              <div className="grid grid-cols-1 gap-4">
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/737fe8a2-bd29-4a7b-88f8-77d5b1f3f1c6.png" 
+                      alt="LadyLedger Transaction List" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/000af59b-b7ac-4f59-88d3-b1fa9fecf010.png" 
+                      alt="LadyLedger Category Management" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Analytics & Insights Showcase Section */}
         <div className="my-16">
           <h2 className="text-3xl font-bold text-center mb-8">Powerful Analytics & Insights</h2>
@@ -200,3 +245,4 @@ const Home = () => {
 };
 
 export default Home;
+
