@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ const signUpSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string().min(1, { message: "Password is required." }),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 // Form validation schema for password reset
@@ -88,6 +90,7 @@ const SignUp = () => {
     defaultValues: {
       email: "",
       password: "",
+      rememberMe: false,
     },
   });
 
@@ -115,7 +118,8 @@ const SignUp = () => {
     setIsLoading(true);
     
     try {
-      await signIn(values.email, values.password);
+      const options = values.rememberMe ? { rememberMe: true } : undefined;
+      await signIn(values.email, values.password, options);
       navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
@@ -331,6 +335,25 @@ const SignUp = () => {
                         </div>
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={loginForm.control}
+                  name="rememberMe"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Remember me</FormLabel>
+                      </div>
                     </FormItem>
                   )}
                 />
