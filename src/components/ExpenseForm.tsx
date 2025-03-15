@@ -42,6 +42,12 @@ export function ExpenseForm({
     ? categories 
     : defaultCategories;
   
+  // Make sure defaultValues.categoryId exists in the available categories
+  // If not, set it to the first available category
+  const categoryExists = availableCategories.some(
+    category => category.id === (defaultValues?.categoryId || '')
+  );
+  
   // Ensure default values are properly set with valid categoryId
   const initialDefaultValues = {
     amount: 0,
@@ -51,11 +57,13 @@ export function ExpenseForm({
   };
   
   // Make sure the date is properly formatted as a Date object
+  // And ensure the categoryId is valid (exists in available categories)
   const formattedDefaultValues = defaultValues ? {
     ...defaultValues,
     date: defaultValues.date instanceof Date 
       ? defaultValues.date 
-      : new Date(defaultValues.date)
+      : new Date(defaultValues.date),
+    categoryId: categoryExists ? defaultValues.categoryId : availableCategories[0]?.id || "other"
   } : initialDefaultValues;
   
   const form = useForm({
@@ -64,6 +72,7 @@ export function ExpenseForm({
 
   console.log("ExpenseForm defaultValues:", defaultValues);
   console.log("ExpenseForm formattedDefaultValues:", formattedDefaultValues);
+  console.log("ExpenseForm availableCategories:", availableCategories);
   
   const handleSubmit = (data: {
     amount: number;
@@ -74,10 +83,16 @@ export function ExpenseForm({
     // Ensure the date is a proper Date object
     console.log("Form submitting with date:", data.date);
     
+    // Verify the category still exists, if not use the first available
+    const categoryStillExists = availableCategories.some(
+      category => category.id === data.categoryId
+    );
+    
     // Pass the data to the parent component
     onSubmit({
       ...data,
-      date: data.date instanceof Date ? data.date : new Date(data.date)
+      date: data.date instanceof Date ? data.date : new Date(data.date),
+      categoryId: categoryStillExists ? data.categoryId : availableCategories[0]?.id || "other"
     });
     
     // Reset the form if it's the Add Expense form
@@ -140,7 +155,20 @@ export function ExpenseForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select 
+                    onValueChange={(value) => {
+                      // Check if the selected category still exists
+                      const categoryExists = availableCategories.some(
+                        category => category.id === value
+                      );
+                      
+                      // If it exists, use it; otherwise, use the first available
+                      field.onChange(
+                        categoryExists ? value : (availableCategories[0]?.id || "other")
+                      );
+                    }} 
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
