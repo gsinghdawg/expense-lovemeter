@@ -75,7 +75,7 @@ export function useCategoryMutations(userId: string | undefined) {
 
   // Delete category mutation
   const deleteCategoryMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: string): Promise<string> => {
       if (!userId) throw new Error("User not authenticated");
       
       // Check if the category is being used by any expenses
@@ -88,7 +88,7 @@ export function useCategoryMutations(userId: string | undefined) {
       if (checkError) throw checkError;
       
       if (expensesUsingCategory && expensesUsingCategory.length > 0) {
-        throw new Error("Category is in use by some expenses");
+        return Promise.reject(new Error("Category is in use by some expenses"));
       }
       
       // Delete the category if it's not being used
@@ -106,8 +106,12 @@ export function useCategoryMutations(userId: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['categories', userId] });
     },
     onError: (error: any) => {
-      console.error("Error deleting category:", error);
-      throw error; // Re-throw the error so it can be caught elsewhere
+      console.error("Error in deleteCategoryMutation:", error);
+      toast({
+        title: "Error deleting category",
+        description: error.message || "Failed to delete category",
+        variant: "destructive",
+      });
     },
   });
 
