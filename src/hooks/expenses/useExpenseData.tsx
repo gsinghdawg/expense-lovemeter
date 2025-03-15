@@ -91,6 +91,8 @@ export function useExpenseData(userId: string | undefined) {
     mutationFn: async (expense: Expense) => {
       if (!userId) throw new Error("User not authenticated");
       
+      console.log("Updating expense:", expense);
+      
       const { error, data } = await supabase
         .from('expenses')
         .update({
@@ -104,7 +106,12 @@ export function useExpenseData(userId: string | undefined) {
         .select()
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating expense:", error);
+        throw error;
+      }
+      
+      console.log("Updated expense from DB:", data);
       
       // Return the updated expense with proper date conversion
       return {
@@ -115,7 +122,9 @@ export function useExpenseData(userId: string | undefined) {
         categoryId: data.category_id,
       };
     },
-    onSuccess: () => {
+    onSuccess: (updatedExpense) => {
+      console.log("Update successful. Updated expense:", updatedExpense);
+      // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
       toast({
         title: "Expense updated",
@@ -123,6 +132,7 @@ export function useExpenseData(userId: string | undefined) {
       });
     },
     onError: (error: any) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Error updating expense",
         description: error.message || "Failed to update expense",
@@ -168,6 +178,7 @@ export function useExpenseData(userId: string | undefined) {
   };
 
   const updateExpense = (expense: Expense) => {
+    console.log("updateExpense called with:", expense);
     updateExpenseMutation.mutate(expense);
   };
 

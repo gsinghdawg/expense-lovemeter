@@ -28,6 +28,7 @@ export function ExpenseList({
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
   const handleEditExpense = (expense: Expense) => {
+    console.log("Editing expense:", expense);
     setEditingExpense(expense);
   };
 
@@ -38,10 +39,12 @@ export function ExpenseList({
     categoryId: string;
   }) => {
     if (editingExpense) {
+      console.log("Updating expense with data:", data);
       const updatedExpense = {
         ...editingExpense,
         ...data,
       };
+      console.log("Final updated expense:", updatedExpense);
       onUpdateExpense(updatedExpense);
       setEditingExpense(null);
     }
