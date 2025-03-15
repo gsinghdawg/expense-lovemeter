@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -229,7 +228,7 @@ const Home = () => {
             <CardContent className="p-0">
               <h3 className="text-2xl font-bold mb-4">Ready to Take Control of Your Finances?</h3>
               <p className="text-lg mb-6 max-w-2xl mx-auto">
-                Join thousands of users who have transformed their financial habits with LadyLedger. 
+                Join thousands of users who have transformed their financial dating habits with LadyLedger. 
                 Start your journey to financial freedom today!
               </p>
               <Button asChild size="lg" className="px-8">
@@ -245,4 +244,3 @@ const Home = () => {
 };
 
 export default Home;
-
