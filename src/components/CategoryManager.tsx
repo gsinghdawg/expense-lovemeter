@@ -11,6 +11,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const categorySchema = z.object({
   name: z.string().min(1, { message: "Category name is required" }).max(50, { message: "Category name is too long" }),
@@ -34,6 +44,7 @@ export function CategoryManager({
 }: CategoryManagerProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ExpenseCategory | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -103,15 +114,31 @@ export function CategoryManager({
     }
   };
 
-  const handleDeleteCategory = (id: string) => {
-    const success = onDeleteCategory(id);
-    if (!success) {
-      toast({
-        title: "Category is in use",
-        description: "Cannot delete a category that is being used by expenses",
-        variant: "destructive",
-      });
+  const handleOpenDeleteConfirm = (id: string) => {
+    setCategoryToDelete(id);
+  };
+  
+  const handleConfirmDelete = () => {
+    if (categoryToDelete) {
+      const success = onDeleteCategory(categoryToDelete);
+      if (!success) {
+        toast({
+          title: "Category is in use",
+          description: "Cannot delete a category that is being used by expenses",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Category deleted",
+          description: "The category has been deleted successfully",
+        });
+      }
+      setCategoryToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setCategoryToDelete(null);
   };
 
   return (
@@ -153,7 +180,7 @@ export function CategoryManager({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDeleteCategory(category.id)}
+                    onClick={() => handleOpenDeleteConfirm(category.id)}
                     className="h-8 w-8 text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -220,6 +247,24 @@ export function CategoryManager({
           </Form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!categoryToDelete} onOpenChange={(open) => !open && handleCancelDelete()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this category. 
+              This action cannot be undone if the category is not in use.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
