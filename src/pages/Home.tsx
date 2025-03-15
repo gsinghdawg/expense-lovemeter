@@ -63,12 +63,6 @@ const Home = () => {
             </CardContent>
           </Card>
         </div>
-
-        <div className="flex justify-center">
-          <Button asChild size="lg" className="px-8">
-            <Link to="/signup">Get Started</Link>
-          </Button>
-        </div>
       </div>
     </div>
   );
