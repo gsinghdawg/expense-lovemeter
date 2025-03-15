@@ -41,6 +41,7 @@ export function ExpenseSummary({
 
   const expensesByCategory = useMemo(() => {
     const result: Record<string, number> = {};
+    const total = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     
     currentMonthExpenses.forEach((expense) => {
       const categoryId = expense.categoryId;
@@ -49,10 +50,12 @@ export function ExpenseSummary({
     
     return Object.entries(result).map(([categoryId, amount]) => {
       const category = getCategoryById(categoryId);
+      const percentage = total > 0 ? (amount / total) * 100 : 0;
       return {
         name: category.name,
         value: amount,
         color: category.color,
+        percentage: percentage
       };
     }).sort((a, b) => b.value - a.value);
   }, [currentMonthExpenses, getCategoryById]);
@@ -230,7 +233,10 @@ export function ExpenseSummary({
               ))}
             </Pie>
             <Tooltip 
-              formatter={(value: number) => `$${value.toFixed(2)}`}
+              formatter={(value: number, name: string, props: any) => {
+                const item = props.payload;
+                return [`$${value.toFixed(2)} (${item.percentage.toFixed(1)}%)`, name];
+              }}
               contentStyle={{ fontSize: '12px' }}
             />
           </PieChart>
