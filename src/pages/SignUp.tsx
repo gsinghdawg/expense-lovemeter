@@ -156,18 +156,19 @@ const SignUp = () => {
 
   return (
     <div className="py-8 px-4 sm:px-6 min-h-screen flex flex-col">
+      <div className="absolute right-4 top-4">
+        <ThemeSwitcher />
+      </div>
+      
       <div className="app-container max-w-md mx-auto w-full">
-        <div className="absolute right-4 top-4 flex items-center gap-4">
-          <Button asChild size="sm" variant="outline" className="gap-2">
-            <Link to="/home">
-              <Home className="h-4 w-4" />
-              Back to Home
-            </Link>
-          </Button>
-          <ThemeSwitcher />
-        </div>
+        <Button asChild size="sm" variant="outline" className="gap-2 absolute left-4 top-4">
+          <Link to="/home">
+            <Home className="h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
         
-        <div className="mb-6">
+        <div className="mb-6 mt-10">
           <div className="flex flex-col items-center">
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-amber-500" />
