@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ExpenseCategory } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle, DialogContent, Dialog } from "@/components/ui/dialog";
@@ -43,7 +43,7 @@ export function CategoryForm({
   });
   
   // Reset form when editing category changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       form.reset({
         name: editingCategory ? editingCategory.name : "",
