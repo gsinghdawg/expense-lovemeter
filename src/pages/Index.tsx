@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useExpenses } from "@/hooks/useExpenses";
@@ -6,6 +7,7 @@ import { ExpenseList } from "@/components/ExpenseList";
 import { ExpenseSummary } from "@/components/ExpenseSummary";
 import { CategoryManager } from "@/components/CategoryManager";
 import { BudgetForm } from "@/components/BudgetForm";
+import { RecentTransactions } from "@/components/RecentTransactions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles } from "lucide-react";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
@@ -86,6 +88,14 @@ const Index = () => {
                 <BudgetForm 
                   currentBudget={budgetGoal}
                   onUpdateBudget={updateBudgetGoal}
+                />
+                <RecentTransactions
+                  expenses={expenses}
+                  categories={categories}
+                  getCategoryById={getCategoryById}
+                  onEditExpense={updateExpense}
+                  onDeleteExpense={deleteExpense}
+                  limit={3}
                 />
               </div>
               <ExpenseSummary
