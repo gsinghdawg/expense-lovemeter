@@ -1,9 +1,9 @@
-
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ComposedChart } from "recharts";
 import { Progress } from "@/components/ui/progress";
+import { formatCurrency } from "@/lib/utils";
 
 type ExpenseSummaryProps = {
   expenses: Expense[];
@@ -52,8 +52,16 @@ export function ExpenseSummary({
         name: category.name,
         value: amount,
         color: category.color,
+        percent: 0,
       };
-    }).sort((a, b) => b.value - a.value);
+    }).sort((a, b) => b.value - a.value)
+    .map((item, _, array) => {
+      const total = array.reduce((sum, entry) => sum + entry.value, 0);
+      return {
+        ...item,
+        percent: total > 0 ? (item.value / total) * 100 : 0,
+      };
+    });
   }, [currentMonthExpenses, getCategoryById]);
 
   const top3Categories = useMemo(() => {
@@ -201,6 +209,47 @@ export function ExpenseSummary({
     "July", "August", "September", "October", "November", "December"
   ];
 
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name, value }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius * 0.8;
+    
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    
+    const percentValue = percent * 100;
+    let fontSize = 12;
+    let labelContent = '';
+    
+    if (percentValue < 5) {
+      fontSize = 9;
+      labelContent = `${Math.round(percentValue)}%`;
+    } else if (percentValue < 10) {
+      fontSize = 10;
+      labelContent = `${Math.round(percentValue)}%`;
+    } else {
+      fontSize = 12;
+      labelContent = `${Math.round(percentValue)}%`;
+    }
+    
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor="middle" 
+        dominantBaseline="central"
+        fontSize={fontSize}
+        fontWeight="bold"
+        style={{
+          textShadow: '0px 0px 2px rgba(0,0,0,0.8)',
+          pointerEvents: 'none'
+        }}
+      >
+        {labelContent}
+      </text>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -244,7 +293,7 @@ export function ExpenseSummary({
           </div>
 
           {currentMonthExpenses.length > 0 ? (
-            <div className="h-[200px] w-full">
+            <div className="h-[220px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -255,17 +304,18 @@ export function ExpenseSummary({
                     cy="50%"
                     outerRadius={80}
                     fill="#8884d8"
-                    label={({ name, percent }) => 
-                      `${name}: ${(percent * 100).toFixed(0)}%`
-                    }
                     labelLine={false}
+                    label={renderCustomizedLabel}
+                    paddingAngle={3}
+                    minAngle={15}
                   >
                     {expensesByCategory.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value: number) => `$${value.toFixed(2)}`} 
+                    formatter={(value: number) => formatCurrency(value)}
+                    labelFormatter={(name) => `Category: ${name}`}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -286,7 +336,7 @@ export function ExpenseSummary({
                   />
                   <span className="text-sm">{item.name}</span>
                 </div>
-                <span className="text-sm font-medium">${item.value.toFixed(2)}</span>
+                <span className="text-sm font-medium">${item.value.toFixed(2)} ({Math.round(item.percent)}%)</span>
               </div>
             ))}
           </div>
@@ -325,7 +375,7 @@ export function ExpenseSummary({
                     />
                     <Bar
                       dataKey="savings"
-                      fill="#4B5563"  // Changed from #FEF7CD (soft yellow) to #4B5563 (dark grey)
+                      fill="#4B5563"
                       name="Monthly Savings"
                       barSize={20}
                       onClick={handleBarClick}
@@ -340,7 +390,7 @@ export function ExpenseSummary({
                       }}
                       onMouseOut={(data) => {
                         if (data && data.element) {
-                          data.element.style.fill = "#4B5563"; // Changed from #FEF7CD to #4B5563
+                          data.element.style.fill = "#4B5563";
                         }
                       }}
                     />
@@ -355,20 +405,20 @@ export function ExpenseSummary({
                     <Line 
                       type="monotone" 
                       dataKey="budget" 
-                      stroke="#4ade80" // Changed from #ef4444 (red) to #4ade80 (green)
+                      stroke="#4ade80"
                       strokeWidth={3}
                       strokeDasharray="5 5"
-                      dot={{ fill: "#4ade80", r: 4 }} // Changed from #ef4444 (red) to #4ade80 (green)
+                      dot={{ fill: "#4ade80", r: 4 }}
                       name="Budget Goal"
                       connectNulls={true}
-                      activeDot={{ r: 6, fill: "#4ade80" }} // Changed from #ef4444 (red) to #4ade80 (green)
+                      activeDot={{ r: 6, fill: "#4ade80" }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
               <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-[#4B5563] mr-1 cursor-pointer"></div> {/* Changed from #FEF7CD to #4B5563 */}
+                  <div className="w-3 h-3 bg-[#4B5563] mr-1 cursor-pointer"></div>
                   <span>Monthly Savings</span>
                 </div>
                 <div className="flex items-center">
