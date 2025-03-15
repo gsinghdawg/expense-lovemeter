@@ -1,9 +1,10 @@
-
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ComposedChart } from "recharts";
 import { Progress } from "@/components/ui/progress";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { formatCurrency } from "@/lib/utils";
 
 type ExpenseSummaryProps = {
   expenses: Expense[];
@@ -201,6 +202,42 @@ export function ExpenseSummary({
     "July", "August", "September", "October", "November", "December"
   ];
 
+  const customPieChartLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name, value }) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    // Determine text size based on percentage
+    const fontSize = percent > 0.15 ? 12 : 10;
+    const valueDisplay = percent > 0.05 ? formatCurrency(value) : '';
+    const nameDisplay = percent > 0.05 ? name : '';
+    const percentageDisplay = `${(percent * 100).toFixed(0)}%`;
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor="middle" 
+        dominantBaseline="central"
+        style={{
+          fontSize: `${fontSize}px`,
+          fontWeight: 'bold',
+          textShadow: '0px 0px 3px rgba(0,0,0,0.7)'
+        }}
+      >
+        {nameDisplay && (
+          <tspan x={x} dy="-0.8em">{nameDisplay}</tspan>
+        )}
+        <tspan x={x} dy={nameDisplay ? "1.6em" : 0}>{percentageDisplay}</tspan>
+        {valueDisplay && percent > 0.08 && (
+          <tspan x={x} dy="1.2em">{valueDisplay}</tspan>
+        )}
+      </text>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -255,10 +292,10 @@ export function ExpenseSummary({
                     cy="50%"
                     outerRadius={80}
                     fill="#8884d8"
-                    label={({ name, percent }) => 
-                      `${name}: ${(percent * 100).toFixed(0)}%`
-                    }
                     labelLine={false}
+                    label={customPieChartLabel}
+                    paddingAngle={2}
+                    cornerRadius={3}
                   >
                     {expensesByCategory.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
