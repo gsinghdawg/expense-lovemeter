@@ -1,10 +1,9 @@
+
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ComposedChart } from "recharts";
 import { Progress } from "@/components/ui/progress";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { formatCurrency } from "@/lib/utils";
 
 type ExpenseSummaryProps = {
   expenses: Expense[];
@@ -202,44 +201,6 @@ export function ExpenseSummary({
     "July", "August", "September", "October", "November", "December"
   ];
 
-  const customPieChartLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name, value }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * (percent < 0.05 ? 1.2 : 0.6);
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    if (percent < 0.03) return null;
-
-    const fontSize = percent > 0.15 ? 12 : percent > 0.08 ? 10 : 8;
-    
-    const showName = percent > 0.05;
-    const showValue = percent > 0.08;
-    const percentageDisplay = `${(percent * 100).toFixed(0)}%`;
-    
-    return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor="middle" 
-        dominantBaseline="central"
-        style={{
-          fontSize: `${fontSize}px`,
-          fontWeight: 'bold',
-          textShadow: '0px 0px 3px rgba(0,0,0,0.7)'
-        }}
-      >
-        {showName && (
-          <tspan x={x} dy="-0.8em">{name}</tspan>
-        )}
-        <tspan x={x} dy={showName ? "1.6em" : 0}>{percentageDisplay}</tspan>
-        {showValue && (
-          <tspan x={x} dy="1.2em">{formatCurrency(value)}</tspan>
-        )}
-      </text>
-    );
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -294,11 +255,10 @@ export function ExpenseSummary({
                     cy="50%"
                     outerRadius={80}
                     fill="#8884d8"
+                    label={({ name, percent }) => 
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                     labelLine={false}
-                    label={customPieChartLabel}
-                    paddingAngle={3}
-                    cornerRadius={3}
-                    minAngle={2}
                   >
                     {expensesByCategory.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -365,7 +325,7 @@ export function ExpenseSummary({
                     />
                     <Bar
                       dataKey="savings"
-                      fill="#4B5563"
+                      fill="#4B5563"  // Changed from #FEF7CD (soft yellow) to #4B5563 (dark grey)
                       name="Monthly Savings"
                       barSize={20}
                       onClick={handleBarClick}
@@ -380,7 +340,7 @@ export function ExpenseSummary({
                       }}
                       onMouseOut={(data) => {
                         if (data && data.element) {
-                          data.element.style.fill = "#4B5563";
+                          data.element.style.fill = "#4B5563"; // Changed from #FEF7CD to #4B5563
                         }
                       }}
                     />
@@ -395,20 +355,20 @@ export function ExpenseSummary({
                     <Line 
                       type="monotone" 
                       dataKey="budget" 
-                      stroke="#4ade80"
+                      stroke="#4ade80" // Changed from #ef4444 (red) to #4ade80 (green)
                       strokeWidth={3}
                       strokeDasharray="5 5"
-                      dot={{ fill: "#4ade80", r: 4 }}
+                      dot={{ fill: "#4ade80", r: 4 }} // Changed from #ef4444 (red) to #4ade80 (green)
                       name="Budget Goal"
                       connectNulls={true}
-                      activeDot={{ r: 6, fill: "#4ade80" }}
+                      activeDot={{ r: 6, fill: "#4ade80" }} // Changed from #ef4444 (red) to #4ade80 (green)
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
               <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-[#4B5563] mr-1 cursor-pointer"></div>
+                  <div className="w-3 h-3 bg-[#4B5563] mr-1 cursor-pointer"></div> {/* Changed from #FEF7CD to #4B5563 */}
                   <span>Monthly Savings</span>
                 </div>
                 <div className="flex items-center">
