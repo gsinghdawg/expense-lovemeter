@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Sparkles, Mail, Lock, User } from "lucide-react";
+import { Sparkles, Mail, Lock, User, Home } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 import {
@@ -157,7 +157,13 @@ const SignUp = () => {
   return (
     <div className="py-8 px-4 sm:px-6 min-h-screen flex flex-col">
       <div className="app-container max-w-md mx-auto w-full">
-        <div className="absolute right-4 top-4">
+        <div className="absolute right-4 top-4 flex items-center gap-4">
+          <Button asChild size="sm" variant="outline" className="gap-2">
+            <Link to="/home">
+              <Home className="h-4 w-4" />
+              Back to Home
+            </Link>
+          </Button>
           <ThemeSwitcher />
         </div>
         
