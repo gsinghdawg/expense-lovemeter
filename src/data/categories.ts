@@ -2,13 +2,53 @@
 import { ExpenseCategory } from "@/types/expense";
 
 export const defaultCategories: ExpenseCategory[] = [
-  { id: "dating-apps", name: "Dating Apps", color: "#FF5C8D" },
-  { id: "subscription", name: "Subscription", color: "#5C8DFF" },
-  { id: "dining", name: "Dining", color: "#FF9F5C" },
-  { id: "dinner", name: "Dinner", color: "#FF8F40" },
-  { id: "shopping", name: "Shopping", color: "#5CFFC7" },
-  { id: "entertainment", name: "Entertainment", color: "#D45CFF" },
-  { id: "bills", name: "Bills", color: "#FF5C5C" },
-  { id: "transportation", name: "Transportation", color: "#5CFFFF" },
-  { id: "other", name: "Other", color: "#999999" }, // Keeping the fallback category
+  {
+    id: "default-food",
+    name: "Food",
+    color: "#FF5757"
+  },
+  {
+    id: "default-transportation",
+    name: "Transportation",
+    color: "#8AA9FF"
+  },
+  {
+    id: "default-entertainment",
+    name: "Entertainment",
+    color: "#53D769"
+  },
+  {
+    id: "default-shopping",
+    name: "Shopping",
+    color: "#FFD653"
+  },
+  {
+    id: "default-housing",
+    name: "Housing",
+    color: "#AF52DE"
+  },
+  {
+    id: "default-utilities",
+    name: "Utilities",
+    color: "#5AC8FA"
+  },
+  {
+    id: "default-subscriptions",
+    name: "Subscriptions",
+    color: "#FF9500"
+  },
+  {
+    id: "default-health",
+    name: "Health",
+    color: "#FF2D55"
+  },
+  {
+    id: "default-other",
+    name: "Other",
+    color: "#8E8E93"
+  }
 ];
+
+export function getCategoryById(categories: ExpenseCategory[], id: string): ExpenseCategory | undefined {
+  return categories.find(category => category.id === id);
+}
