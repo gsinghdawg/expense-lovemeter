@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { Expense, ExpenseCategory } from "@/types/expense";
 import { ExpenseItem } from "@/components/ExpenseItem";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,6 +29,7 @@ export function ExpenseList({
 
   const handleEditExpense = (expense: Expense) => {
     console.log("Editing expense:", expense);
+    // Ensure the date is a proper Date object
     const expenseWithValidDate = {
       ...expense,
       date: expense.date instanceof Date ? expense.date : new Date(expense.date)
@@ -45,6 +47,7 @@ export function ExpenseList({
     if (editingExpense) {
       console.log("Updating expense with data:", data);
       console.log("Date from form:", data.date);
+      // Ensure the date is a proper Date object
       const updatedExpense = {
         ...editingExpense,
         ...data,
@@ -67,17 +70,23 @@ export function ExpenseList({
   });
 
   const sortedExpenses = [...filteredExpenses].sort(
-    (a, b) => b.date.getTime() - a.date.getTime()
+    (a, b) => {
+      const dateA = a.date instanceof Date ? a.date : new Date(a.date);
+      const dateB = b.date instanceof Date ? b.date : new Date(b.date);
+      return dateB.getTime() - dateA.getTime();
+    }
   );
 
   const groupExpensesByDate = (expenses: Expense[]) => {
     const groups: { [key: string]: { date: Date; expenses: Expense[] } } = {};
     
     expenses.forEach((expense) => {
-      const dateKey = format(expense.date, 'yyyy-MM-dd');
+      const expenseDate = expense.date instanceof Date ? expense.date : new Date(expense.date);
+      const dateKey = format(expenseDate, 'yyyy-MM-dd');
+      
       if (!groups[dateKey]) {
         groups[dateKey] = {
-          date: expense.date,
+          date: expenseDate,
           expenses: []
         };
       }
@@ -96,7 +105,7 @@ export function ExpenseList({
       return 'Today';
     } 
     
-    if (isSameDay(new Date(today.setDate(today.getDate() - 1)), date)) {
+    if (isSameDay(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1), date)) {
       return 'Yesterday';
     }
     
@@ -162,7 +171,10 @@ export function ExpenseList({
                 {group.expenses.map((expense) => (
                   <ExpenseItem
                     key={expense.id}
-                    expense={expense}
+                    expense={{
+                      ...expense,
+                      date: expense.date instanceof Date ? expense.date : new Date(expense.date)
+                    }}
                     category={getCategoryById(expense.categoryId)}
                     onEdit={handleEditExpense}
                     onDelete={onDeleteExpense}
@@ -178,6 +190,9 @@ export function ExpenseList({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Expense</DialogTitle>
+            <DialogDescription>
+              Make changes to your expense below
+            </DialogDescription>
           </DialogHeader>
           {editingExpense && (
             <ExpenseForm

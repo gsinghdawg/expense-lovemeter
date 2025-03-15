@@ -13,6 +13,8 @@ type ExpenseItemProps = {
 };
 
 export function ExpenseItem({ expense, category, onEdit, onDelete }: ExpenseItemProps) {
+  const expenseDate = expense.date instanceof Date ? expense.date : new Date(expense.date);
+  
   return (
     <Card className="mb-3 gradient-card rounded-lg overflow-hidden">
       <CardContent className="p-4">
@@ -32,7 +34,7 @@ export function ExpenseItem({ expense, category, onEdit, onDelete }: ExpenseItem
             <div>
               <h3 className="font-medium">{expense.description}</h3>
               <p className="text-sm text-muted-foreground">
-                {format(expense.date, "PPP")} • {category.name}
+                {format(expenseDate, "PPP")} • {category.name}
               </p>
             </div>
           </div>

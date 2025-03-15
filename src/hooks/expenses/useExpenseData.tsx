@@ -1,3 +1,4 @@
+
 import { Expense } from "@/types/expense";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -176,8 +177,13 @@ export function useExpenseData(userId: string | undefined) {
   });
 
   const addExpense = (expense: Omit<Expense, "id">) => {
-    addExpenseMutation.mutate(expense);
-    return { ...expense, id: 'pending' };
+    // Ensure the date is a proper Date object
+    const expenseWithValidDate = {
+      ...expense,
+      date: expense.date instanceof Date ? expense.date : new Date(expense.date)
+    };
+    addExpenseMutation.mutate(expenseWithValidDate);
+    return { ...expenseWithValidDate, id: 'pending' };
   };
 
   const updateExpense = (expense: Expense) => {
@@ -202,7 +208,7 @@ export function useExpenseData(userId: string | undefined) {
     const currentYear = now.getFullYear();
     
     return expenses.filter(expense => {
-      const expenseDate = expense.date;
+      const expenseDate = expense.date instanceof Date ? expense.date : new Date(expense.date);
       return expenseDate.getMonth() === currentMonth && 
              expenseDate.getFullYear() === currentYear;
     });

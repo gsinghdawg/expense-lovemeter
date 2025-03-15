@@ -53,7 +53,9 @@ export function ExpenseForm({
   // Make sure the date is properly formatted as a Date object
   const formattedDefaultValues = defaultValues ? {
     ...defaultValues,
-    date: defaultValues.date instanceof Date ? defaultValues.date : new Date(defaultValues.date)
+    date: defaultValues.date instanceof Date 
+      ? defaultValues.date 
+      : new Date(defaultValues.date)
   } : initialDefaultValues;
   
   const form = useForm({
@@ -69,8 +71,16 @@ export function ExpenseForm({
     date: Date;
     categoryId: string;
   }) => {
+    // Ensure the date is a proper Date object
     console.log("Form submitting with date:", data.date);
-    onSubmit(data);
+    
+    // Pass the data to the parent component
+    onSubmit({
+      ...data,
+      date: data.date instanceof Date ? data.date : new Date(data.date)
+    });
+    
+    // Reset the form if it's the Add Expense form
     if (submitLabel === "Add Expense") {
       form.reset({
         amount: 0,
@@ -172,7 +182,7 @@ export function ExpenseForm({
                           )}
                         >
                           {field.value ? (
-                            format(new Date(field.value), "PPP")
+                            format(field.value instanceof Date ? field.value : new Date(field.value), "PPP")
                           ) : (
                             <span>Pick a date</span>
                           )}
@@ -186,6 +196,7 @@ export function ExpenseForm({
                         selected={field.value instanceof Date ? field.value : new Date(field.value)}
                         onSelect={field.onChange}
                         initialFocus
+                        className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
