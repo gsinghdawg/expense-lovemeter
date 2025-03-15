@@ -72,6 +72,10 @@ export function useExpenseData(userId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
+      toast({
+        title: "Expense added",
+        description: "Your expense has been added successfully.",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -87,7 +91,7 @@ export function useExpenseData(userId: string | undefined) {
     mutationFn: async (expense: Expense) => {
       if (!userId) throw new Error("User not authenticated");
       
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('expenses')
         .update({
           description: expense.description,
@@ -96,14 +100,27 @@ export function useExpenseData(userId: string | undefined) {
           category_id: expense.categoryId,
         })
         .eq('id', expense.id)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select()
+        .single();
         
       if (error) throw error;
       
-      return expense;
+      // Return the updated expense with proper date conversion
+      return {
+        id: data.id,
+        amount: data.amount,
+        description: data.description,
+        date: new Date(data.date),
+        categoryId: data.category_id,
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
+      toast({
+        title: "Expense updated",
+        description: "Your expense has been updated successfully.",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -129,8 +146,12 @@ export function useExpenseData(userId: string | undefined) {
       
       return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
+      toast({
+        title: "Expense deleted",
+        description: "Your expense has been deleted successfully.",
+      });
     },
     onError: (error: any) => {
       toast({

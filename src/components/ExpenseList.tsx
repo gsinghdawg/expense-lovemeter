@@ -38,10 +38,11 @@ export function ExpenseList({
     categoryId: string;
   }) => {
     if (editingExpense) {
-      onUpdateExpense({
+      const updatedExpense = {
         ...editingExpense,
         ...data,
-      });
+      };
+      onUpdateExpense(updatedExpense);
       setEditingExpense(null);
     }
   };
