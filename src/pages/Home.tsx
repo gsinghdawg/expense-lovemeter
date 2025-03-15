@@ -69,7 +69,7 @@ const Home = () => {
           </Card>
         </div>
 
-        {/* App Showcase Section */}
+        {/* App Showcase Section - Expense Tracking */}
         <div className="my-16">
           <h2 className="text-3xl font-bold text-center mb-8">See How It Works</h2>
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -95,6 +95,38 @@ const Home = () => {
                   <img 
                     src="/lovable-uploads/8e8e7db1-e8a5-4c71-bc2a-16e671f1d0f7.png" 
                     alt="LadyLedger Expense Form" 
+                    className="w-full h-auto"
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Budget & Transactions Showcase Section */}
+        <div className="my-16">
+          <div className="flex flex-col md:flex-row-reverse items-center justify-between gap-8">
+            <div className="md:w-1/2">
+              <h3 className="text-2xl font-semibold mb-4">Smart Budget Management</h3>
+              <p className="text-lg mb-4">
+                Set monthly budgets and track your transactions in real-time to stay in control of your finances.
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-6">
+                <li>Create personalized monthly budget goals</li>
+                <li>Track all your expenses in one place</li>
+                <li>See your spending history at a glance</li>
+                <li>Edit or delete transactions easily</li>
+              </ul>
+              <Button asChild size="lg" className="w-full md:w-auto">
+                <Link to="/signup">Start Budgeting Today</Link>
+              </Button>
+            </div>
+            <div className="md:w-1/2 mt-8 md:mt-0">
+              <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                <CardContent className="p-0">
+                  <img 
+                    src="/lovable-uploads/3418c085-9be9-4c98-9b0f-e3cdfce82b34.png" 
+                    alt="LadyLedger Budget and Transactions" 
                     className="w-full h-auto"
                   />
                 </CardContent>
