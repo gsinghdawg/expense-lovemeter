@@ -42,17 +42,26 @@ export function CategoryManager({
   
   const handleConfirmDelete = () => {
     if (categoryToDelete) {
-      const success = onDeleteCategory(categoryToDelete);
-      if (!success) {
+      try {
+        const success = onDeleteCategory(categoryToDelete);
+        if (!success) {
+          toast({
+            title: "Category is in use",
+            description: "Cannot delete a category that is being used by expenses",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Category deleted",
+            description: "The category has been deleted successfully",
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting category:", error);
         toast({
-          title: "Category is in use",
-          description: "Cannot delete a category that is being used by expenses",
+          title: "Error deleting category",
+          description: "An error occurred while deleting the category",
           variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Category deleted",
-          description: "The category has been deleted successfully",
         });
       }
       setCategoryToDelete(null);

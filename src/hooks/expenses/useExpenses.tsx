@@ -43,10 +43,6 @@ export function useExpenses() {
     ? defaultCategories 
     : userCategories;
 
-  console.log("useExpenses defaultCategories:", defaultCategories);
-  console.log("useExpenses userCategories:", userCategories);
-  console.log("useExpenses final categories:", categories);
-
   const isLoading = isLoadingExpenses || isLoadingBudgetGoal || isLoadingBudgetHistory;
 
   return {

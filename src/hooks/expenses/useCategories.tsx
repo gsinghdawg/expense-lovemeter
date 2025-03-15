@@ -32,7 +32,8 @@ export function useCategories(userId: string | undefined) {
     try {
       deleteCategoryMutation.mutate(id);
       return true;
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error in deleteCategory:", error);
       return false;
     }
   };
