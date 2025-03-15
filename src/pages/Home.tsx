@@ -1,12 +1,28 @@
 
 import { Link } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Sparkles, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 const Home = () => {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col items-center justify-center p-4">
+      <div className="absolute top-4 right-4 flex items-center gap-4">
+        <ThemeSwitcher />
+        {!user && (
+          <Button asChild size="sm" className="gap-2">
+            <Link to="/signup">
+              <LogIn className="h-4 w-4" />
+              Sign In / Register
+            </Link>
+          </Button>
+        )}
+      </div>
+
       <div className="w-full max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-5xl md:text-6xl font-bold mb-4 flex items-center justify-center gap-3">
