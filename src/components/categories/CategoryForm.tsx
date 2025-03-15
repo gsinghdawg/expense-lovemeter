@@ -42,10 +42,25 @@ export function CategoryForm({
     },
   });
   
+  // Reset form when editing category changes
+  React.useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        name: editingCategory ? editingCategory.name : "",
+        color: editingCategory ? editingCategory.color : "#000000",
+      });
+    }
+  }, [editingCategory, isOpen, form]);
+  
   const handleSubmit = (data: CategoryFormValues) => {
     try {
-      // Check if category name already exists (only for new categories)
-      if (!editingCategory && categories.some(c => c.name.toLowerCase() === data.name.toLowerCase())) {
+      // Check if category name already exists (only for new categories or if name was changed)
+      const nameExists = categories.some(c => 
+        c.name.toLowerCase() === data.name.toLowerCase() && 
+        (!editingCategory || c.id !== editingCategory.id)
+      );
+      
+      if (nameExists) {
         form.setError("name", {
           type: "manual",
           message: "Category with this name already exists"
@@ -58,23 +73,14 @@ export function CategoryForm({
           ...editingCategory,
           ...data,
         });
-        toast({
-          title: "Category updated",
-          description: `${data.name} category has been updated`,
-        });
       } else {
         // The data from the form is already validated by Zod, so name and color are guaranteed to be defined
-        // But we need to explicitly type them as non-optional for TypeScript
         const categoryToAdd: Omit<ExpenseCategory, "id"> = {
           name: data.name,
           color: data.color
         };
         
         onAddCategory(categoryToAdd);
-        toast({
-          title: "Category added",
-          description: `${data.name} category has been created`,
-        });
       }
       onClose();
     } catch (error) {

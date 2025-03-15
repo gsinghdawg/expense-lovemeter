@@ -48,6 +48,20 @@ export function useCategoryMutations(userId: string | undefined) {
     mutationFn: async (category: ExpenseCategory) => {
       if (!userId) throw new Error("User not authenticated");
       
+      // First check if this category exists
+      const { data: existingCategory, error: checkError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('id', category.id)
+        .eq('user_id', userId)
+        .single();
+      
+      if (checkError) {
+        console.error("Error checking category existence:", checkError);
+        throw new Error("Category not found or you don't have permission to edit it");
+      }
+      
+      // Now update the category
       const { error } = await supabase
         .from('categories')
         .update({
@@ -61,8 +75,22 @@ export function useCategoryMutations(userId: string | undefined) {
       
       return category;
     },
-    onSuccess: () => {
+    onSuccess: (updatedCategory) => {
+      // Optimistically update the cache
+      queryClient.setQueryData(['categories', userId], (oldData: ExpenseCategory[] | undefined) => {
+        if (!oldData) return [];
+        return oldData.map(category => 
+          category.id === updatedCategory.id ? updatedCategory : category
+        );
+      });
+      
+      // Then invalidate to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['categories', userId] });
+      
+      toast({
+        title: "Category updated",
+        description: `${updatedCategory.name} category has been updated successfully`,
+      });
     },
     onError: (error: any) => {
       toast({
