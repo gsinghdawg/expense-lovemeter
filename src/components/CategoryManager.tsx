@@ -3,31 +3,11 @@ import { useState } from "react";
 import { ExpenseCategory } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DialogHeader, DialogTitle, DialogContent, Dialog } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Edit2, Trash2, Plus } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-const categorySchema = z.object({
-  name: z.string().min(1, { message: "Category name is required" }).max(50, { message: "Category name is too long" }),
-  color: z.string().regex(/^#([0-9A-F]{3}){1,2}$/i, { message: "Must be a valid hex color code" }),
-});
-
-type CategoryFormValues = z.infer<typeof categorySchema>;
+import { CategoryForm } from "./categories/CategoryForm";
+import { CategoryList } from "./categories/CategoryList";
+import { CategoryDeleteConfirmation } from "./categories/CategoryDeleteConfirmation";
 
 type CategoryManagerProps = {
   categories: ExpenseCategory[];
@@ -46,72 +26,14 @@ export function CategoryManager({
   const [editingCategory, setEditingCategory] = useState<ExpenseCategory | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
-  const form = useForm<CategoryFormValues>({
-    resolver: zodResolver(categorySchema),
-    defaultValues: {
-      name: "",
-      color: "#000000",
-    },
-  });
-  
   const handleOpenDialog = (category?: ExpenseCategory) => {
     setEditingCategory(category || null);
-    
-    form.reset({
-      name: category ? category.name : "",
-      color: category ? category.color : "#000000"
-    });
-    
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingCategory(null);
-  };
-
-  const handleSubmit = (data: CategoryFormValues) => {
-    try {
-      // Check if category name already exists (only for new categories)
-      if (!editingCategory && categories.some(c => c.name.toLowerCase() === data.name.toLowerCase())) {
-        form.setError("name", {
-          type: "manual",
-          message: "Category with this name already exists"
-        });
-        return;
-      }
-
-      if (editingCategory) {
-        onUpdateCategory({
-          ...editingCategory,
-          ...data,
-        });
-        toast({
-          title: "Category updated",
-          description: `${data.name} category has been updated`,
-        });
-      } else {
-        // The data from the form is already validated by Zod, so name and color are guaranteed to be defined
-        // But we need to explicitly type them as non-optional for TypeScript
-        const categoryToAdd: Omit<ExpenseCategory, "id"> = {
-          name: data.name,
-          color: data.color
-        };
-        
-        const newCategory = onAddCategory(categoryToAdd);
-        toast({
-          title: "Category added",
-          description: `${data.name} category has been created`,
-        });
-      }
-      handleCloseDialog();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "There was a problem saving the category",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleOpenDeleteConfirm = (id: string) => {
@@ -150,121 +72,27 @@ export function CategoryManager({
         </Button>
       </CardHeader>
       <CardContent>
-        {categories.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            No categories yet. Add your first category to start tracking expenses.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className="flex items-center justify-between p-2 rounded border"
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: category.color }}
-                  />
-                  <span>{category.name}</span>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleOpenDialog(category)}
-                    className="h-8 w-8"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleOpenDeleteConfirm(category.id)}
-                    className="h-8 w-8 text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <CategoryList 
+          categories={categories} 
+          onEdit={handleOpenDialog} 
+          onDelete={handleOpenDeleteConfirm} 
+        />
       </CardContent>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingCategory ? "Edit Category" : "Add Category"}
-            </DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Dating Apps, Subscription" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <CategoryForm 
+        categories={categories}
+        editingCategory={editingCategory}
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        onAddCategory={onAddCategory}
+        onUpdateCategory={onUpdateCategory}
+      />
 
-              <FormField
-                control={form.control}
-                name="color"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Color</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-2">
-                        <div
-                          className="w-10 h-10 rounded border"
-                          style={{ backgroundColor: field.value }}
-                        />
-                        <Input type="color" {...field} className="w-20" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingCategory ? "Update" : "Add"} Category
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!categoryToDelete} onOpenChange={(open) => !open && handleCancelDelete()}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this category. 
-              This action cannot be undone if the category is not in use.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CategoryDeleteConfirmation 
+        isOpen={!!categoryToDelete}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
     </Card>
   );
 }
