@@ -1,9 +1,9 @@
+
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ComposedChart } from "recharts";
 import { Progress } from "@/components/ui/progress";
-import { formatCurrency } from "@/lib/utils";
 
 type ExpenseSummaryProps = {
   expenses: Expense[];
@@ -201,48 +201,6 @@ export function ExpenseSummary({
     "July", "August", "September", "October", "November", "December"
   ];
 
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name, value }: any) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 1.1; // Position slightly outside the pie
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    
-    // Only show name for segments that are at least 5% of the total
-    if (percent < 0.05) {
-      return null;
-    }
-    
-    // Adaptive font size based on segment size
-    const fontSize = percent < 0.1 ? 10 : 12;
-    
-    // Determine text to display based on segment size
-    let displayText = '';
-    if (percent >= 0.15) {
-      // For larger segments, show name and percentage
-      displayText = `${name}: ${(percent * 100).toFixed(0)}%`;
-    } else {
-      // For smaller segments, just show percentage
-      displayText = `${(percent * 100).toFixed(0)}%`;
-    }
-    
-    return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="#000000"
-        fontSize={fontSize}
-        fontWeight="500"
-        textAnchor={x > cx ? 'start' : 'end'}
-        dominantBaseline="central"
-        style={{
-          filter: 'drop-shadow(0px 0px 2px rgba(255, 255, 255, 0.8))'
-        }}
-      >
-        {displayText}
-      </text>
-    );
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -286,7 +244,7 @@ export function ExpenseSummary({
           </div>
 
           {currentMonthExpenses.length > 0 ? (
-            <div className="h-[250px] w-full">
+            <div className="h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -296,10 +254,10 @@ export function ExpenseSummary({
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
-                    innerRadius={30}
-                    paddingAngle={2}
-                    minAngle={10}
-                    label={renderCustomizedLabel}
+                    fill="#8884d8"
+                    label={({ name, percent }) => 
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                     labelLine={false}
                   >
                     {expensesByCategory.map((entry, index) => (
@@ -308,7 +266,6 @@ export function ExpenseSummary({
                   </Pie>
                   <Tooltip 
                     formatter={(value: number) => `$${value.toFixed(2)}`} 
-                    contentStyle={{ fontSize: 12 }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -368,7 +325,7 @@ export function ExpenseSummary({
                     />
                     <Bar
                       dataKey="savings"
-                      fill="#4B5563"
+                      fill="#4B5563"  // Changed from #FEF7CD (soft yellow) to #4B5563 (dark grey)
                       name="Monthly Savings"
                       barSize={20}
                       onClick={handleBarClick}
@@ -383,7 +340,7 @@ export function ExpenseSummary({
                       }}
                       onMouseOut={(data) => {
                         if (data && data.element) {
-                          data.element.style.fill = "#4B5563";
+                          data.element.style.fill = "#4B5563"; // Changed from #FEF7CD to #4B5563
                         }
                       }}
                     />
@@ -398,20 +355,20 @@ export function ExpenseSummary({
                     <Line 
                       type="monotone" 
                       dataKey="budget" 
-                      stroke="#4ade80"
+                      stroke="#4ade80" // Changed from #ef4444 (red) to #4ade80 (green)
                       strokeWidth={3}
                       strokeDasharray="5 5"
-                      dot={{ fill: "#4ade80", r: 4 }}
+                      dot={{ fill: "#4ade80", r: 4 }} // Changed from #ef4444 (red) to #4ade80 (green)
                       name="Budget Goal"
                       connectNulls={true}
-                      activeDot={{ r: 6, fill: "#4ade80" }}
+                      activeDot={{ r: 6, fill: "#4ade80" }} // Changed from #ef4444 (red) to #4ade80 (green)
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
               <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-[#4B5563] mr-1 cursor-pointer"></div>
+                  <div className="w-3 h-3 bg-[#4B5563] mr-1 cursor-pointer"></div> {/* Changed from #FEF7CD to #4B5563 */}
                   <span>Monthly Savings</span>
                 </div>
                 <div className="flex items-center">
