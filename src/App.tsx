@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
+import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -28,7 +29,8 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/signup" element={<SignUp />} />
-              <Route path="/" element={<Navigate to="/signup" replace />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/" element={<Navigate to="/home" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
