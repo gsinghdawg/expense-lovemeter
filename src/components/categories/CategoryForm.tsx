@@ -54,7 +54,7 @@ export function CategoryForm({
   
   const handleSubmit = (data: CategoryFormValues) => {
     try {
-      // Check if category name already exists (only for new categories or if name was changed)
+      // Check if category name already exists but exclude the current category being edited
       const nameExists = categories.some(c => 
         c.name.toLowerCase() === data.name.toLowerCase() && 
         (!editingCategory || c.id !== editingCategory.id)
