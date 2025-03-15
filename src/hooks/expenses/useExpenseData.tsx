@@ -1,4 +1,3 @@
-
 import { Expense } from "@/types/expense";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,13 +91,17 @@ export function useExpenseData(userId: string | undefined) {
       if (!userId) throw new Error("User not authenticated");
       
       console.log("Updating expense:", expense);
+      console.log("Date to be stored:", expense.date);
+      console.log("Date in ISO format:", expense.date.toISOString());
       
       const { error, data } = await supabase
         .from('expenses')
         .update({
           description: expense.description,
           amount: expense.amount,
-          date: expense.date.toISOString(),
+          date: expense.date instanceof Date 
+            ? expense.date.toISOString() 
+            : new Date(expense.date).toISOString(),
           category_id: expense.categoryId,
         })
         .eq('id', expense.id)
@@ -179,7 +182,13 @@ export function useExpenseData(userId: string | undefined) {
 
   const updateExpense = (expense: Expense) => {
     console.log("updateExpense called with:", expense);
-    updateExpenseMutation.mutate(expense);
+    // Ensure expense.date is a Date object before mutation
+    const expenseWithValidDate = {
+      ...expense,
+      date: expense.date instanceof Date ? expense.date : new Date(expense.date)
+    };
+    console.log("Expense with valid date:", expenseWithValidDate);
+    updateExpenseMutation.mutate(expenseWithValidDate);
   };
 
   const deleteExpense = (id: string) => {

@@ -50,20 +50,26 @@ export function ExpenseForm({
     categoryId: availableCategories[0]?.id || "other"
   };
   
+  // Make sure the date is properly formatted as a Date object
+  const formattedDefaultValues = defaultValues ? {
+    ...defaultValues,
+    date: defaultValues.date instanceof Date ? defaultValues.date : new Date(defaultValues.date)
+  } : initialDefaultValues;
+  
   const form = useForm({
-    defaultValues: defaultValues || initialDefaultValues,
+    defaultValues: formattedDefaultValues,
   });
 
-  console.log("ExpenseForm defaultCategories:", defaultCategories);
-  console.log("ExpenseForm categories prop:", categories);
-  console.log("ExpenseForm availableCategories:", availableCategories);
-
+  console.log("ExpenseForm defaultValues:", defaultValues);
+  console.log("ExpenseForm formattedDefaultValues:", formattedDefaultValues);
+  
   const handleSubmit = (data: {
     amount: number;
     description: string;
     date: Date;
     categoryId: string;
   }) => {
+    console.log("Form submitting with date:", data.date);
     onSubmit(data);
     if (submitLabel === "Add Expense") {
       form.reset({
@@ -166,7 +172,7 @@ export function ExpenseForm({
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(new Date(field.value), "PPP")
                           ) : (
                             <span>Pick a date</span>
                           )}
@@ -177,7 +183,7 @@ export function ExpenseForm({
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value}
+                        selected={field.value instanceof Date ? field.value : new Date(field.value)}
                         onSelect={field.onChange}
                         initialFocus
                       />

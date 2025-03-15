@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Expense, ExpenseCategory } from "@/types/expense";
 import { ExpenseItem } from "@/components/ExpenseItem";
@@ -29,7 +28,12 @@ export function ExpenseList({
 
   const handleEditExpense = (expense: Expense) => {
     console.log("Editing expense:", expense);
-    setEditingExpense(expense);
+    const expenseWithValidDate = {
+      ...expense,
+      date: expense.date instanceof Date ? expense.date : new Date(expense.date)
+    };
+    console.log("Editing expense with valid date:", expenseWithValidDate);
+    setEditingExpense(expenseWithValidDate);
   };
 
   const handleUpdateExpense = (data: {
@@ -40,9 +44,11 @@ export function ExpenseList({
   }) => {
     if (editingExpense) {
       console.log("Updating expense with data:", data);
+      console.log("Date from form:", data.date);
       const updatedExpense = {
         ...editingExpense,
         ...data,
+        date: data.date instanceof Date ? data.date : new Date(data.date)
       };
       console.log("Final updated expense:", updatedExpense);
       onUpdateExpense(updatedExpense);
@@ -50,7 +56,6 @@ export function ExpenseList({
     }
   };
 
-  // Filter expenses
   const filteredExpenses = expenses.filter((expense) => {
     const matchesText = expense.description
       .toLowerCase()
@@ -61,12 +66,10 @@ export function ExpenseList({
     return matchesText && matchesCategory;
   });
 
-  // Sort expenses by date (most recent first)
   const sortedExpenses = [...filteredExpenses].sort(
     (a, b) => b.date.getTime() - a.date.getTime()
   );
 
-  // Group expenses by date
   const groupExpensesByDate = (expenses: Expense[]) => {
     const groups: { [key: string]: { date: Date; expenses: Expense[] } } = {};
     
@@ -86,7 +89,6 @@ export function ExpenseList({
   
   const groupedExpenses = groupExpensesByDate(sortedExpenses);
 
-  // Get date header text based on date
   const getDateHeaderText = (date: Date) => {
     const today = new Date();
     
@@ -184,7 +186,9 @@ export function ExpenseList({
               defaultValues={{
                 amount: editingExpense.amount,
                 description: editingExpense.description,
-                date: editingExpense.date,
+                date: editingExpense.date instanceof Date ? 
+                  editingExpense.date : 
+                  new Date(editingExpense.date),
                 categoryId: editingExpense.categoryId,
               }}
               submitLabel="Update Expense"
