@@ -34,9 +34,7 @@ export function CategoryDeleteConfirmation({
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => {
-              onConfirm();
-            }}
+            onClick={onConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             Delete

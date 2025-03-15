@@ -102,8 +102,20 @@ export function useCategoryMutations(userId: string | undefined) {
       
       return id;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId) => {
+      // Update the cache by removing the deleted category
+      queryClient.setQueryData(['categories', userId], (oldData: ExpenseCategory[] | undefined) => {
+        if (!oldData) return [];
+        return oldData.filter(category => category.id !== deletedId);
+      });
+      
+      // Then invalidate to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['categories', userId] });
+      
+      toast({
+        title: "Category deleted",
+        description: "The category has been deleted successfully",
+      });
     },
     onError: (error: any) => {
       console.error("Error in deleteCategoryMutation:", error);
