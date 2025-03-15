@@ -88,7 +88,7 @@ export function useCategoryMutations(userId: string | undefined) {
       if (checkError) throw checkError;
       
       if (expensesUsingCategory && expensesUsingCategory.length > 0) {
-        return Promise.reject(new Error("Category is in use by some expenses"));
+        throw new Error("Category is in use by some expenses");
       }
       
       // Delete the category if it's not being used

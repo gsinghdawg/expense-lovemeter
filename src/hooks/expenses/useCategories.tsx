@@ -30,6 +30,7 @@ export function useCategories(userId: string | undefined) {
 
   const deleteCategory = (id: string) => {
     try {
+      // The mutation will handle toast notifications for errors
       deleteCategoryMutation.mutate(id);
       return true;
     } catch (error: any) {
