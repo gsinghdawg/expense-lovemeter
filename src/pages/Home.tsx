@@ -1,6 +1,5 @@
-
 import { Link } from "react-router-dom";
-import { Sparkles, LogIn, LogOut } from "lucide-react";
+import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -134,6 +133,67 @@ const Home = () => {
             </div>
           </div>
         </div>
+
+        {/* Analytics & Insights Showcase Section */}
+        <div className="my-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Powerful Analytics & Insights</h2>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="md:w-1/2">
+              <h3 className="text-2xl font-semibold mb-4">Visualize Your Financial Health</h3>
+              <p className="text-lg mb-4">
+                Get comprehensive insights into your spending habits with beautiful charts and detailed analytics.
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-6">
+                <li>Track budget progress with intuitive visualizations</li>
+                <li>Analyze spending patterns across categories</li>
+                <li>View monthly spending history and trends</li>
+                <li>Identify top spending categories at a glance</li>
+              </ul>
+              <Button asChild size="lg" className="w-full md:w-auto">
+                <Link to="/signup">Start Analyzing Today</Link>
+              </Button>
+            </div>
+            <div className="md:w-1/2 mt-8 md:mt-0">
+              <div className="grid grid-cols-1 gap-4">
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/ef82ae7e-b4c0-43c2-8b60-2bbaec961f1c.png" 
+                      alt="LadyLedger Expense Summary and Category Breakdown" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/aee62957-15f2-456e-a356-50b3dab78200.png" 
+                      alt="LadyLedger Spending History and Analytics" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Call to Action Section */}
+        <div className="mt-16 mb-8 text-center">
+          <Card className="p-8 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/50 dark:to-blue-950/50 border-2 border-primary/20">
+            <CardContent className="p-0">
+              <h3 className="text-2xl font-bold mb-4">Ready to Take Control of Your Finances?</h3>
+              <p className="text-lg mb-6 max-w-2xl mx-auto">
+                Join thousands of users who have transformed their financial habits with LadyLedger. 
+                Start your journey to financial freedom today!
+              </p>
+              <Button asChild size="lg" className="px-8">
+                <Link to="/signup">Sign Up for Free</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
       </div>
     </div>
   );
