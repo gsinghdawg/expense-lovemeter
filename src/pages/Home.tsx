@@ -1,24 +1,29 @@
 
 import { Link } from "react-router-dom";
-import { Sparkles, LogIn } from "lucide-react";
+import { Sparkles, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 const Home = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col items-center justify-center p-4">
       <div className="absolute top-4 right-4 flex items-center gap-4">
         <ThemeSwitcher />
-        {!user && (
+        {!user ? (
           <Button asChild size="sm" className="gap-2">
             <Link to="/signup">
               <LogIn className="h-4 w-4" />
               Sign In / Register
             </Link>
+          </Button>
+        ) : (
+          <Button size="sm" variant="destructive" className="gap-2" onClick={signOut}>
+            <LogOut className="h-4 w-4" />
+            Sign Out
           </Button>
         )}
       </div>
