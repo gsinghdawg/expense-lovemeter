@@ -1,25 +1,23 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { defaultCategories } from "@/data/categories";
 import { ExpenseCategory } from "@/types/expense";
+import { defaultCategories } from "@/data/categories";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-// Check if all default categories are present in the user's categories
-export function areAllDefaultCategoriesPresent(userCategories: any[]): boolean {
-  // Extract names of all user categories
-  const userCategoryNames = userCategories.map(cat => cat.name.trim().toLowerCase());
+// Check if all default categories are present
+export const areAllDefaultCategoriesPresent = (userCategories: any[]) => {
+  const categoryNames = userCategories.map(c => c.name.toLowerCase());
+  const defaultNames = defaultCategories.map(c => c.name.toLowerCase());
   
-  // Check if all default category names are present in user categories
-  return defaultCategories.every(defaultCat => 
-    userCategoryNames.includes(defaultCat.name.trim().toLowerCase())
-  );
-}
+  return defaultNames.every(name => categoryNames.includes(name));
+};
 
-// Initialize default categories for a new user
-export async function initializeDefaultCategories(userId: string): Promise<void> {
-  console.log("Initializing default categories for user:", userId);
-  
+// Initialize default categories for new users
+export const initializeDefaultCategories = async (userId: string) => {
   try {
-    // Get existing categories first
+    console.log("Starting to initialize default categories:", defaultCategories);
+    
+    // Get existing categories to avoid duplicates
     const { data: existingCategories, error: fetchError } = await supabase
       .from('categories')
       .select('name')
@@ -30,44 +28,55 @@ export async function initializeDefaultCategories(userId: string): Promise<void>
       return;
     }
     
-    // Extract names of existing categories (case insensitive)
-    const existingCategoryNames = (existingCategories || [])
-      .map(cat => cat.name.trim().toLowerCase());
+    const existingNames = new Set(existingCategories?.map(c => c.name.toLowerCase()) || []);
     
-    // Filter default categories to only those that don't already exist
-    const categoriesToAdd = defaultCategories.filter(defaultCat => 
-      !existingCategoryNames.includes(defaultCat.name.trim().toLowerCase())
-    );
-    
-    if (categoriesToAdd.length === 0) {
-      console.log("All default categories already exist for user");
-      return;
-    }
-    
-    // Prepare categories for insertion
-    const categoriesToInsert = categoriesToAdd.map(cat => ({
-      name: cat.name,
-      color: cat.color,
-      icon: 'default',
-      user_id: userId
-    }));
-    
-    // Insert missing default categories
-    const { error: insertError } = await supabase
-      .from('categories')
-      .insert(categoriesToInsert);
+    for (const category of defaultCategories) {
+      // Skip if category already exists
+      if (existingNames.has(category.name.toLowerCase())) {
+        console.log(`Category ${category.name} already exists, skipping`);
+        continue;
+      }
       
-    if (insertError) {
-      console.error("Error inserting default categories:", insertError);
-    } else {
-      console.log(`Successfully added ${categoriesToAdd.length} default categories`);
+      // Important: Don't use the string ID from defaultCategories
+      // Let Supabase generate a UUID automatically
+      const { error } = await supabase
+        .from('categories')
+        .insert({
+          name: category.name,
+          color: category.color,
+          icon: 'default',
+          user_id: userId,
+        });
+      
+      if (error) {
+        console.error(`Error creating category ${category.name}:`, error);
+        toast({
+          title: "Error creating category",
+          description: `Failed to create ${category.name}: ${error.message}`,
+          variant: "destructive",
+        });
+      } else {
+        console.log(`Successfully created category: ${category.name}`);
+      }
     }
-  } catch (error) {
-    console.error("Error in initializeDefaultCategories:", error);
+    
+    console.log("Default categories initialization complete");
+  } catch (e) {
+    console.error("Failed to initialize default categories", e);
   }
-}
+};
 
-// Helper to get a category by ID from a list of categories
-export function getCategoryById(categories: ExpenseCategory[], id: string): ExpenseCategory | undefined {
-  return categories.find(category => category.id === id);
-}
+// Helper function to get category by ID
+export const getCategoryById = (categories: ExpenseCategory[], id: string) => {
+  const category = categories.find(c => c.id === id);
+  if (category) return category;
+  
+  const defaultCategory = defaultCategories.find(c => c.id === id);
+  if (defaultCategory) return defaultCategory;
+  
+  return defaultCategories.find(c => c.id === "other") || {
+    id: "unknown",
+    name: "Unknown Category",
+    color: "#CCCCCC"
+  };
+};
