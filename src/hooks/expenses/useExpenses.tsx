@@ -17,7 +17,8 @@ export function useExpenses() {
     deleteExpense,
     getCurrentMonthExpenses,
     getCurrentMonthTotal,
-    calculateAverageMonthlyExpense
+    calculateAverageMonthlyExpense,
+    calculateTotalSavings
   } = useExpenseData(userId);
 
   const {
@@ -46,6 +47,10 @@ export function useExpenses() {
 
   const isLoading = isLoadingExpenses || isLoadingBudgetGoal || isLoadingBudgetHistory;
 
+  const getTotalSavings = () => {
+    return calculateTotalSavings(getBudgetForMonth);
+  };
+
   return {
     // Expense data and methods
     expenses,
@@ -55,6 +60,7 @@ export function useExpenses() {
     getCurrentMonthExpenses,
     getCurrentMonthTotal,
     calculateAverageMonthlyExpense,
+    getTotalSavings,
     
     // Category data and methods
     categories,

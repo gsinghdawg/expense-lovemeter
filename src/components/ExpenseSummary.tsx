@@ -1,3 +1,4 @@
+
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ type ExpenseSummaryProps = {
   currentMonthTotal: number;
   getBudgetForMonth: (month: number, year: number) => number | null;
   calculateAverageMonthlyExpense: () => number;
+  totalSavings: number;
 };
 
 export function ExpenseSummary({
@@ -24,6 +26,7 @@ export function ExpenseSummary({
   currentMonthTotal,
   getBudgetForMonth,
   calculateAverageMonthlyExpense,
+  totalSavings,
 }: ExpenseSummaryProps) {
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -220,9 +223,17 @@ export function ExpenseSummary({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">Total Spent</p>
-            <p className="text-2xl font-bold">${totalSpent.toFixed(2)}</p>
+          <div className="grid grid-cols-2 gap-4 text-center">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Spent</p>
+              <p className="text-2xl font-bold">${totalSpent.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total {totalSavings >= 0 ? "Savings" : "Deficit"}</p>
+              <p className={`text-2xl font-bold ${totalSavings >= 0 ? "text-green-500" : "text-red-500"}`}>
+                ${Math.abs(totalSavings).toFixed(2)}
+              </p>
+            </div>
           </div>
 
           <div className="space-y-2">

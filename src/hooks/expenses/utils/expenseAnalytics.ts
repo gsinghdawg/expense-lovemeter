@@ -45,3 +45,35 @@ export function calculateAverageMonthlyExpense(expenses: Expense[]) {
   // Return average monthly expense
   return monthDiff > 0 ? totalExpenses / monthDiff : totalExpenses;
 }
+
+// Calculate total savings/deficit based on monthly budgets and expenses
+export function calculateTotalSavings(expenses: Expense[], getBudgetForMonth: (month: number, year: number) => number | null) {
+  if (expenses.length === 0) return 0;
+  
+  // Group expenses by month and year
+  const expensesByMonth: Record<string, number> = {};
+  
+  expenses.forEach(expense => {
+    const expenseDate = expense.date instanceof Date ? expense.date : new Date(expense.date);
+    const month = expenseDate.getMonth();
+    const year = expenseDate.getFullYear();
+    const key = `${year}-${month}`;
+    
+    expensesByMonth[key] = (expensesByMonth[key] || 0) + expense.amount;
+  });
+  
+  // Calculate total savings (budget - expenses) for each month
+  let totalSavings = 0;
+  
+  Object.entries(expensesByMonth).forEach(([key, totalExpense]) => {
+    const [year, month] = key.split('-').map(Number);
+    const budget = getBudgetForMonth(month, year);
+    
+    // Only add to total savings if a budget exists for this month
+    if (budget !== null) {
+      totalSavings += (budget - totalExpense);
+    }
+  });
+  
+  return totalSavings;
+}

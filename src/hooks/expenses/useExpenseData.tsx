@@ -5,7 +5,8 @@ import { useExpenseMutations } from "./mutations/useExpenseMutations";
 import { 
   getCurrentMonthExpenses, 
   getCurrentMonthTotal, 
-  calculateAverageMonthlyExpense 
+  calculateAverageMonthlyExpense,
+  calculateTotalSavings
 } from "./utils/expenseAnalytics";
 
 export function useExpenseData(userId: string | undefined) {
@@ -31,6 +32,8 @@ export function useExpenseData(userId: string | undefined) {
     deleteExpense,
     getCurrentMonthExpenses: () => getCurrentMonthExpenses(expenses),
     getCurrentMonthTotal: () => getCurrentMonthTotal(expenses),
-    calculateAverageMonthlyExpense: () => calculateAverageMonthlyExpense(expenses)
+    calculateAverageMonthlyExpense: () => calculateAverageMonthlyExpense(expenses),
+    calculateTotalSavings: (getBudgetForMonth: (month: number, year: number) => number | null) => 
+      calculateTotalSavings(expenses, getBudgetForMonth)
   };
 }
