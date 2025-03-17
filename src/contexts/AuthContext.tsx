@@ -129,15 +129,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign out
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Explicitly update the state to ensure UI reflects sign out
+      // First update the local state to ensure UI updates immediately
       setUser(null);
       setSession(null);
+
+      // Then attempt to sign out from Supabase
+      try {
+        await supabase.auth.signOut();
+      } catch (error: any) {
+        // Log the error but don't throw it - we've already updated the UI state
+        console.warn("Error during Supabase sign out:", error);
+        // We don't throw the error here since we've already cleared the local state
+      }
       
       toast({
         title: "Signed out",
