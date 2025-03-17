@@ -1,77 +1,77 @@
 
 import { Expense } from "@/types/expense";
 
-// Helper functions for expense analysis
-export function getCurrentMonthExpenses(expenses: Expense[]) {
+// Get just the current month's expenses
+export function getCurrentMonthExpenses(expenses: Expense[]): Expense[] {
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
   
   return expenses.filter(expense => {
-    const expenseDate = expense.date instanceof Date ? expense.date : new Date(expense.date);
+    const expenseDate = expense.date;
     return expenseDate.getMonth() === currentMonth && 
            expenseDate.getFullYear() === currentYear;
   });
 }
 
-export function getCurrentMonthTotal(expenses: Expense[]) {
+// Calculate the total for current month
+export function getCurrentMonthTotal(expenses: Expense[]): number {
   const currentMonthExpenses = getCurrentMonthExpenses(expenses);
-  return currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  return currentMonthExpenses.reduce((total, expense) => total + expense.amount, 0);
 }
 
-// Calculate average monthly expense from the first expense recorded
-export function calculateAverageMonthlyExpense(expenses: Expense[]) {
+// Calculate average monthly expense
+export function calculateAverageMonthlyExpense(expenses: Expense[]): number {
   if (expenses.length === 0) return 0;
   
-  // Sort expenses by date (oldest first)
-  const sortedExpenses = [...expenses].sort((a, b) => 
-    new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
-  
-  // Get the date of the first expense
-  const firstExpenseDate = new Date(sortedExpenses[0].date);
-  
-  // Get the current date
-  const currentDate = new Date();
-  
-  // Calculate the number of months between the first expense and now
-  const monthDiff = 
-    (currentDate.getFullYear() - firstExpenseDate.getFullYear()) * 12 + 
-    (currentDate.getMonth() - firstExpenseDate.getMonth()) + 1;
-  
-  // Calculate total expense
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  
-  // Return average monthly expense
-  return monthDiff > 0 ? totalExpenses / monthDiff : totalExpenses;
-}
-
-// Calculate total savings/deficit based on monthly budgets and expenses
-export function calculateTotalSavings(expenses: Expense[], getBudgetForMonth: (month: number, year: number) => number | null) {
-  if (expenses.length === 0) return 0;
-  
-  // Group expenses by month and year
-  const expensesByMonth: Record<string, number> = {};
-  
+  // Get unique month-year combinations in the data
+  const monthsYears = new Set();
   expenses.forEach(expense => {
-    const expenseDate = expense.date instanceof Date ? expense.date : new Date(expense.date);
-    const month = expenseDate.getMonth();
-    const year = expenseDate.getFullYear();
-    const key = `${year}-${month}`;
-    
-    expensesByMonth[key] = (expensesByMonth[key] || 0) + expense.amount;
+    const date = expense.date;
+    const monthYear = `${date.getFullYear()}-${date.getMonth()}`;
+    monthsYears.add(monthYear);
   });
   
-  // Calculate total savings (budget - expenses) for each month
-  let totalSavings = 0;
+  // Only count months that have expenses
+  const numMonths = monthsYears.size;
+  if (numMonths === 0) return 0;
   
-  Object.entries(expensesByMonth).forEach(([key, totalExpense]) => {
-    const [year, month] = key.split('-').map(Number);
-    const budget = getBudgetForMonth(month, year);
+  const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  return total / numMonths;
+}
+
+// Calculate total savings (budget - expenses) across all months
+export function calculateTotalSavings(
+  expenses: Expense[], 
+  getBudgetForMonth: (month: number, year: number) => number | null
+): number {
+  if (expenses.length === 0) return 0;
+  
+  // Get unique month-year combinations in the data
+  const monthlyData: Record<string, { total: number, budget: number | null }> = {};
+  
+  // Populate monthly expenses
+  expenses.forEach(expense => {
+    const date = expense.date;
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    const key = `${year}-${month}`;
     
-    // Only add to total savings if a budget exists for this month
+    if (!monthlyData[key]) {
+      monthlyData[key] = { 
+        total: 0, 
+        budget: getBudgetForMonth(month, year)
+      };
+    }
+    
+    monthlyData[key].total += expense.amount;
+  });
+  
+  // Calculate total savings
+  let totalSavings = 0;
+  Object.values(monthlyData).forEach(({ total, budget }) => {
     if (budget !== null) {
-      totalSavings += (budget - totalExpense);
+      totalSavings += (budget - total);
     }
   });
   
