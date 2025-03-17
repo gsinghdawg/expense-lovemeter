@@ -2,10 +2,13 @@
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ComposedChart } from "recharts";
-import { Progress } from "@/components/ui/progress";
-import { formatCurrency } from "@/lib/utils";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { CategoryPieChart } from "@/components/charts/CategoryPieChart";
+import { CategoryLegend } from "@/components/charts/CategoryLegend";
+import { MonthlySpendingChart } from "@/components/charts/MonthlySpendingChart";
+import { ChartLegend } from "@/components/charts/ChartLegend";
+import { TopCategoriesChart } from "@/components/charts/TopCategoriesChart";
+import { BudgetProgress } from "@/components/summary/BudgetProgress";
+import { StatsGrid, Stat } from "@/components/summary/StatsGrid";
 
 type ExpenseSummaryProps = {
   expenses: Expense[];
@@ -65,77 +68,7 @@ export function ExpenseSummary({
     }).sort((a, b) => b.value - a.value);
   }, [currentMonthExpenses, getCategoryById]);
 
-  const top3Categories = useMemo(() => {
-    const result: Record<string, number> = {};
-    
-    expenses.forEach((expense) => {
-      const categoryId = expense.categoryId;
-      result[categoryId] = (result[categoryId] || 0) + expense.amount;
-    });
-    
-    return Object.entries(result)
-      .map(([categoryId, amount]) => {
-        const category = getCategoryById(categoryId);
-        return {
-          name: category.name,
-          amount: parseFloat(amount.toFixed(2)),
-          color: category.color
-        };
-      })
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 3);
-  }, [expenses, getCategoryById]);
-
-  const budgetPercentage = useMemo(() => {
-    if (budgetGoal.amount === null) return 0;
-    return Math.min(Math.round((currentMonthTotal / budgetGoal.amount) * 100), 100);
-  }, [currentMonthTotal, budgetGoal.amount]);
-  
-  const isOverBudget = useMemo(() => {
-    if (budgetGoal.amount === null) return false;
-    return currentMonthTotal > budgetGoal.amount;
-  }, [currentMonthTotal, budgetGoal.amount]);
-
-  const monthlySpending = useMemo(() => {
-    const spendingByMonth: Record<string, number> = {};
-    const now = new Date();
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(now.getMonth() - 5); // Show last 6 months
-
-    expenses.forEach((expense) => {
-      if (expense.date >= sixMonthsAgo) {
-        const monthKey = `${expense.date.getFullYear()}-${expense.date.getMonth() + 1}`;
-        spendingByMonth[monthKey] = (spendingByMonth[monthKey] || 0) + expense.amount;
-      }
-    });
-
-    const monthlyData = [];
-    for (let i = 0; i < 6; i++) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const month = date.getMonth();
-      const year = date.getFullYear();
-      const monthKey = `${year}-${month + 1}`;
-      const monthName = date.toLocaleString('default', { month: 'short' });
-      
-      const monthBudget = getBudgetForMonth(month, year);
-      const monthSpending = spendingByMonth[monthKey] || 0;
-      
-      monthlyData.unshift({
-        month: monthName,
-        spending: monthSpending,
-        budget: monthBudget,
-        savings: monthBudget !== null ? monthBudget - monthSpending : null,
-        fullMonth: date.toLocaleString('default', { month: 'long' }),
-        year: year
-      });
-    }
-
-    return monthlyData;
-  }, [expenses, getBudgetForMonth]);
-
   const averageMonthlyExpense = calculateAverageMonthlyExpense();
-
   const currentMonthlyBudget = budgetGoal.amount;
 
   const averageMonthlySavings = useMemo(() => {
@@ -170,52 +103,6 @@ export function ExpenseSummary({
     }
   };
 
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-
-  const renderCategoryPieChart = () => {
-    if (currentMonthExpenses.length === 0) {
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          Add expenses to see your spending breakdown
-        </div>
-      );
-    }
-
-    return (
-      <div className="h-[200px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={expensesByCategory}
-              dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={80}
-              fill="#8884d8"
-              label={false}
-              labelLine={false}
-            >
-              {expensesByCategory.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip 
-              formatter={(value: number, name: string, props: any) => {
-                const item = props.payload;
-                return [`$${value.toFixed(2)} (${item.percentage.toFixed(1)}%)`, name];
-              }}
-              contentStyle={{ fontSize: '12px' }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -236,213 +123,69 @@ export function ExpenseSummary({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <p className="text-sm font-medium">
-                Budget for {months[budgetGoal.month]} {budgetGoal.year}
-              </p>
-              <p className="text-sm font-medium">
-                ${currentMonthTotal.toFixed(2)} 
-                {budgetGoal.amount !== null && ` / $${budgetGoal.amount.toFixed(2)}`}
-              </p>
-            </div>
-            {budgetGoal.amount !== null ? (
-              <>
-                <Progress 
-                  value={budgetPercentage} 
-                  className={isOverBudget ? "bg-red-200" : ""}
-                  indicatorClassName={isOverBudget ? "bg-red-500" : ""}
-                />
-                {isOverBudget && (
-                  <p className="text-sm text-red-500 font-medium">
-                    You've exceeded your monthly budget by ${(currentMonthTotal - budgetGoal.amount).toFixed(2)}
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No budget set for this month. Set a budget to track your spending.
-              </p>
-            )}
-          </div>
+          <BudgetProgress 
+            currentMonthTotal={currentMonthTotal} 
+            budgetGoal={budgetGoal}
+          />
 
-          {renderCategoryPieChart()}
+          <CategoryPieChart 
+            expenses={currentMonthExpenses} 
+            getCategoryById={getCategoryById} 
+          />
 
-          <div className="space-y-2">
-            {expensesByCategory.map((item, index) => (
-              <div key={index} className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-sm">{item.name}</span>
-                </div>
-                <span className="text-sm font-medium">${item.value.toFixed(2)}</span>
-              </div>
-            ))}
-          </div>
+          <CategoryLegend categories={expensesByCategory} />
           
-          {monthlySpending.length > 0 && (
+          {expenses.length > 0 && (
             <div>
               <h4 className="text-sm font-medium mb-2">Monthly Spending History</h4>
-              <div className="h-[200px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart
-                    data={monthlySpending}
-                    margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                    <XAxis 
-                      dataKey="month" 
-                      tick={{ fontSize: 10 }}
-                      tickLine={false}
-                    />
-                    <YAxis 
-                      tickFormatter={(value) => `$${value}`}
-                      tick={{ fontSize: 10 }}
-                      tickLine={false}
-                      width={40}
-                    />
-                    <Tooltip 
-                      formatter={(value: number | null, name: string, props: any) => {
-                        if (value === null) return ["Not set", name];
-                        return [`$${value.toFixed(2)}`, name];
-                      }}
-                      labelFormatter={(label: string, items: any[]) => {
-                        const item = items[0]?.payload;
-                        return item ? `${item.fullMonth} ${item.year}` : label;
-                      }}
-                      contentStyle={{ fontSize: 12 }}
-                    />
-                    <Bar
-                      dataKey="savings"
-                      fill="#4B5563"
-                      name="Monthly Savings"
-                      barSize={20}
-                      onClick={handleBarClick}
-                      cursor="pointer"
-                      isAnimationActive={true}
-                      onMouseOver={(data) => {
-                        if (data && data.tooltipPayload && data.tooltipPayload[0]) {
-                          const value = data.tooltipPayload[0].value;
-                          const color = value >= 0 ? "#4ade80" : "#ef4444";
-                          data.element.style.fill = color;
-                        }
-                      }}
-                      onMouseOut={(data) => {
-                        if (data && data.element) {
-                          data.element.style.fill = "#4B5563";
-                        }
-                      }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="spending" 
-                      stroke="#2563eb" 
-                      strokeWidth={2}
-                      dot={{ fill: "#2563eb" }}
-                      name="Monthly Spending"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="budget" 
-                      stroke="#4ade80"
-                      strokeWidth={3}
-                      strokeDasharray="5 5"
-                      dot={{ fill: "#4ade80", r: 4 }}
-                      name="Budget Goal"
-                      connectNulls={true}
-                      activeDot={{ r: 6, fill: "#4ade80" }}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-[#4B5563] mr-1 cursor-pointer"></div>
-                  <span>Monthly Savings</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-1 bg-blue-600 mr-1"></div>
-                  <span>Monthly Spending</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-1 bg-green-500 mr-1 border-dashed border-t"></div>
-                  <span>Budget Goal</span>
-                </div>
-              </div>
+              <MonthlySpendingChart 
+                expenses={expenses} 
+                getBudgetForMonth={getBudgetForMonth}
+                onBarClick={handleBarClick}
+              />
+              <ChartLegend 
+                items={[
+                  { color: "#4B5563", label: "Monthly Savings", type: "bar" },
+                  { color: "blue-600", label: "Monthly Spending", type: "line", height: 1 },
+                  { color: "green-500", label: "Budget Goal", type: "dashed", height: 1 }
+                ]}
+              />
               
-              <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md">
-                  <p className="text-xs text-muted-foreground mb-1">Average Monthly Expense</p>
-                  <p className="text-sm font-medium">${averageMonthlyExpense.toFixed(2)}</p>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md">
-                  <p className="text-xs text-muted-foreground mb-1">Current Monthly Budget</p>
-                  <p className="text-sm font-medium">
-                    {currentMonthlyBudget === null 
-                      ? "Not set" 
-                      : `$${currentMonthlyBudget.toFixed(2)}`}
-                  </p>
-                </div>
-                <div className={`bg-slate-50 dark:bg-slate-800 p-3 rounded-md ${
-                  averageMonthlySavings !== null && averageMonthlySavings < 0 
-                    ? "text-red-500" 
-                    : averageMonthlySavings !== null 
-                      ? "text-green-500" 
-                      : ""
-                }`}>
-                  <p className="text-xs text-muted-foreground mb-1">Average Monthly Savings</p>
-                  {averageMonthlySavings === null ? (
-                    <p className="text-sm font-medium">Budget not set</p>
-                  ) : (
-                    <p className="text-sm font-medium">
-                      ${Math.abs(averageMonthlySavings).toFixed(2)}
-                      {averageMonthlySavings < 0 ? " (Deficit)" : ""}
-                    </p>
-                  )}
-                </div>
-              </div>
+              <StatsGrid 
+                stats={[
+                  {
+                    label: "Average Monthly Expense",
+                    value: `$${averageMonthlyExpense.toFixed(2)}`
+                  },
+                  {
+                    label: "Current Monthly Budget",
+                    value: currentMonthlyBudget === null ? "Not set" : `$${currentMonthlyBudget.toFixed(2)}`
+                  },
+                  {
+                    label: "Average Monthly Savings",
+                    value: averageMonthlySavings === null 
+                      ? "Budget not set" 
+                      : `$${Math.abs(averageMonthlySavings).toFixed(2)}`,
+                    colorClass: averageMonthlySavings !== null && averageMonthlySavings < 0 
+                      ? "text-red-500" 
+                      : averageMonthlySavings !== null 
+                        ? "text-green-500" 
+                        : "",
+                    subtext: averageMonthlySavings !== null && averageMonthlySavings < 0 ? "(Deficit)" : ""
+                  }
+                ]}
+              />
             </div>
           )}
           
-          {top3Categories.length > 0 && (
+          {expenses.length > 0 && (
             <div>
               <h4 className="text-sm font-medium mb-2">Top 3 Spending Categories</h4>
-              <div className="h-[200px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={top3Categories}
-                    margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fontSize: 10 }}
-                      tickLine={false}
-                    />
-                    <YAxis 
-                      tickFormatter={(value) => `$${value}`}
-                      tick={{ fontSize: 10 }}
-                      tickLine={false}
-                      width={40}
-                    />
-                    <Tooltip 
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, "Amount"]}
-                      contentStyle={{ fontSize: 12 }}
-                    />
-                    <Bar 
-                      dataKey="amount" 
-                      radius={[4, 4, 0, 0]}
-                    >
-                      {top3Categories.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <TopCategoriesChart 
+                expenses={expenses} 
+                getCategoryById={getCategoryById}
+                limit={3}
+              />
             </div>
           )}
         </div>
