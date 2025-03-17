@@ -95,40 +95,30 @@ export function ExpenseSummary({
 
   const monthlySpending = useMemo(() => {
     const spendingByMonth: Record<string, number> = {};
-    
-    if (expenses.length === 0) return [];
-    
-    const sortedExpenses = [...expenses].sort((a, b) => 
-      a.date.getTime() - b.date.getTime()
-    );
-    
-    const firstExpenseDate = new Date(sortedExpenses[0].date);
-    const firstMonth = firstExpenseDate.getMonth();
-    const firstYear = firstExpenseDate.getFullYear();
-    
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(now.getMonth() - 5); // Show last 6 months
+
     expenses.forEach((expense) => {
-      const monthKey = `${expense.date.getFullYear()}-${expense.date.getMonth() + 1}`;
-      spendingByMonth[monthKey] = (spendingByMonth[monthKey] || 0) + expense.amount;
+      if (expense.date >= sixMonthsAgo) {
+        const monthKey = `${expense.date.getFullYear()}-${expense.date.getMonth() + 1}`;
+        spendingByMonth[monthKey] = (spendingByMonth[monthKey] || 0) + expense.amount;
+      }
     });
-    
+
     const monthlyData = [];
-    
-    let year = firstYear;
-    let month = firstMonth;
-    
-    while (year < currentYear || (year === currentYear && month <= currentMonth)) {
-      const date = new Date(year, month);
+    for (let i = 0; i < 6; i++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const month = date.getMonth();
+      const year = date.getFullYear();
       const monthKey = `${year}-${month + 1}`;
       const monthName = date.toLocaleString('default', { month: 'short' });
       
       const monthBudget = getBudgetForMonth(month, year);
       const monthSpending = spendingByMonth[monthKey] || 0;
       
-      monthlyData.push({
+      monthlyData.unshift({
         month: monthName,
         spending: monthSpending,
         budget: monthBudget,
@@ -136,25 +126,10 @@ export function ExpenseSummary({
         fullMonth: date.toLocaleString('default', { month: 'long' }),
         year: year
       });
-      
-      month++;
-      if (month > 11) {
-        month = 0;
-        year++;
-      }
     }
 
     return monthlyData;
   }, [expenses, getBudgetForMonth]);
-
-  const totalSavings = useMemo(() => {
-    return monthlySpending.reduce((total, month) => {
-      if (month.savings !== null && month.savings > 0) {
-        return total + month.savings;
-      }
-      return total;
-    }, 0);
-  }, [monthlySpending]);
 
   const averageMonthlyExpense = calculateAverageMonthlyExpense();
 
@@ -245,15 +220,9 @@ export function ExpenseSummary({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Spent</p>
-              <p className="text-2xl font-bold">${totalSpent.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Savings</p>
-              <p className="text-2xl font-bold text-green-600">${totalSavings.toFixed(2)}</p>
-            </div>
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Total Spent</p>
+            <p className="text-2xl font-bold">${totalSpent.toFixed(2)}</p>
           </div>
 
           <div className="space-y-2">
