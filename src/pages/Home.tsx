@@ -5,15 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { useEffect, useState } from "react";
 
 const Home = () => {
   const { user, signOut } = useAuth();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(!!user);
+
+  // Update login status when auth changes
+  useEffect(() => {
+    setIsLoggedIn(!!user);
+    console.log("Home component: Auth state changed", { user, isLoggedIn: !!user });
+  }, [user]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    console.log("Sign out clicked, current user state:", user);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col items-center justify-center p-4">
       <div className="absolute top-4 right-4 flex items-center gap-4">
         <ThemeSwitcher />
-        {!user ? (
+        {!isLoggedIn ? (
           <Button asChild size="sm" className="gap-2">
             <Link to="/signup">
               <LogIn className="h-4 w-4" />
@@ -21,7 +34,7 @@ const Home = () => {
             </Link>
           </Button>
         ) : (
-          <Button size="sm" variant="destructive" className="gap-2" onClick={signOut}>
+          <Button size="sm" variant="destructive" className="gap-2" onClick={handleSignOut}>
             <LogOut className="h-4 w-4" />
             Sign Out
           </Button>
