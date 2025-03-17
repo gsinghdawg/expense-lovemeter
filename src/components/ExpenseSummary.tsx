@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ComposedChart } from "recharts";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/utils";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 type ExpenseSummaryProps = {
   expenses: Expense[];
@@ -274,16 +275,81 @@ export function ExpenseSummary({
           {monthlySpending.length > 0 && (
             <div>
               <h4 className="text-sm font-medium mb-2">Monthly Spending History</h4>
-              <div className="h-[350px] w-full flex items-center justify-center">
-                <img 
-                  src="/lovable-uploads/6ac3e1bf-7e72-4e2f-bf5f-94b0b8d0f245.png" 
-                  alt="Monthly Spending History" 
-                  className="max-w-full max-h-full object-contain"
-                />
+              <div className="h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={monthlySpending}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tickFormatter={(value) => `$${value}`}
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                      width={40}
+                    />
+                    <Tooltip 
+                      formatter={(value: number | null, name: string, props: any) => {
+                        if (value === null) return ["Not set", name];
+                        return [`$${value.toFixed(2)}`, name];
+                      }}
+                      labelFormatter={(label: string, items: any[]) => {
+                        const item = items[0]?.payload;
+                        return item ? `${item.fullMonth} ${item.year}` : label;
+                      }}
+                      contentStyle={{ fontSize: 12 }}
+                    />
+                    <Bar
+                      dataKey="savings"
+                      fill="#4B5563"
+                      name="Monthly Savings"
+                      barSize={20}
+                      onClick={handleBarClick}
+                      cursor="pointer"
+                      isAnimationActive={true}
+                      onMouseOver={(data) => {
+                        if (data && data.tooltipPayload && data.tooltipPayload[0]) {
+                          const value = data.tooltipPayload[0].value;
+                          const color = value >= 0 ? "#4ade80" : "#ef4444";
+                          data.element.style.fill = color;
+                        }
+                      }}
+                      onMouseOut={(data) => {
+                        if (data && data.element) {
+                          data.element.style.fill = "#4B5563";
+                        }
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="spending" 
+                      stroke="#2563eb" 
+                      strokeWidth={2}
+                      dot={{ fill: "#2563eb" }}
+                      name="Monthly Spending"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="budget" 
+                      stroke="#4ade80"
+                      strokeWidth={3}
+                      strokeDasharray="5 5"
+                      dot={{ fill: "#4ade80", r: 4 }}
+                      name="Budget Goal"
+                      connectNulls={true}
+                      activeDot={{ r: 6, fill: "#4ade80" }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
               </div>
               <div className="flex items-center justify-center space-x-6 mt-2 text-xs text-muted-foreground">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-[#4B5563] mr-1"></div>
+                  <div className="w-3 h-3 bg-[#4B5563] mr-1 cursor-pointer"></div>
                   <span>Monthly Savings</span>
                 </div>
                 <div className="flex items-center">
@@ -291,7 +357,7 @@ export function ExpenseSummary({
                   <span>Monthly Spending</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-1 bg-green-500 mr-1"></div>
+                  <div className="w-3 h-1 bg-green-500 mr-1 border-dashed border-t"></div>
                   <span>Budget Goal</span>
                 </div>
               </div>
