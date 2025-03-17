@@ -16,7 +16,8 @@ export function useExpenses() {
     updateExpense,
     deleteExpense,
     getCurrentMonthExpenses,
-    getCurrentMonthTotal
+    getCurrentMonthTotal,
+    calculateAverageMonthlyExpense
   } = useExpenseData(userId);
 
   const {
@@ -53,6 +54,7 @@ export function useExpenses() {
     deleteExpense,
     getCurrentMonthExpenses,
     getCurrentMonthTotal,
+    calculateAverageMonthlyExpense,
     
     // Category data and methods
     categories,

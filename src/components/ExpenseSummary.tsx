@@ -13,6 +13,7 @@ type ExpenseSummaryProps = {
   budgetGoal: BudgetGoal;
   currentMonthTotal: number;
   getBudgetForMonth: (month: number, year: number) => number | null;
+  calculateAverageMonthlyExpense: () => number;
 };
 
 export function ExpenseSummary({
@@ -22,6 +23,7 @@ export function ExpenseSummary({
   budgetGoal,
   currentMonthTotal,
   getBudgetForMonth,
+  calculateAverageMonthlyExpense,
 }: ExpenseSummaryProps) {
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -129,41 +131,7 @@ export function ExpenseSummary({
     return monthlyData;
   }, [expenses, getBudgetForMonth]);
 
-  const averageMonthlyExpense = useMemo(() => {
-    if (expenses.length === 0) return 0;
-    
-    const uniqueMonths = new Set();
-    expenses.forEach(expense => {
-      const monthKey = `${expense.date.getFullYear()}-${expense.date.getMonth() + 1}`;
-      uniqueMonths.add(monthKey);
-    });
-    
-    const trackedMonths = uniqueMonths.size;
-    
-    if (monthlySpending.length > 0 && trackedMonths > 0) {
-      const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-      return total / trackedMonths;
-    }
-    
-    if (expenses.length > 0) {
-      const sortedExpenses = [...expenses].sort((a, b) => 
-        a.date.getTime() - b.date.getTime()
-      );
-      
-      const firstExpenseDate = sortedExpenses[0].date;
-      const currentDate = new Date();
-      
-      const monthDiff = 
-        (currentDate.getFullYear() - firstExpenseDate.getFullYear()) * 12 + 
-        (currentDate.getMonth() - firstExpenseDate.getMonth()) + 1;
-      
-      const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-      
-      return monthDiff > 0 ? totalSpent / monthDiff : totalSpent;
-    }
-    
-    return 0;
-  }, [expenses, monthlySpending]);
+  const averageMonthlyExpense = calculateAverageMonthlyExpense();
 
   const currentMonthlyBudget = budgetGoal.amount;
 

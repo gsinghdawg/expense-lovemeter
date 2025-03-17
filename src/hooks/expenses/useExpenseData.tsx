@@ -219,6 +219,33 @@ export function useExpenseData(userId: string | undefined) {
     return currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   };
 
+  // Calculate average monthly expense from the first expense recorded
+  const calculateAverageMonthlyExpense = () => {
+    if (expenses.length === 0) return 0;
+    
+    // Sort expenses by date (oldest first)
+    const sortedExpenses = [...expenses].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    // Get the date of the first expense
+    const firstExpenseDate = new Date(sortedExpenses[0].date);
+    
+    // Get the current date
+    const currentDate = new Date();
+    
+    // Calculate the number of months between the first expense and now
+    const monthDiff = 
+      (currentDate.getFullYear() - firstExpenseDate.getFullYear()) * 12 + 
+      (currentDate.getMonth() - firstExpenseDate.getMonth()) + 1;
+    
+    // Calculate total expense
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    
+    // Return average monthly expense
+    return monthDiff > 0 ? totalExpenses / monthDiff : totalExpenses;
+  };
+
   return {
     expenses,
     isLoadingExpenses,
@@ -226,6 +253,7 @@ export function useExpenseData(userId: string | undefined) {
     updateExpense,
     deleteExpense,
     getCurrentMonthExpenses,
-    getCurrentMonthTotal
+    getCurrentMonthTotal,
+    calculateAverageMonthlyExpense
   };
 }
