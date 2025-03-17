@@ -208,15 +208,6 @@ const Home = () => {
                     />
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
-                  <CardContent className="p-0">
-                    <img 
-                      src="/lovable-uploads/aee62957-15f2-456e-a356-50b3dab78200.png" 
-                      alt="LadyLedger Spending History and Analytics" 
-                      className="w-full h-auto"
-                    />
-                  </CardContent>
-                </Card>
               </div>
             </div>
           </div>
