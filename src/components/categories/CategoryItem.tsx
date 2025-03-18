@@ -13,7 +13,7 @@ type CategoryItemProps = {
 export function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) {
   return (
     <div className="p-2 rounded border">
-      <ScrollArea className="w-full" orientation="horizontal">
+      <ScrollArea className="w-full">
         <div className="flex items-center justify-between min-w-max">
           <div className="flex items-center gap-2">
             <div
