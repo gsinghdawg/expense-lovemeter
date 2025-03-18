@@ -5,6 +5,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Sparkles, Mail, Lock, User, Home } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // Form validation schema for signup
 const signUpSchema = z.object({
