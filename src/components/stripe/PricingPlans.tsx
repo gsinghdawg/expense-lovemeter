@@ -22,7 +22,7 @@ export const PricingPlans = () => {
     {
       id: 'basic',
       name: 'Basic',
-      description: 'Essential features for personal budgeting',
+      description: 'Full access to LadyLedger for 1 month',
       price: '$9.99',
       priceId: 'price_1R2frfECEgtMuXU25cEk0iVG', // Basic plan price ID
       features: [
@@ -36,7 +36,7 @@ export const PricingPlans = () => {
     {
       id: 'premium',
       name: 'Premium',
-      description: 'Advanced features for serious budgeters',
+      description: 'Full access to LadyLedger for 3 months',
       price: '$19.99',
       priceId: 'price_1R2g0XECEgtMuXU2kVcXdMv3', // Premium plan price ID
       features: [
@@ -52,7 +52,7 @@ export const PricingPlans = () => {
     {
       id: 'business',
       name: 'Business',
-      description: 'Complete solution for small businesses',
+      description: 'Full access to LadyLedger for 12 months',
       price: '$39.99',
       priceId: billingInterval === 'monthly' 
         ? 'price_1R2g0XECEgtMuXU2ecCSvPJv' // Business monthly plan price ID
