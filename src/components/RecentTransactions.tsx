@@ -63,14 +63,19 @@ export function RecentTransactions({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Recent Transactions</CardTitle>
+          {recentExpenses.length > 0 && (
+            <div className="flex items-center text-sm text-muted-foreground">
+              <span>Scroll horizontally to see more</span>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-0 pb-4">
           {recentExpenses.length > 0 ? (
             <div className="w-full px-4">
-              <ScrollArea className="w-full max-h-[400px]">
-                <div className="flex flex-col space-y-4 pb-4">
+              <ScrollArea className="w-full">
+                <div className="flex space-x-4 pb-4">
                   {recentExpenses.map(expense => (
-                    <div key={expense.id}>
+                    <div key={expense.id} className="min-w-[300px] md:min-w-[350px]">
                       <ExpenseItem
                         expense={{
                           ...expense,
@@ -84,7 +89,7 @@ export function RecentTransactions({
                     </div>
                   ))}
                 </div>
-                <ScrollBar orientation="vertical" />
+                <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </div>
           ) : (
