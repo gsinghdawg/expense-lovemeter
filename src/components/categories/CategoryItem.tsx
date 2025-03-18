@@ -19,7 +19,7 @@ export function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) 
         />
         <span>{category.name}</span>
       </div>
-      <div className="flex gap-1">
+      <div className="flex gap-1 !opacity-100">
         <Button
           variant="ghost"
           size="icon"
