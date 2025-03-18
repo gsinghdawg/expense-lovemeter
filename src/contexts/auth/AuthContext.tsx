@@ -4,26 +4,9 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-
-interface ProfileData {
-  id: string;
-  name?: string;
-  email: string;
-  age?: number;
-  date_of_birth?: string;
-  country?: string;
-}
-
-interface AuthContextProps {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
-  profileData: ProfileData | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-}
+import { AuthContextProps, ProfileData } from "./types";
+import { signInWithEmailPassword, signOutUser, signUpWithEmailPassword, resetUserPassword } from "./authOperations";
+import { fetchProfileData, updateUserProfile } from "./profileUtils";
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
@@ -34,43 +17,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Update user profile in Supabase
-  const updateUserProfile = async (userId: string, userData: { name?: string }) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update(userData)
-        .eq('id', userId);
-      
-      if (error) {
-        console.error("Error updating profile:", error);
-      }
-    } catch (error) {
-      console.error("Failed to update profile:", error);
-    }
-  };
-
-  // Get user profile data
-  const fetchProfileData = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching profile data:", error);
-        return null;
-      }
-      
-      return data as ProfileData;
-    } catch (error) {
-      console.error("Failed to fetch profile data:", error);
-      return null;
-    }
-  };
 
   useEffect(() => {
     // Get initial session
@@ -119,11 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) {
-        throw error;
-      }
+      await signInWithEmailPassword(email, password);
       
       toast({
         title: "Welcome back!",
@@ -142,34 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign up with email and password
   const signUp = async (email: string, password: string, name: string) => {
     try {
-      const { error, data } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: {
-            name
-          }
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      // If signup was successful, create/update profile
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            email: email,
-            name: name
-          });
-          
-        if (profileError) {
-          console.error("Error creating profile during signup:", profileError);
-        }
-      }
+      await signUpWithEmailPassword(email, password, name);
       
       toast({
         title: "Account created!",
@@ -195,10 +110,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Then attempt to sign out from Supabase
       try {
-        await supabase.auth.signOut();
+        await signOutUser();
       } catch (error: any) {
         // Log the error but don't throw it - we've already updated the UI state
-        console.warn("Error during Supabase sign out:", error);
+        console.warn("Error during sign out:", error);
       }
       
       toast({
@@ -221,13 +136,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Reset password
   const resetPassword = async (email: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/dashboard`,
-      });
-      
-      if (error) {
-        throw error;
-      }
+      await resetUserPassword(email);
       
       toast({
         title: "Reset email sent",
