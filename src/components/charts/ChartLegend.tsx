@@ -19,13 +19,19 @@ export function ChartLegend({ items }: ChartLegendProps) {
         <div key={index} className="flex items-center">
           {item.type === "line" ? (
             <div 
-              className={`w-6 h-${item.height || 1} mr-1.5`} 
-              style={{ backgroundColor: item.color }}
+              className="w-6 mr-1.5" 
+              style={{ 
+                backgroundColor: item.color,
+                height: `${item.height || 1}px` 
+              }}
             ></div>
           ) : item.type === "dashed" ? (
             <div 
-              className={`w-6 h-${item.height || 1} mr-1.5 border-t-2 border-dashed`} 
-              style={{ borderColor: item.color }}
+              className="w-6 mr-1.5 border-t-2 border-dashed" 
+              style={{ 
+                borderColor: item.color,
+                height: `${item.height || 1}px` 
+              }}
             ></div>
           ) : (
             <div 
