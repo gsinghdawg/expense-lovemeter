@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckoutButton } from '@/components/stripe/CheckoutButton';
 import { Badge } from '@/components/ui/badge';
@@ -17,8 +16,6 @@ interface PricingTier {
 }
 
 export const PricingPlans = () => {
-  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
-
   const pricingTiers: PricingTier[] = [
     {
       id: 'monthly',
@@ -57,9 +54,7 @@ export const PricingPlans = () => {
       name: 'Semi-Annual',
       description: 'Professional features for serious budgeting',
       price: '$40',
-      priceId: billingInterval === 'monthly' 
-        ? 'price_1R2g0XECEgtMuXU259x0lLOp' // Biannual plan price ID
-        : 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Fallback price ID
+      priceId: 'price_1R2g0XECEgtMuXU259x0lLOp', // Biannual plan price ID
       features: [
         'Multiple user accounts',
         'Team collaboration',

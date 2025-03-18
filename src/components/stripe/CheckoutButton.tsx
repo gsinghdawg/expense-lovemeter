@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
-import { useStripe } from '@/hooks/use-stripe';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 // Initialize Stripe with the provided publishable key
@@ -26,37 +27,20 @@ export const CheckoutButton = ({
   variant = 'default',
   className,
 }: CheckoutButtonProps) => {
-  const { createCheckoutSession } = useStripe();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check for payment success or cancel query params
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get('payment_success') === 'true') {
-      toast({
-        title: 'Payment Successful',
-        description: 'Thank you for your purchase!',
-      });
-      
-      // Clean up URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete('payment_success');
-      window.history.replaceState({}, '', url);
-    } else if (searchParams.get('payment_cancelled') === 'true') {
-      toast({
-        title: 'Payment Cancelled',
-        description: 'Your payment was cancelled.',
-      });
-      
-      // Clean up URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete('payment_cancelled');
-      window.history.replaceState({}, '', url);
-    }
-  }, [toast]);
-
   const handleCheckout = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to subscribe to a plan",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -67,21 +51,32 @@ export const CheckoutButton = ({
         throw new Error('Failed to load Stripe.');
       }
       
-      // Create checkout session
-      const sessionId = await createCheckoutSession({
-        priceId,
-        mode,
-        successUrl,
-        cancelUrl,
+      // Create a checkout session directly with Stripe
+      const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          'success_url': successUrl,
+          'cancel_url': cancelUrl,
+          'mode': mode,
+          'line_items[0][price]': priceId,
+          'line_items[0][quantity]': '1',
+          'client_reference_id': user.id,
+          'customer_email': user.email || '',
+        }),
       });
       
-      if (!sessionId) {
+      const session = await response.json();
+      
+      if (!session || !session.id) {
         throw new Error('Failed to create checkout session.');
       }
       
       // Redirect to Stripe Checkout
       const { error } = await stripe.redirectToCheckout({
-        sessionId,
+        sessionId: session.id,
       });
       
       if (error) {
