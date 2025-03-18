@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
@@ -5,8 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// Initialize Stripe with the test publishable key instead of live key
-const stripePromise = loadStripe('pk_test_51QzSAJECEgtMuXU2UJ8hDINkw43JABnVFmbispZpwtT4HGK2ZIj4tuhb5STL48ERAnr1KOUb5KtCDtxS31IsQzjg009FXBPWY7');
+// Initialize Stripe with the provided publishable key
+const stripePromise = loadStripe('pk_live_51QzSAJECEgtMuXU2GLO1bMiyihcl0AZ4o318dV4Nbwga6d8K8M2YutpgcgV0EGHP882QgIX9MqXyaUtoXvhlZMAd00r7TMTC4R');
 
 interface CheckoutButtonProps {
   priceId: string;

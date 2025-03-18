@@ -9,11 +9,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Create a Stripe client with the secret key - Ensure we're using TEST mode secret key
-const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
-console.log('Using Stripe key mode:', stripeSecretKey.startsWith('sk_test_') ? 'TEST' : 'LIVE');
-
-const stripe = new Stripe(stripeSecretKey, {
+// Create a Stripe client with the secret key
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
 });
@@ -61,9 +58,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Log the price ID to debug
-    console.log('Processing checkout with priceId:', priceId, 'mode:', mode);
-
     // Check if user already has a Stripe customer ID
     const { data: customerData } = await supabase
       .from('stripe_customers')
@@ -75,7 +69,6 @@ Deno.serve(async (req) => {
     
     if (customerData?.stripe_customer_id) {
       customerId = customerData.stripe_customer_id;
-      console.log('Using existing customer ID:', customerId);
     } else {
       // Create a new customer in Stripe
       const customer = await stripe.customers.create({
@@ -86,7 +79,6 @@ Deno.serve(async (req) => {
       });
       
       customerId = customer.id;
-      console.log('Created new customer ID:', customerId);
       
       // Store the customer ID in the database
       await supabase
@@ -112,8 +104,6 @@ Deno.serve(async (req) => {
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
-
-    console.log('Created checkout session ID:', session.id);
 
     // Return the session ID
     return new Response(JSON.stringify({ sessionId: session.id }), {
