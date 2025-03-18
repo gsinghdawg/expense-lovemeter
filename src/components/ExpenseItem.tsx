@@ -72,7 +72,6 @@ export function ExpenseItem({
             </div>
             <div className="flex items-center gap-2">
               <p className="font-medium text-lg">${expense.amount.toFixed(2)}</p>
-              {/* Always show action buttons regardless of hover state */}
               <div className="flex gap-1">
                 <Button 
                   variant="ghost" 
