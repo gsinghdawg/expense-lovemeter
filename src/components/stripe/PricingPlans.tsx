@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckoutButton } from '@/components/stripe/CheckoutButton';
@@ -12,6 +13,7 @@ interface PricingTier {
   features: string[];
   popular?: boolean;
   mode: 'subscription';
+  duration: string;
 }
 
 export const PricingPlans = () => {
@@ -19,25 +21,26 @@ export const PricingPlans = () => {
 
   const pricingTiers: PricingTier[] = [
     {
-      id: 'basic',
-      name: 'Basic',
+      id: 'monthly',
+      name: 'Monthly',
       description: 'Full access to LadyLedger for 1 month',
-      price: '$9.99',
-      priceId: 'price_1R2frfECEgtMuXU25cEk0iVG', // Basic plan price ID
+      price: '$10',
+      priceId: 'price_1R2frfECEgtMuXU25cEk0iVG', // Monthly plan price ID
       features: [
         'Up to 50 expense entries',
         'Basic expense categories',
         'Monthly summary reports',
         'Email support'
       ],
-      mode: 'subscription'
+      mode: 'subscription',
+      duration: '1 month'
     },
     {
-      id: 'premium',
-      name: 'Premium',
+      id: 'quarterly',
+      name: 'Quarterly',
       description: 'Full access to LadyLedger for 3 months',
-      price: '$19.99',
-      priceId: 'price_1R2g0XECEgtMuXU2kVcXdMv3', // Premium plan price ID
+      price: '$25',
+      priceId: 'price_1R2g0XECEgtMuXU2kVcXdMv3', // Quarterly plan price ID
       features: [
         'Unlimited expense entries',
         'Custom categories',
@@ -46,25 +49,44 @@ export const PricingPlans = () => {
         'Priority support'
       ],
       popular: true,
-      mode: 'subscription'
+      mode: 'subscription',
+      duration: '3 months'
     },
     {
-      id: 'business',
-      name: 'Business',
-      description: 'Full access to LadyLedger for 12 months',
-      price: '$39.99',
+      id: 'biannual',
+      name: 'Semi-Annual',
+      description: 'Full access to LadyLedger for 6 months',
+      price: '$40',
       priceId: billingInterval === 'monthly' 
-        ? 'price_1R2g0XECEgtMuXU259x0lLOp' // Business monthly plan price ID
-        : 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Business yearly plan price ID
+        ? 'price_1R2g0XECEgtMuXU259x0lLOp' // Biannual plan price ID
+        : 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Fallback price ID
       features: [
         'Multiple user accounts',
         'Team collaboration',
         'Business categories',
         'Receipt scanning',
         'Accounting integration',
-        'Dedicated support'
+        'Priority support'
       ],
-      mode: 'subscription'
+      mode: 'subscription',
+      duration: '6 months'
+    },
+    {
+      id: 'annual',
+      name: 'Annual',
+      description: 'Full access to LadyLedger for 12 months',
+      price: '$50',
+      priceId: 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Annual plan price ID
+      features: [
+        'All Semi-Annual features',
+        'Year-end financial reporting',
+        'Dedicated account manager',
+        'Custom financial insights',
+        'API access',
+        'VIP support'
+      ],
+      mode: 'subscription',
+      duration: '12 months'
     }
   ];
 
@@ -77,7 +99,7 @@ export const PricingPlans = () => {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8 mt-8">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mt-8">
         {pricingTiers.map((tier) => (
           <Card key={tier.id} className={`flex flex-col ${tier.popular ? 'border-primary shadow-lg' : ''}`}>
             <CardHeader>
@@ -86,11 +108,11 @@ export const PricingPlans = () => {
                   <CardTitle className="text-xl">{tier.name}</CardTitle>
                   <CardDescription className="mt-2">{tier.description}</CardDescription>
                 </div>
-                {tier.popular && <Badge className="ml-2">Popular</Badge>}
+                {tier.popular && <Badge className="ml-2">Best Value</Badge>}
               </div>
               <div className="mt-4">
                 <span className="text-3xl font-bold">{tier.price}</span>
-                <span className="text-muted-foreground"> /month</span>
+                <span className="text-muted-foreground"> for {tier.duration}</span>
               </div>
             </CardHeader>
             <CardContent className="flex-1">
@@ -109,7 +131,7 @@ export const PricingPlans = () => {
               <CheckoutButton
                 priceId={tier.priceId}
                 mode={tier.mode}
-                buttonText={`Subscribe to ${tier.name}`}
+                buttonText={`Subscribe Now`}
                 className="w-full"
                 variant={tier.popular ? 'default' : 'outline'}
               />
