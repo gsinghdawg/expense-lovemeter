@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 // Initialize Stripe with the test publishable key instead of live key
-const stripePromise = loadStripe('pk_test_51QzSAJECEgtMuXU2JURfaABnw4GXJtfZnMwj1kXNM4KdpPxPYOVsrPHyBZgHZbUswDsCzbS3xHAe3Zgl2V9HZWsI00zEjIK5wR');
+const stripePromise = loadStripe('pk_test_51QzSAJECEgtMuXU2UJ8hDINkw43JABnVFmbispZpwtT4HGK2ZIj4tuhb5STL48ERAnr1KOUb5KtCDtxS31IsQzjg009FXBPWY7');
 
 interface CheckoutButtonProps {
   priceId: string;
