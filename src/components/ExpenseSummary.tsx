@@ -146,8 +146,8 @@ export function ExpenseSummary({
               <ChartLegend 
                 items={[
                   { color: "#4B5563", label: "Monthly Savings", type: "bar" },
-                  { color: "blue-600", label: "Monthly Spending", type: "line", height: 1 },
-                  { color: "green-500", label: "Budget Goal", type: "dashed", height: 1 }
+                  { color: "#2563eb", label: "Monthly Spending", type: "line", height: 1 },
+                  { color: "#4ade80", label: "Budget Goal", type: "dashed", height: 1 }
                 ]}
               />
               
