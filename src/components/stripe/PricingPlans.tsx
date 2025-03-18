@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckoutButton } from '@/components/stripe/CheckoutButton';
 import { Badge } from '@/components/ui/badge';
