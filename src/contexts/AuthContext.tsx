@@ -5,20 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
-interface UserProfile {
-  id: string;
-  name: string | null;
-  age: number | null;
-  date_of_birth: string | null;
-  country: string | null;
-  onboarding_completed: boolean;
-}
-
 interface AuthContextProps {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  userProfile: UserProfile | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -31,30 +21,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Fetch user profile data
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching profile:", error);
-        return null;
-      }
-      
-      return data as UserProfile;
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
-      return null;
-    }
-  };
 
   // Update user profile in Supabase
   const updateUserProfile = async (userId: string, userData: { name?: string }) => {
@@ -74,29 +42,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        setUserProfile(profile);
-        
-        // Check if user needs to complete onboarding
-        if (profile && !profile.onboarding_completed) {
-          navigate('/profile-setup');
-        }
-      }
-      
       setIsLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log("Auth state changed:", event, session);
         setSession(session);
         setUser(session?.user ?? null);
+        setIsLoading(false);
         
         // When user signs in or token is refreshed, update their profile data
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
@@ -107,23 +65,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (name) {
             updateUserProfile(session.user.id, { name });
           }
-          
-          // Fetch user profile
-          const profile = await fetchUserProfile(session.user.id);
-          setUserProfile(profile);
-          
-          // Check if user needs to complete onboarding
-          if (profile && !profile.onboarding_completed) {
-            navigate('/profile-setup');
-          }
         }
-        
-        setIsLoading(false);
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
@@ -185,7 +132,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // First update the local state to ensure UI updates immediately
       setUser(null);
       setSession(null);
-      setUserProfile(null);
 
       // Then attempt to sign out from Supabase
       try {
@@ -242,7 +188,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     session,
     isLoading,
-    userProfile,
     signIn,
     signUp,
     signOut,
