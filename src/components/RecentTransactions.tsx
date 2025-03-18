@@ -7,15 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronRight, ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { 
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "@/components/ui/carousel";
 
 interface RecentTransactionsProps {
   expenses: Expense[];
@@ -74,16 +65,16 @@ export function RecentTransactions({
           <CardTitle className="text-lg">Recent Transactions</CardTitle>
           {recentExpenses.length > 0 && (
             <div className="flex items-center text-sm text-muted-foreground">
-              <span>Swipe to view more</span>
+              <span>Scroll horizontally to see more</span>
             </div>
           )}
         </CardHeader>
         <CardContent className="p-0 pb-4">
           {recentExpenses.length > 0 ? (
-            <Carousel className="w-full">
-              <CarouselContent>
+            <ScrollArea orientation="horizontal" className="w-full px-4">
+              <div className="flex space-x-4 pb-4">
                 {recentExpenses.map(expense => (
-                  <CarouselItem key={expense.id} className="md:basis-full pl-4 pr-4">
+                  <div key={expense.id} className="min-w-[300px] md:min-w-[350px]">
                     <ExpenseItem
                       expense={{
                         ...expense,
@@ -94,14 +85,10 @@ export function RecentTransactions({
                       onDelete={onDeleteExpense}
                       alwaysShowActions={isMobile}
                     />
-                  </CarouselItem>
+                  </div>
                 ))}
-              </CarouselContent>
-              <div className="flex justify-center gap-2 mt-2">
-                <CarouselPrevious className="static translate-y-0 translate-x-0 !mx-1" />
-                <CarouselNext className="static translate-y-0 translate-x-0 !mx-1" />
               </div>
-            </Carousel>
+            </ScrollArea>
           ) : (
             <div className="text-center py-4 text-muted-foreground">
               No recent transactions

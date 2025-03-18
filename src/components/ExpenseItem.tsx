@@ -45,7 +45,7 @@ export function ExpenseItem({
   
   return (
     <>
-      <Card className="mb-3 gradient-card rounded-lg">
+      <Card className="mb-3 gradient-card rounded-lg h-full">
         <CardContent className="p-4">
           <div className="flex justify-between items-center w-full">
             <div className="flex items-start gap-3 min-w-0">
