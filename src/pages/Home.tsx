@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth } from "@/contexts/auth/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useEffect, useState } from "react";
 

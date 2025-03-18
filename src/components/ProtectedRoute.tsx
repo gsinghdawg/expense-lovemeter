@@ -1,12 +1,11 @@
 
 import { useEffect } from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/auth/AuthContext";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
-  const location = useLocation();
 
   if (isLoading) {
     return (

@@ -1,5 +1,5 @@
 
-import { useAuth } from "@/contexts/auth/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useExpenseData } from "./useExpenseData";
 import { useCategories } from "./useCategories";
 import { useBudgetGoals } from "./useBudgetGoals";
