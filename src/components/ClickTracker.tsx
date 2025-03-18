@@ -20,6 +20,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       if (!user) return;
       
       try {
+        // The table name should be specified as a string literal type
         const { data, error } = await supabase
           .from('user_click_counts')
           .select('click_count')
