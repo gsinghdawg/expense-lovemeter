@@ -5,10 +5,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
+interface ProfileData {
+  id: string;
+  name?: string;
+  email: string;
+  onboarding_completed?: boolean;
+  age?: number;
+  date_of_birth?: string;
+  country?: string;
+}
+
 interface AuthContextProps {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  profileData: ProfileData | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -21,6 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -40,21 +52,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Get user profile data
+  const fetchProfileData = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching profile data:", error);
+        return null;
+      }
+      
+      return data as ProfileData;
+    } catch (error) {
+      console.error("Failed to fetch profile data:", error);
+      return null;
+    }
+  };
+
+  // Check if user needs to complete onboarding and redirect if needed
+  const checkOnboardingStatus = async (userId: string) => {
+    const profileData = await fetchProfileData(userId);
+    setProfileData(profileData);
+    
+    // If user just signed up and hasn't completed onboarding, redirect to onboarding
+    if (profileData && profileData.onboarding_completed === false) {
+      navigate('/onboarding');
+    }
+  };
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        checkOnboardingStatus(session.user.id);
+      }
+      
       setIsLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, session);
         setSession(session);
         setUser(session?.user ?? null);
-        setIsLoading(false);
         
         // When user signs in or token is refreshed, update their profile data
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
@@ -63,14 +111,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           // Update profile if we have user metadata
           if (name) {
-            updateUserProfile(session.user.id, { name });
+            await updateUserProfile(session.user.id, { name });
           }
+          
+          // Check if user needs to complete onboarding
+          await checkOnboardingStatus(session.user.id);
         }
+        
+        setIsLoading(false);
       }
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
@@ -98,7 +151,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign up with email and password
   const signUp = async (email: string, password: string, name: string) => {
     try {
-      const { error } = await supabase.auth.signUp({ 
+      const { error, data } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
@@ -110,6 +163,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         throw error;
+      }
+      
+      // If signup was successful, create/update profile with onboarding_completed = false
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            email: email,
+            name: name,
+            onboarding_completed: false
+          });
+          
+        if (profileError) {
+          console.error("Error creating profile during signup:", profileError);
+        }
+        
+        // Redirect to onboarding page immediately if no email confirmation is required
+        if (data.session) {
+          navigate('/onboarding');
+        }
       }
       
       toast({
@@ -132,6 +206,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // First update the local state to ensure UI updates immediately
       setUser(null);
       setSession(null);
+      setProfileData(null);
 
       // Then attempt to sign out from Supabase
       try {
@@ -188,6 +263,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     session,
     isLoading,
+    profileData,
     signIn,
     signUp,
     signOut,
