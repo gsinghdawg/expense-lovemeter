@@ -48,7 +48,7 @@ export function ExpenseItem({
   
   return (
     <>
-      <Card className={`mb-3 gradient-card rounded-lg overflow-hidden ${alwaysShowActions ? '' : 'group'}`}>
+      <Card className="mb-3 gradient-card rounded-lg overflow-hidden">
         <CardContent className="p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-start gap-3">
@@ -72,8 +72,8 @@ export function ExpenseItem({
             </div>
             <div className="flex items-center gap-2">
               <p className="font-medium text-lg">${expense.amount.toFixed(2)}</p>
-              {/* Always show actions on mobile or when hovered on desktop */}
-              <div className={alwaysShowActions ? 'flex gap-1' : 'flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity'}>
+              {/* Always show action buttons regardless of hover state */}
+              <div className="flex gap-1">
                 <Button 
                   variant="ghost" 
                   size="icon" 
