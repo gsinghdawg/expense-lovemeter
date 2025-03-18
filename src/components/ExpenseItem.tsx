@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 type ExpenseItemProps = {
   expense: Expense;
@@ -51,7 +51,7 @@ export function ExpenseItem({
     <>
       <Card className="mb-3 gradient-card rounded-lg overflow-hidden">
         <CardContent className="p-4">
-          <ScrollArea className="w-full" orientation="horizontal">
+          <ScrollArea className="w-full">
             <div className="flex justify-between items-center min-w-max">
               <div className="flex items-start gap-3">
                 <div 
@@ -94,6 +94,7 @@ export function ExpenseItem({
                 </div>
               </div>
             </div>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
         </CardContent>
       </Card>

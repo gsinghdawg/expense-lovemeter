@@ -2,7 +2,7 @@
 import { ExpenseCategory } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Edit2, Trash2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 type CategoryItemProps = {
   category: ExpenseCategory;
@@ -13,7 +13,7 @@ type CategoryItemProps = {
 export function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) {
   return (
     <div className="p-2 rounded border">
-      <ScrollArea className="w-full" orientation="horizontal">
+      <ScrollArea className="w-full">
         <div className="flex items-center justify-between min-w-max">
           <div className="flex items-center gap-2">
             <div
@@ -41,6 +41,7 @@ export function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) 
             </Button>
           </div>
         </div>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
     </div>
   );
