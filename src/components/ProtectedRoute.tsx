@@ -16,14 +16,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // If user is not logged in, redirect to signup page
   if (!user) {
     return <Navigate to="/signup" replace />;
   }
 
   // If user is logged in but hasn't completed onboarding and isn't already on the onboarding page
   if (profileData && profileData.onboarding_completed === false && location.pathname !== "/onboarding") {
-    console.log("User hasn't completed onboarding, redirecting to onboarding page");
     return <Navigate to="/onboarding" replace />;
   }
 
