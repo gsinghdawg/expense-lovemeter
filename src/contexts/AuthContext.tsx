@@ -1,48 +1,60 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthContextProps } from "@/types/auth";
-import { useAuthOperations } from "@/hooks/useAuthOperations";
-import { updateUserProfile } from "@/utils/authUtils";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+
+interface AuthContextProps {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+}
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const location = useLocation();
-  
-  const {
-    isLoading,
-    setIsLoading,
-    handleAuthStateRouting,
-    signIn,
-    signUp,
-    signOut,
-    resetPassword
-  } = useAuthOperations();
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Update user profile in Supabase
+  const updateUserProfile = async (userId: string, userData: { name?: string }) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(userData)
+        .eq('id', userId);
+      
+      if (error) {
+        console.error("Error updating profile:", error);
+      }
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    }
+  };
 
   useEffect(() => {
-    console.log("AuthContext useEffect running");
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        handleAuthStateRouting(session.user, location.pathname);
-      }
       setIsLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event, session?.user?.id);
+      (event, session) => {
+        console.log("Auth state changed:", event, session);
         setSession(session);
         setUser(session?.user ?? null);
+        setIsLoading(false);
         
         // When user signs in or token is refreshed, update their profile data
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
@@ -51,19 +63,126 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           // Update profile if we have user metadata
           if (name) {
-            await updateUserProfile(session.user.id, { name });
+            updateUserProfile(session.user.id, { name });
           }
-          
-          // Handle routing based on new auth state
-          await handleAuthStateRouting(session.user, location.pathname);
         }
-        
-        setIsLoading(false);
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [location.pathname]);
+  }, []);
+
+  // Sign in with email and password
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Welcome back!",
+        description: "You've successfully logged in to LadyLedger."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "There was an error logging in",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  // Sign up with email and password
+  const signUp = async (email: string, password: string, name: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            name
+          }
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Account created!",
+        description: "Please check your email to confirm your registration."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Registration failed",
+        description: error.message || "There was an error creating your account",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  // Sign out
+  const signOut = async () => {
+    try {
+      // First update the local state to ensure UI updates immediately
+      setUser(null);
+      setSession(null);
+
+      // Then attempt to sign out from Supabase
+      try {
+        await supabase.auth.signOut();
+      } catch (error: any) {
+        // Log the error but don't throw it - we've already updated the UI state
+        console.warn("Error during Supabase sign out:", error);
+        // We don't throw the error here since we've already cleared the local state
+      }
+      
+      toast({
+        title: "Signed out",
+        description: "You've been successfully signed out."
+      });
+      
+      // Redirect to homepage after signing out
+      navigate('/home');
+    } catch (error: any) {
+      console.error("Error during sign out:", error);
+      toast({
+        title: "Error signing out",
+        description: error.message || "There was an error signing out",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Reset password
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/dashboard`,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Reset email sent",
+        description: "Check your email for a password reset link."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Password reset failed",
+        description: error.message || "There was an error sending the reset email",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
 
   const value = {
     user,
