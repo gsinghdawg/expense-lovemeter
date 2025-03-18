@@ -64,10 +64,10 @@ export function RecentTransactions({
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Recent Transactions</CardTitle>
         </CardHeader>
-        <CardContent className="p-0 pb-4">
+        <CardContent className="p-0">
           {recentExpenses.length > 0 ? (
             <div className="w-full px-4">
-              <ScrollArea className="w-full max-h-[400px]">
+              <ScrollArea className="w-full h-[300px]">
                 <div className="flex flex-col space-y-4 pb-4">
                   {recentExpenses.map(expense => (
                     <div key={expense.id} className="w-full">
