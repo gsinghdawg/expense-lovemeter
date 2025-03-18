@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { CalendarIcon, Cake, User } from "lucide-react";
+import { CalendarIcon, Cake, User, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,9 +25,28 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+
+// List of countries for the dropdown
+const countries = [
+  "United States", "Canada", "United Kingdom", "Australia", "Germany", 
+  "France", "Japan", "China", "India", "Brazil", "Mexico", "Spain", 
+  "Italy", "Russia", "South Africa", "Nigeria", "Egypt", "Saudi Arabia", 
+  "UAE", "Singapore", "South Korea", "New Zealand", "Ireland", "Portugal",
+  "Argentina", "Chile", "Colombia", "Peru", "Venezuela", "Sweden", "Norway",
+  "Finland", "Denmark", "Netherlands", "Belgium", "Switzerland", "Austria",
+  "Greece", "Turkey", "Israel", "Thailand", "Vietnam", "Malaysia", "Indonesia",
+  "Philippines", "Pakistan", "Bangladesh", "Kenya", "Ghana", "Morocco"
+];
 
 // Form validation schema
 const profileSchema = z.object({
@@ -38,6 +57,9 @@ const profileSchema = z.object({
   }),
   dateOfBirth: z.date({
     required_error: "Please select a date of birth.",
+  }),
+  country: z.string({
+    required_error: "Please select your country.",
   }),
 });
 
@@ -56,6 +78,7 @@ const ProfileSetup = () => {
       age: undefined,
       gender: undefined,
       dateOfBirth: undefined,
+      country: undefined,
     },
   });
 
@@ -100,6 +123,7 @@ const ProfileSetup = () => {
           age: values.age,
           gender: values.gender,
           date_of_birth: formattedDateOfBirth,
+          country: values.country,
           onboarding_completed: true
         })
         .eq('id', user.id);
@@ -280,6 +304,38 @@ const ProfileSetup = () => {
                         />
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <Select
+                      disabled={isLoading}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <div className="flex items-center relative">
+                          <Globe className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          <SelectTrigger className="pl-10">
+                            <SelectValue placeholder="Select your country" />
+                          </SelectTrigger>
+                        </div>
+                      </FormControl>
+                      <SelectContent className="max-h-[200px]">
+                        {countries.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
