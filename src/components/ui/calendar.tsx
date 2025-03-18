@@ -1,7 +1,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker, CaptionProps } from "react-day-picker";
+import { DayPicker, CaptionProps, useNavigation } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -16,8 +16,8 @@ function CustomCaption({ displayMonth, fromYear, toYear }: CaptionProps & { from
   const endYear = toYear || currentYear + 1;
   const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
 
-  // Get the navigate function from context
-  const { goToMonth } = React.useContext(DayPicker.Context);
+  // Get the navigate function from react-day-picker's hook
+  const { goToMonth } = useNavigation();
 
   const handleYearChange = (year: string) => {
     const newMonth = new Date(displayMonth);
