@@ -23,7 +23,7 @@ export const PricingPlans = () => {
     {
       id: 'monthly',
       name: 'Monthly',
-      description: 'Full access to LadyLedger for 1 month',
+      description: 'Basic tracking for personal finances',
       price: '$10',
       priceId: 'price_1R2frfECEgtMuXU25cEk0iVG', // Monthly plan price ID
       features: [
@@ -38,7 +38,7 @@ export const PricingPlans = () => {
     {
       id: 'quarterly',
       name: 'Quarterly',
-      description: 'Full access to LadyLedger for 3 months',
+      description: 'Enhanced tracking with advanced features',
       price: '$25',
       priceId: 'price_1R2g0XECEgtMuXU2kVcXdMv3', // Quarterly plan price ID
       features: [
@@ -55,7 +55,7 @@ export const PricingPlans = () => {
     {
       id: 'biannual',
       name: 'Semi-Annual',
-      description: 'Full access to LadyLedger for 6 months',
+      description: 'Professional features for serious budgeting',
       price: '$40',
       priceId: billingInterval === 'monthly' 
         ? 'price_1R2g0XECEgtMuXU259x0lLOp' // Biannual plan price ID
@@ -74,7 +74,7 @@ export const PricingPlans = () => {
     {
       id: 'annual',
       name: 'Annual',
-      description: 'Full access to LadyLedger for 12 months',
+      description: 'Complete financial management suite',
       price: '$50',
       priceId: 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Annual plan price ID
       features: [
