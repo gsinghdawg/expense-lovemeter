@@ -1,6 +1,8 @@
 
-import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
+// Import Stripe from npm using URL imports for Deno
+import Stripe from 'npm:stripe@12.7.0';
+// Import Supabase JS client using URL imports for Deno
+import { createClient } from 'npm:@supabase/supabase-js@2.31.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
