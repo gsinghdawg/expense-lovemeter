@@ -15,6 +15,7 @@ interface ExtendedCaptionProps extends CaptionProps {
   fromYear?: number;
   toYear?: number; 
   onChange?: (date: Date) => void;
+  onMonthChange?: (date: Date) => void;
 }
 
 function Calendar({
@@ -101,8 +102,9 @@ function Calendar({
           
           // Create a custom onChange handler that will be passed to YearNavigation
           const handleYearChange = (date: Date) => {
-            if (props.onMonthChange) {
-              props.onMonthChange(date);
+            // Access onMonthChange through the extendedProps instead of props directly
+            if (extendedProps.onMonthChange) {
+              extendedProps.onMonthChange(date);
             }
           };
           
