@@ -116,6 +116,9 @@ const SignUp = () => {
     
     try {
       await signIn(values.email, values.password);
+      
+      // After successful login, the ProtectedRoute component will
+      // check if onboarding is completed and redirect accordingly
       navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);

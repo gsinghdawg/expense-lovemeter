@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ProfileSetup from "./pages/ProfileSetup";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,11 @@ const App = () => (
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Index />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile-setup" element={
+                <ProtectedRoute>
+                  <ProfileSetup />
                 </ProtectedRoute>
               } />
               <Route path="/signup" element={<SignUp />} />
