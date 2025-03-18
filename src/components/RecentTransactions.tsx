@@ -7,6 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChevronRight, ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { 
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 
 interface RecentTransactionsProps {
   expenses: Expense[];
@@ -27,9 +36,6 @@ export function RecentTransactions({
 }: RecentTransactionsProps) {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const isMobile = useIsMobile();
-  
-  // For debugging
-  console.log("RecentTransactions isMobile:", isMobile);
   
   // Get the most recent expenses
   const recentExpenses = [...expenses]
@@ -64,33 +70,43 @@ export function RecentTransactions({
   return (
     <>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Recent Transactions</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-full w-full">
-            <div className="px-4 py-2 space-y-2">
-              {recentExpenses.length > 0 ? (
-                recentExpenses.map(expense => (
-                  <ExpenseItem
-                    key={expense.id}
-                    expense={{
-                      ...expense,
-                      date: expense.date instanceof Date ? expense.date : new Date(expense.date)
-                    }}
-                    category={getCategoryById(expense.categoryId)}
-                    onEdit={handleEdit}
-                    onDelete={onDeleteExpense}
-                    alwaysShowActions={isMobile} // Always show action buttons on mobile
-                  />
-                ))
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  No recent transactions
-                </div>
-              )}
+          {recentExpenses.length > 0 && (
+            <div className="flex items-center text-sm text-muted-foreground">
+              <span>Swipe to view more</span>
             </div>
-          </ScrollArea>
+          )}
+        </CardHeader>
+        <CardContent className="p-0 pb-4">
+          {recentExpenses.length > 0 ? (
+            <Carousel className="w-full">
+              <CarouselContent>
+                {recentExpenses.map(expense => (
+                  <CarouselItem key={expense.id} className="md:basis-full pl-4 pr-4">
+                    <ExpenseItem
+                      expense={{
+                        ...expense,
+                        date: expense.date instanceof Date ? expense.date : new Date(expense.date)
+                      }}
+                      category={getCategoryById(expense.categoryId)}
+                      onEdit={handleEdit}
+                      onDelete={onDeleteExpense}
+                      alwaysShowActions={isMobile}
+                    />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <div className="flex justify-center gap-2 mt-2">
+                <CarouselPrevious className="static translate-y-0 translate-x-0 !mx-1" />
+                <CarouselNext className="static translate-y-0 translate-x-0 !mx-1" />
+              </div>
+            </Carousel>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              No recent transactions
+            </div>
+          )}
         </CardContent>
       </Card>
 

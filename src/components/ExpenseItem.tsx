@@ -15,7 +15,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 type ExpenseItemProps = {
   expense: Expense;
@@ -44,18 +43,15 @@ export function ExpenseItem({
     setShowDeleteConfirmation(false);
   };
   
-  // For debugging
-  console.log("ExpenseItem alwaysShowActions:", alwaysShowActions);
-  
   return (
     <>
-      <Card className="mb-3 gradient-card rounded-lg overflow-hidden">
-        <CardContent className="p-4 overflow-hidden">
+      <Card className="mb-3 gradient-card rounded-lg">
+        <CardContent className="p-4">
           <div className="flex justify-between items-center w-full">
-            <div className="flex items-start gap-3 min-w-0 flex-shrink">
+            <div className="flex items-start gap-3 min-w-0">
               <div 
                 className="w-10 h-10 rounded-full flex items-center justify-center mt-1 flex-shrink-0" 
-                style={{ backgroundColor: category.color + "33" }} // Adding transparency
+                style={{ backgroundColor: category.color + "33" }}
               >
                 <div 
                   className="w-6 h-6 rounded-full flex items-center justify-center" 

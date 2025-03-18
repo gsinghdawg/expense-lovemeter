@@ -2,7 +2,6 @@
 import { ExpenseCategory } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Edit2, Trash2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 type CategoryItemProps = {
   category: ExpenseCategory;
@@ -12,7 +11,7 @@ type CategoryItemProps = {
 
 export function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) {
   return (
-    <div className="p-2 rounded border overflow-hidden">
+    <div className="p-2 rounded border">
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <div
