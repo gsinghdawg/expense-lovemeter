@@ -5,6 +5,7 @@ import { ExpenseItem } from "@/components/ExpenseItem";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface RecentTransactionsProps {
   expenses: Expense[];
@@ -24,6 +25,7 @@ export function RecentTransactions({
   limit = 3
 }: RecentTransactionsProps) {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const isMobile = useIsMobile();
   
   // Get the most recent expenses
   const recentExpenses = [...expenses]
@@ -73,6 +75,7 @@ export function RecentTransactions({
                 category={getCategoryById(expense.categoryId)}
                 onEdit={handleEdit}
                 onDelete={onDeleteExpense}
+                alwaysShowActions={isMobile} // Always show action buttons on mobile
               />
             ))
           ) : (

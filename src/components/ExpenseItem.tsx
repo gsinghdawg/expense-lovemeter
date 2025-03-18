@@ -21,9 +21,16 @@ type ExpenseItemProps = {
   category: ExpenseCategory;
   onEdit: (expense: Expense) => void;
   onDelete: (id: string) => void;
+  alwaysShowActions?: boolean;
 };
 
-export function ExpenseItem({ expense, category, onEdit, onDelete }: ExpenseItemProps) {
+export function ExpenseItem({ 
+  expense, 
+  category, 
+  onEdit, 
+  onDelete, 
+  alwaysShowActions = false 
+}: ExpenseItemProps) {
   const expenseDate = expense.date instanceof Date ? expense.date : new Date(expense.date);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   
@@ -38,7 +45,7 @@ export function ExpenseItem({ expense, category, onEdit, onDelete }: ExpenseItem
   
   return (
     <>
-      <Card className="mb-3 gradient-card rounded-lg overflow-hidden">
+      <Card className={`mb-3 gradient-card rounded-lg overflow-hidden ${alwaysShowActions ? '' : 'group'}`}>
         <CardContent className="p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-start gap-3">
@@ -62,7 +69,7 @@ export function ExpenseItem({ expense, category, onEdit, onDelete }: ExpenseItem
             </div>
             <div className="flex items-center gap-2">
               <p className="font-medium text-lg">${expense.amount.toFixed(2)}</p>
-              <div className="flex gap-1">
+              <div className={`flex gap-1 ${alwaysShowActions ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}>
                 <Button 
                   variant="ghost" 
                   size="icon" 
