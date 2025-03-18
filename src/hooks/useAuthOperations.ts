@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { User } from "@supabase/supabase-js"; // Add the User import
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { checkProfileCompletion, updateUserProfile } from "@/utils/authUtils";
