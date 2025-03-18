@@ -10,16 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 // Custom caption component with year dropdown
-function CustomCaption({ displayMonth, fromYear, toYear, onSelect }: CaptionProps & { fromYear?: number; toYear?: number }) {
+function CustomCaption({ displayMonth, fromYear, toYear }: CaptionProps & { fromYear?: number; toYear?: number }) {
   const currentYear = displayMonth.getFullYear();
   const startYear = fromYear || currentYear - 100;
   const endYear = toYear || currentYear + 1;
   const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
 
+  // Get the navigate function from context
+  const { goToMonth } = React.useContext(DayPicker.Context);
+
   const handleYearChange = (year: string) => {
     const newMonth = new Date(displayMonth);
     newMonth.setFullYear(parseInt(year));
-    onSelect(newMonth);
+    goToMonth(newMonth);
   };
 
   const months = [
