@@ -18,7 +18,8 @@ const Pricing = () => {
   }, [user, navigate]);
 
   const handleBackToDashboard = () => {
-    navigate('/dashboard');
+    // Using replace: true to prevent navigation loops
+    navigate('/', { replace: true });
   };
 
   return (
