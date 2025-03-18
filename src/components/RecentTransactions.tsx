@@ -66,7 +66,7 @@ export function RecentTransactions({
         <CardHeader>
           <CardTitle className="text-lg">Recent Transactions</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-2 overflow-visible">
           {recentExpenses.length > 0 ? (
             recentExpenses.map(expense => (
               <ExpenseItem

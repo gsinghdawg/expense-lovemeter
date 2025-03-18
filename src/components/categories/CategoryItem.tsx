@@ -14,7 +14,7 @@ export function CategoryItem({ category, onEdit, onDelete }: CategoryItemProps) 
   return (
     <div className="p-2 rounded border">
       <ScrollArea className="w-full">
-        <div className="flex items-center justify-between min-w-max">
+        <div className="flex items-center justify-between min-w-max w-full pr-2">
           <div className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded-full"

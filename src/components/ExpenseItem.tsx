@@ -1,3 +1,4 @@
+
 import { Expense, ExpenseCategory } from "@/types/expense";
 import { format } from "date-fns";
 import { Edit2, Trash2, DollarSign, AlertTriangle } from "lucide-react";
@@ -51,7 +52,7 @@ export function ExpenseItem({
       <Card className="mb-3 gradient-card rounded-lg overflow-hidden">
         <CardContent className="p-4">
           <ScrollArea className="w-full">
-            <div className="flex justify-between items-center min-w-max">
+            <div className="flex justify-between items-center min-w-max w-full pr-2">
               <div className="flex items-start gap-3">
                 <div 
                   className="w-10 h-10 rounded-full flex items-center justify-center mt-1" 
