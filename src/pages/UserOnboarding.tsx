@@ -122,6 +122,9 @@ const UserOnboarding = () => {
 
             <div className="space-y-2">
               <Label>Date of Birth</Label>
+              <p className="text-xs text-muted-foreground mb-1">
+                Select your birth year from the dropdown, then pick month and day
+              </p>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -141,6 +144,9 @@ const UserOnboarding = () => {
                     selected={date}
                     onSelect={setDate}
                     initialFocus
+                    captionLayout="dropdown-buttons"
+                    fromYear={1900}
+                    toYear={new Date().getFullYear()}
                   />
                 </PopoverContent>
               </Popover>

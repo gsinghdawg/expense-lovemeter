@@ -1,9 +1,12 @@
+
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, CaptionProps } from "react-day-picker";
+import { format } from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
@@ -13,14 +16,41 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  // Function to generate array of years (from 1900 to current year)
+  function YearNavigation({ displayMonth, fromYear, toYear, onChange }: CaptionProps) {
+    const years = Array.from({ length: toYear - fromYear + 1 }, (_, i) => fromYear + i);
+    
+    return (
+      <Select
+        value={displayMonth.getFullYear().toString()}
+        onValueChange={(year) => {
+          const newDate = new Date(displayMonth);
+          newDate.setFullYear(parseInt(year));
+          onChange(newDate);
+        }}
+      >
+        <SelectTrigger className="w-[100px] h-7 text-xs">
+          <SelectValue placeholder={displayMonth.getFullYear()} />
+        </SelectTrigger>
+        <SelectContent className="max-h-[300px]">
+          {years.map((year) => (
+            <SelectItem key={year} value={year.toString()} className="text-xs">
+              {year}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-3 pointer-events-auto", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
+        caption: "flex justify-center pt-1 relative items-center gap-1",
         caption_label: "text-sm font-medium",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
@@ -54,6 +84,14 @@ function Calendar({
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+        Caption: (props) => (
+          <div className="flex justify-center gap-1 items-center py-1">
+            <YearNavigation {...props} fromYear={1900} toYear={new Date().getFullYear()} />
+            <span className="text-sm font-medium">
+              {format(props.displayMonth, 'MMMM')}
+            </span>
+          </div>
+        ),
       }}
       {...props}
     />
@@ -62,3 +100,4 @@ function Calendar({
 Calendar.displayName = "Calendar";
 
 export { Calendar };
+
