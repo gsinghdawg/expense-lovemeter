@@ -75,20 +75,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Check if user needs to complete onboarding and redirect if needed
   const checkOnboardingStatus = async (userId: string) => {
-    try {
-      const profileData = await fetchProfileData(userId);
-      setProfileData(profileData);
-      
-      // Log the onboarding status for debugging
-      console.log("Profile data retrieved:", profileData);
-      
-      // If user just signed up and hasn't completed onboarding, redirect to onboarding
-      if (profileData && profileData.onboarding_completed === false) {
-        console.log("User hasn't completed onboarding, redirecting from AuthContext");
-        navigate('/onboarding');
-      }
-    } catch (error) {
-      console.error("Error checking onboarding status:", error);
+    const profileData = await fetchProfileData(userId);
+    setProfileData(profileData);
+    
+    // If user just signed up and hasn't completed onboarding, redirect to onboarding
+    if (profileData && profileData.onboarding_completed === false) {
+      navigate('/onboarding');
     }
   };
 
@@ -136,15 +128,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
-      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
         throw error;
-      }
-      
-      // Check onboarding status immediately after successful login
-      if (data.user) {
-        await checkOnboardingStatus(data.user.id);
       }
       
       toast({

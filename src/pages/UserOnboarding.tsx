@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,24 +29,17 @@ const UserOnboarding = () => {
   const [country, setCountry] = useState(profileData?.country || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Log on component mount for debugging
-  useEffect(() => {
-    console.log("UserOnboarding mounted with user:", user);
-    console.log("UserOnboarding mounted with profileData:", profileData);
-    
-    // If user is not authenticated, redirect to signup
-    if (!user) {
-      console.log("No user found, redirecting to signup");
-      navigate("/signup");
-      return;
-    }
+  // If user is not authenticated, redirect to signup
+  if (!user) {
+    navigate("/signup");
+    return null;
+  }
 
-    // If user has already completed onboarding, redirect to dashboard
-    if (profileData?.onboarding_completed) {
-      console.log("Onboarding already completed, redirecting to dashboard");
-      navigate("/dashboard");
-    }
-  }, [user, profileData, navigate]);
+  // If user has already completed onboarding, redirect to dashboard
+  if (profileData?.onboarding_completed) {
+    navigate("/dashboard");
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,16 +50,6 @@ const UserOnboarding = () => {
         description: "Please enter your name to continue.",
         variant: "destructive"
       });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Authentication error",
-        description: "You must be logged in to complete onboarding.",
-        variant: "destructive"
-      });
-      navigate("/signup");
       return;
     }
 
@@ -104,11 +87,6 @@ const UserOnboarding = () => {
     }
   };
 
-  // If still loading or user is not authenticated, show nothing
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white p-4">
       <Card className="w-full max-w-md shadow-lg">
@@ -144,6 +122,9 @@ const UserOnboarding = () => {
 
             <div className="space-y-2">
               <Label>Date of Birth</Label>
+              <p className="text-xs text-muted-foreground mb-1">
+                Select your birth year from the dropdown, then pick month and day
+              </p>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -163,6 +144,9 @@ const UserOnboarding = () => {
                     selected={date}
                     onSelect={setDate}
                     initialFocus
+                    captionLayout="dropdown-buttons"
+                    fromYear={1900}
+                    toYear={new Date().getFullYear()}
                   />
                 </PopoverContent>
               </Popover>
