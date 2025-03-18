@@ -1,231 +1,193 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { format } from "date-fns";
-import { CalendarIcon, User, Calendar, Flag } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
-
-// Form validation schema
-const onboardingSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  age: z.string()
-    .refine((val) => !isNaN(parseInt(val)), { message: "Age must be a number." })
-    .refine((val) => parseInt(val) > 0 && parseInt(val) < 120, { message: "Age must be between 1 and 119." }),
-  dateOfBirth: z.date({
-    required_error: "Date of birth is required.",
-  }),
-  country: z.string().min(2, { message: "Country must be at least 2 characters." }),
-});
-
-type OnboardingFormValues = z.infer<typeof onboardingSchema>;
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { countries } from "@/data/countries";
 
 const UserOnboarding = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, session } = useAuth();
+  const { user, profileData } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  const [name, setName] = useState(profileData?.name || "");
+  const [age, setAge] = useState<number | undefined>(profileData?.age);
+  const [date, setDate] = useState<Date | undefined>(
+    profileData?.date_of_birth ? new Date(profileData.date_of_birth) : undefined
+  );
+  const [country, setCountry] = useState(profileData?.country || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If user is not logged in, redirect to sign up
+  // Log on component mount for debugging
   useEffect(() => {
+    console.log("UserOnboarding mounted with user:", user);
+    console.log("UserOnboarding mounted with profileData:", profileData);
+    
+    // If user is not authenticated, redirect to signup
     if (!user) {
+      console.log("No user found, redirecting to signup");
       navigate("/signup");
+      return;
     }
-  }, [user, navigate]);
 
-  const form = useForm<OnboardingFormValues>({
-    resolver: zodResolver(onboardingSchema),
-    defaultValues: {
-      name: user?.user_metadata?.name || "",
-      age: "",
-      country: "",
-    },
-  });
+    // If user has already completed onboarding, redirect to dashboard
+    if (profileData?.onboarding_completed) {
+      console.log("Onboarding already completed, redirecting to dashboard");
+      navigate("/dashboard");
+    }
+  }, [user, profileData, navigate]);
 
-  async function onSubmit(values: OnboardingFormValues) {
-    if (!user) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
+    if (!name) {
+      toast({
+        title: "Name is required",
+        description: "Please enter your name to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Authentication error",
+        description: "You must be logged in to complete onboarding.",
+        variant: "destructive"
+      });
+      navigate("/signup");
+      return;
+    }
+
     setIsSubmitting(true);
-    
+
     try {
-      // Calculate age from date of birth (in case the manually entered age is different)
-      const today = new Date();
-      const birthDate = new Date(values.dateOfBirth);
-      const calculatedAge = today.getFullYear() - birthDate.getFullYear();
-      
-      // Update user profile in the database
       const { error } = await supabase
         .from('profiles')
         .update({
-          name: values.name,
-          age: parseInt(values.age),
-          date_of_birth: values.dateOfBirth.toISOString(),
-          country: values.country,
+          name,
+          age: age || null,
+          date_of_birth: date?.toISOString() || null,
+          country: country || null,
           onboarding_completed: true
         })
         .eq('id', user.id);
-      
-      if (error) {
-        throw error;
-      }
-      
+
+      if (error) throw error;
+
       toast({
         title: "Profile updated",
-        description: "Thank you for providing your information!",
+        description: "Your profile has been successfully updated!"
       });
-      
+
       // Redirect to dashboard
       navigate("/dashboard");
     } catch (error: any) {
       toast({
         title: "Error updating profile",
-        description: error.message || "Failed to update your profile",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // If still loading or user is not authenticated, show nothing
+  if (!user) {
+    return null;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Complete Your Profile</CardTitle>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white p-4">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">Welcome to LadyLedger!</CardTitle>
           <CardDescription className="text-center">
-            Please provide the following information to personalize your experience.
+            Please tell us a bit about yourself
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center relative">
-                        <User className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Enter your full name"
-                          className="pl-10"
-                          {...field}
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
               />
-              
-              <FormField
-                control={form.control}
-                name="age"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Age</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center relative">
-                        <Calendar className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Enter your age"
-                          type="number"
-                          className="pl-10"
-                          {...field}
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="age">Age</Label>
+              <Input
+                id="age"
+                type="number"
+                placeholder="Enter your age"
+                value={age || ""}
+                onChange={(e) => setAge(e.target.value ? parseInt(e.target.value) : undefined)}
               />
-              
-              <FormField
-                control={form.control}
-                name="dateOfBirth"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date of Birth</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="country"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Country of Origin</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center relative">
-                        <Flag className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Enter your country"
-                          className="pl-10"
-                          {...field}
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Complete Profile"}
-              </Button>
-            </form>
-          </Form>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Date of Birth</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country">Country</Label>
+              <Select value={country} onValueChange={setCountry}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.code} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Continue to Dashboard"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
