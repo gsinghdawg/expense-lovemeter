@@ -71,24 +71,26 @@ export function RecentTransactions({
         </CardHeader>
         <CardContent className="p-0 pb-4">
           {recentExpenses.length > 0 ? (
-            <ScrollArea orientation="horizontal" className="w-full px-4">
-              <div className="flex space-x-4 pb-4">
-                {recentExpenses.map(expense => (
-                  <div key={expense.id} className="min-w-[300px] md:min-w-[350px]">
-                    <ExpenseItem
-                      expense={{
-                        ...expense,
-                        date: expense.date instanceof Date ? expense.date : new Date(expense.date)
-                      }}
-                      category={getCategoryById(expense.categoryId)}
-                      onEdit={handleEdit}
-                      onDelete={onDeleteExpense}
-                      alwaysShowActions={isMobile}
-                    />
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+            <div className="w-full px-4 overflow-auto">
+              <ScrollArea className="w-full">
+                <div className="flex space-x-4 pb-4">
+                  {recentExpenses.map(expense => (
+                    <div key={expense.id} className="min-w-[300px] md:min-w-[350px]">
+                      <ExpenseItem
+                        expense={{
+                          ...expense,
+                          date: expense.date instanceof Date ? expense.date : new Date(expense.date)
+                        }}
+                        category={getCategoryById(expense.categoryId)}
+                        onEdit={handleEdit}
+                        onDelete={onDeleteExpense}
+                        alwaysShowActions={isMobile}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
           ) : (
             <div className="text-center py-4 text-muted-foreground">
               No recent transactions
