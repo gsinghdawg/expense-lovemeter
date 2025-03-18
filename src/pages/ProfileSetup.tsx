@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,11 +32,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 const profileSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   gender: z.enum(["male", "female", "other", "prefer_not_to_say"]),
-  age: z.string()
-    .refine((val) => !isNaN(parseInt(val)), { message: "Age must be a number" })
-    .refine((val) => parseInt(val) > 0, { message: "Age must be positive" })
-    .refine((val) => parseInt(val) < 120, { message: "Age must be less than 120" })
-    .transform((val) => parseInt(val)),
+  age: z.coerce.number()
+    .positive({ message: "Age must be positive" })
+    .lt(120, { message: "Age must be less than 120" }),
   dateOfBirth: z.string()
     .refine((val) => /^\d{2}\/\d{2}\/\d{4}$/.test(val), {
       message: "Date of birth must be in MM/DD/YYYY format",
@@ -57,7 +54,7 @@ const ProfileSetup = () => {
     defaultValues: {
       name: user?.user_metadata?.name || "",
       gender: "prefer_not_to_say",
-      age: "",
+      age: undefined,
       dateOfBirth: "",
     },
   });
@@ -75,11 +72,9 @@ const ProfileSetup = () => {
     setIsLoading(true);
     
     try {
-      // Parse the date string into a Date object
       const [month, day, year] = values.dateOfBirth.split('/').map(Number);
       const dateOfBirth = new Date(year, month - 1, day);
       
-      // Update the user's profile in Supabase
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -99,7 +94,6 @@ const ProfileSetup = () => {
         description: "Your profile has been completed successfully."
       });
       
-      // Redirect to the dashboard
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Profile update error:", error);
@@ -203,6 +197,11 @@ const ProfileSetup = () => {
                         placeholder="Enter your age"
                         type="number"
                         {...field}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : Number(value));
+                        }}
+                        value={field.value || ""}
                         disabled={isLoading}
                       />
                     </div>
