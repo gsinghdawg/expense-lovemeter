@@ -43,6 +43,9 @@ export function ExpenseItem({
     setShowDeleteConfirmation(false);
   };
   
+  // For debugging
+  console.log("ExpenseItem alwaysShowActions:", alwaysShowActions);
+  
   return (
     <>
       <Card className={`mb-3 gradient-card rounded-lg overflow-hidden ${alwaysShowActions ? '' : 'group'}`}>
@@ -69,7 +72,8 @@ export function ExpenseItem({
             </div>
             <div className="flex items-center gap-2">
               <p className="font-medium text-lg">${expense.amount.toFixed(2)}</p>
-              <div className={`flex gap-1 ${alwaysShowActions ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}>
+              {/* Always show actions on mobile or when hovered on desktop */}
+              <div className={alwaysShowActions ? 'flex gap-1' : 'flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity'}>
                 <Button 
                   variant="ghost" 
                   size="icon" 

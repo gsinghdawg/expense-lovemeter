@@ -27,6 +27,9 @@ export function RecentTransactions({
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const isMobile = useIsMobile();
   
+  // For debugging
+  console.log("RecentTransactions isMobile:", isMobile);
+  
   // Get the most recent expenses
   const recentExpenses = [...expenses]
     .sort((a, b) => {
