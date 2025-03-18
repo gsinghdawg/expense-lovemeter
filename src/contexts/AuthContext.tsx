@@ -9,7 +9,6 @@ interface ProfileData {
   id: string;
   name?: string;
   email: string;
-  onboarding_completed?: boolean;
   age?: number;
   date_of_birth?: string;
   country?: string;
@@ -73,17 +72,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Check if user needs to complete onboarding and redirect if needed
-  const checkOnboardingStatus = async (userId: string) => {
-    const profileData = await fetchProfileData(userId);
-    setProfileData(profileData);
-    
-    // If user just signed up and hasn't completed onboarding, redirect to onboarding
-    if (profileData && profileData.onboarding_completed === false) {
-      navigate('/onboarding');
-    }
-  };
-
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -91,7 +79,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkOnboardingStatus(session.user.id);
+        fetchProfileData(session.user.id).then(data => {
+          setProfileData(data);
+        });
       }
       
       setIsLoading(false);
@@ -114,8 +104,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             await updateUserProfile(session.user.id, { name });
           }
           
-          // Check if user needs to complete onboarding
-          await checkOnboardingStatus(session.user.id);
+          // Fetch profile data
+          const profileData = await fetchProfileData(session.user.id);
+          setProfileData(profileData);
         }
         
         setIsLoading(false);
@@ -165,24 +156,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
       
-      // If signup was successful, create/update profile with onboarding_completed = false
+      // If signup was successful, create/update profile
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
             id: data.user.id,
             email: email,
-            name: name,
-            onboarding_completed: false
+            name: name
           });
           
         if (profileError) {
           console.error("Error creating profile during signup:", profileError);
-        }
-        
-        // Redirect to onboarding page immediately if no email confirmation is required
-        if (data.session) {
-          navigate('/onboarding');
         }
       }
       
@@ -214,7 +199,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (error: any) {
         // Log the error but don't throw it - we've already updated the UI state
         console.warn("Error during Supabase sign out:", error);
-        // We don't throw the error here since we've already cleared the local state
       }
       
       toast({

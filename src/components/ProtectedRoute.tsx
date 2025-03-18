@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading, profileData } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -18,11 +18,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     return <Navigate to="/signup" replace />;
-  }
-
-  // If user is logged in but hasn't completed onboarding and isn't already on the onboarding page
-  if (profileData && profileData.onboarding_completed === false && location.pathname !== "/onboarding") {
-    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;
