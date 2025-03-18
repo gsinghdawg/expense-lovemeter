@@ -6,7 +6,6 @@ import { ExpenseForm } from "@/components/ExpenseForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface RecentTransactionsProps {
   expenses: Expense[];
@@ -27,6 +26,9 @@ export function RecentTransactions({
 }: RecentTransactionsProps) {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const isMobile = useIsMobile();
+  
+  // For debugging
+  console.log("RecentTransactions isMobile:", isMobile);
   
   // Get the most recent expenses
   const recentExpenses = [...expenses]
@@ -61,32 +63,24 @@ export function RecentTransactions({
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle className="text-lg">Recent Transactions</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="space-y-2">
           {recentExpenses.length > 0 ? (
-            <div className="w-full px-4">
-              <ScrollArea className="w-full h-[300px]">
-                <div className="flex flex-col space-y-4 pb-4">
-                  {recentExpenses.map(expense => (
-                    <div key={expense.id} className="w-full">
-                      <ExpenseItem
-                        expense={{
-                          ...expense,
-                          date: expense.date instanceof Date ? expense.date : new Date(expense.date)
-                        }}
-                        category={getCategoryById(expense.categoryId)}
-                        onEdit={handleEdit}
-                        onDelete={onDeleteExpense}
-                        alwaysShowActions={isMobile}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <ScrollBar orientation="vertical" />
-              </ScrollArea>
-            </div>
+            recentExpenses.map(expense => (
+              <ExpenseItem
+                key={expense.id}
+                expense={{
+                  ...expense,
+                  date: expense.date instanceof Date ? expense.date : new Date(expense.date)
+                }}
+                category={getCategoryById(expense.categoryId)}
+                onEdit={handleEdit}
+                onDelete={onDeleteExpense}
+                alwaysShowActions={isMobile} // Always show action buttons on mobile
+              />
+            ))
           ) : (
             <div className="text-center py-4 text-muted-foreground">
               No recent transactions

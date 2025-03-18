@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 type ExpenseItemProps = {
   expense: Expense;
@@ -43,52 +44,58 @@ export function ExpenseItem({
     setShowDeleteConfirmation(false);
   };
   
+  // For debugging
+  console.log("ExpenseItem alwaysShowActions:", alwaysShowActions);
+  
   return (
     <>
-      <Card className="mb-3 gradient-card rounded-lg h-full">
+      <Card className="mb-3 gradient-card rounded-lg overflow-hidden">
         <CardContent className="p-4">
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-start gap-3 min-w-0">
-              <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center mt-1 flex-shrink-0" 
-                style={{ backgroundColor: category.color + "33" }}
-              >
+          <ScrollArea className="w-full">
+            <div className="flex justify-between items-center min-w-max">
+              <div className="flex items-start gap-3">
                 <div 
-                  className="w-6 h-6 rounded-full flex items-center justify-center" 
-                  style={{ backgroundColor: category.color }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center mt-1" 
+                  style={{ backgroundColor: category.color + "33" }} // Adding transparency
                 >
-                  <DollarSign className="h-3 w-3 text-white" />
+                  <div 
+                    className="w-6 h-6 rounded-full flex items-center justify-center" 
+                    style={{ backgroundColor: category.color }}
+                  >
+                    <DollarSign className="h-3 w-3 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-medium">{expense.description}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {format(expenseDate, "PPP")} • {category.name}
+                  </p>
                 </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-medium text-ellipsis overflow-hidden whitespace-nowrap">{expense.description}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {format(expenseDate, "PPP")} • {category.name}
-                </p>
+              <div className="flex items-center gap-2 pl-4">
+                <p className="font-medium text-lg whitespace-nowrap">${expense.amount.toFixed(2)}</p>
+                <div className="flex gap-1 !opacity-100">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => onEdit(expense)}
+                    className="h-8 w-8 hover:bg-gray-100"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleDeleteClick}
+                    className="h-8 w-8 text-destructive hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-              <p className="font-medium text-lg whitespace-nowrap">${expense.amount.toFixed(2)}</p>
-              <div className="flex gap-1 !opacity-100">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => onEdit(expense)}
-                  className="h-8 w-8 hover:bg-gray-100"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={handleDeleteClick}
-                  className="h-8 w-8 text-destructive hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         </CardContent>
       </Card>
 
