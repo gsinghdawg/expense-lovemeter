@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckoutButton } from '@/components/stripe/CheckoutButton';
@@ -55,8 +54,8 @@ export const PricingPlans = () => {
       description: 'Full access to LadyLedger for 12 months',
       price: '$39.99',
       priceId: billingInterval === 'monthly' 
-        ? 'price_1R2g0XECEgtMuXU2ecCSvPJv' // Business monthly plan price ID
-        : 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Business yearly plan price ID - using the same price ID for both as requested
+        ? 'price_1R2g0XECEgtMuXU259x0lLOp' // Business monthly plan price ID
+        : 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Business yearly plan price ID
       features: [
         'Multiple user accounts',
         'Team collaboration',
