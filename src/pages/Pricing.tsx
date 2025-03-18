@@ -17,6 +17,10 @@ const Pricing = () => {
     }
   }, [user, navigate]);
 
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="container mx-auto max-w-7xl">
@@ -24,7 +28,7 @@ const Pricing = () => {
           <Button 
             variant="ghost" 
             className="flex items-center gap-2" 
-            onClick={() => navigate('/dashboard')}
+            onClick={handleBackToDashboard}
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
