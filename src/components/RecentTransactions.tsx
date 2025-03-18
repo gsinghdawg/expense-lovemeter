@@ -6,6 +6,7 @@ import { ExpenseForm } from "@/components/ExpenseForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface RecentTransactionsProps {
   expenses: Expense[];
@@ -66,7 +67,7 @@ export function RecentTransactions({
         <CardHeader>
           <CardTitle className="text-lg">Recent Transactions</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 overflow-visible p-4">
+        <CardContent className="space-y-2 p-4">
           {recentExpenses.length > 0 ? (
             recentExpenses.map(expense => (
               <ExpenseItem
