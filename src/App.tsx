@@ -13,7 +13,14 @@ import NotFound from "./pages/NotFound";
 import ProfileSetup from "./pages/ProfileSetup";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <ThemeProvider defaultTheme="light">
@@ -36,10 +43,10 @@ const App = () => (
                   <ProfileSetup />
                 </ProtectedRoute>
               } />
-              {/* Redirect all unmatched routes to /home */}
+              {/* Redirect root to /home */}
               <Route path="/" element={<Navigate to="/home" replace />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<Navigate to="/home" replace />} />
+              {/* Redirect all unmatched routes to /home */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
         </AuthProvider>

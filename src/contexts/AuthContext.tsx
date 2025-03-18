@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface UserProfile {
   id: string;
@@ -34,10 +34,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Fetch user profile data
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user ID:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -49,6 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       }
       
+      console.log("Profile data retrieved:", data);
       return data as UserProfile;
     } catch (error) {
       console.error("Failed to fetch profile:", error);
@@ -72,24 +75,70 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Function to handle routing based on authentication state and profile completion
+  const handleAuthStateRouting = async (currentUser: User | null) => {
+    if (!currentUser) {
+      if (location.pathname !== "/home" && 
+          location.pathname !== "/signup" &&
+          !location.pathname.startsWith("/home")) {
+        console.log("No user found, redirecting to /home");
+        navigate("/home");
+      }
+      return;
+    }
+
+    // User is authenticated, check profile
+    const profile = await fetchUserProfile(currentUser.id);
+    setUserProfile(profile);
+    
+    if (profile) {
+      console.log("Profile onboarding status:", profile.onboarding_completed);
+      
+      // If profile is not complete and not already on profile setup page
+      if (!profile.onboarding_completed && location.pathname !== "/profile-setup") {
+        console.log("Profile not complete, redirecting to /profile-setup");
+        navigate("/profile-setup");
+      } 
+      // If profile is complete and on profile setup page, redirect to dashboard
+      else if (profile.onboarding_completed && location.pathname === "/profile-setup") {
+        console.log("Profile complete, redirecting from setup to /dashboard");
+        navigate("/dashboard");
+      }
+      // If on signup or home page and already authenticated with complete profile
+      else if ((location.pathname === "/signup" || location.pathname === "/home") 
+               && profile.onboarding_completed) {
+        console.log("Already authenticated with complete profile, redirecting to /dashboard");
+        navigate("/dashboard");
+      }
+    } else {
+      console.warn("No profile found for authenticated user");
+    }
+  };
+
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const initializeAuth = async () => {
+      setIsLoading(true);
       
-      if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        setUserProfile(profile);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session check:", session ? "Session found" : "No session");
         
-        // Check if user needs to complete onboarding
-        if (profile && !profile.onboarding_completed) {
-          navigate('/profile-setup');
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await handleAuthStateRouting(session.user);
+        } else {
+          setIsLoading(false);
         }
+      } catch (error) {
+        console.error("Error during auth initialization:", error);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -98,7 +147,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // When user signs in or token is refreshed, update their profile data
+        // When user signs in, update their profile data
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
           // Get user metadata
           const name = session.user.user_metadata.name;
@@ -108,26 +157,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             updateUserProfile(session.user.id, { name });
           }
           
-          // Fetch user profile
-          const profile = await fetchUserProfile(session.user.id);
-          setUserProfile(profile);
-          
-          // Check if user needs to complete onboarding
-          if (profile && !profile.onboarding_completed) {
-            navigate('/profile-setup');
-          }
+          await handleAuthStateRouting(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          // Clear profile data on sign out
+          setUserProfile(null);
+          setIsLoading(false);
+        } else {
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    return () => {
+      console.log("Cleaning up auth subscription");
+      subscription.unsubscribe();
+    };
+  }, [navigate, location.pathname]);
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
@@ -139,6 +189,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "You've successfully logged in to LadyLedger."
       });
     } catch (error: any) {
+      setIsLoading(false);
       toast({
         title: "Login failed",
         description: error.message || "There was an error logging in",
@@ -151,6 +202,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign up with email and password
   const signUp = async (email: string, password: string, name: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -170,6 +222,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "Please check your email to confirm your registration."
       });
     } catch (error: any) {
+      setIsLoading(false);
       toast({
         title: "Registration failed",
         description: error.message || "There was an error creating your account",
@@ -182,6 +235,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign out
   const signOut = async () => {
     try {
+      setIsLoading(true);
+      
       // First update the local state to ensure UI updates immediately
       setUser(null);
       setSession(null);
@@ -210,6 +265,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: error.message || "There was an error signing out",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
