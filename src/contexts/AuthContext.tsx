@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface AuthContextProps {
   user: User | null;
@@ -23,6 +23,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if user has completed onboarding and redirect accordingly
+  const checkProfileCompletion = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error("Error checking profile completion:", error);
+        return false;
+      }
+
+      return data?.onboarding_completed || false;
+    } catch (error) {
+      console.error("Failed to check profile completion:", error);
+      return false;
+    }
+  };
+
+  // Handle routing based on auth state and profile completion
+  const handleAuthStateRouting = async (newUser: User | null) => {
+    if (!newUser) {
+      // If not on signup page and not logged in, redirect to signup
+      if (location.pathname !== '/signup' && location.pathname !== '/home') {
+        navigate('/signup');
+      }
+      return;
+    }
+
+    // If we're already on the login or signup page, check profile completion
+    if (location.pathname === '/signup' || location.pathname === '/home') {
+      const isProfileComplete = await checkProfileCompletion(newUser.id);
+      
+      if (!isProfileComplete) {
+        navigate('/profile-setup');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  };
 
   // Update user profile in Supabase
   const updateUserProfile = async (userId: string, userData: { name?: string }) => {
@@ -45,16 +89,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        handleAuthStateRouting(session.user);
+      }
       setIsLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, session);
         setSession(session);
         setUser(session?.user ?? null);
-        setIsLoading(false);
         
         // When user signs in or token is refreshed, update their profile data
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
@@ -63,14 +109,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           // Update profile if we have user metadata
           if (name) {
-            updateUserProfile(session.user.id, { name });
+            await updateUserProfile(session.user.id, { name });
           }
+          
+          // Handle routing based on new auth state
+          await handleAuthStateRouting(session.user);
         }
+        
+        setIsLoading(false);
       }
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate, location.pathname]);
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
