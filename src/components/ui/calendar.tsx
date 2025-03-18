@@ -98,14 +98,13 @@ function Calendar({
         Caption: (props) => {
           // Cast the props to our extended type
           const extendedProps = props as ExtendedCaptionProps;
-          
           return (
             <div className="flex justify-center gap-1 items-center py-1">
               <YearNavigation 
                 {...extendedProps} 
                 fromYear={1900} 
                 toYear={new Date().getFullYear()} 
-                onChange={props.onMonthChange} 
+                onChange={extendedProps.onChange} 
               />
               <span className="text-sm font-medium">
                 {format(props.displayMonth, 'MMMM')}
