@@ -20,7 +20,7 @@ export const PricingPlans = () => {
     {
       id: 'monthly',
       name: 'Monthly',
-      description: 'Basic tracking for personal finances',
+      description: 'Full Access',
       price: '$10',
       priceId: 'price_1R2frfECEgtMuXU25cEk0iVG', // Monthly plan price ID
       features: [
@@ -35,7 +35,7 @@ export const PricingPlans = () => {
     {
       id: 'quarterly',
       name: 'Quarterly',
-      description: 'Enhanced tracking with advanced features',
+      description: 'Full Access',
       price: '$25',
       priceId: 'price_1R2g0XECEgtMuXU2kVcXdMv3', // Quarterly plan price ID
       features: [
@@ -52,7 +52,7 @@ export const PricingPlans = () => {
     {
       id: 'biannual',
       name: 'Semi-Annual',
-      description: 'Professional features for serious budgeting',
+      description: 'Full Access',
       price: '$40',
       priceId: 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Swapped - now using Annual plan price ID
       features: [
@@ -69,7 +69,7 @@ export const PricingPlans = () => {
     {
       id: 'annual',
       name: 'Annual',
-      description: 'Complete financial management suite',
+      description: 'Full Access',
       price: '$50',
       priceId: 'price_1R2g0XECEgtMuXU259x0lLOp', // Swapped - now using Biannual plan price ID
       features: [
