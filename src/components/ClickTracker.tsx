@@ -14,26 +14,32 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Load the click count from Supabase when component mounts
+  // Load the click count from Supabase when component mounts or user changes
   useEffect(() => {
     const loadClickCount = async () => {
       if (!user) return;
       
       try {
-        // The table name should be specified as a string literal type
         const { data, error } = await supabase
           .from('user_click_counts')
           .select('click_count')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
-        if (error && error.code !== 'PGRST116') { // Not found error
+        if (error) {
           console.error('Error loading click count:', error);
           return;
         }
         
         if (data) {
           setClickCount(data.click_count);
+          console.log('Loaded click count:', data.click_count);
+          
+          // Check if user has already reached the limit on initial load
+          if (data.click_count >= MAX_FREE_CLICKS) {
+            console.log('User already reached click limit, redirecting to pricing');
+            navigate('/pricing');
+          }
         }
       } catch (error) {
         console.error('Error fetching click count:', error);
@@ -41,7 +47,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     };
     
     loadClickCount();
-  }, [user]);
+  }, [user, navigate]);
 
   // Save the click count to Supabase when it changes
   useEffect(() => {
@@ -49,10 +55,11 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       if (!user || clickCount === 0) return;
       
       try {
+        console.log('Saving click count:', clickCount);
         const { error } = await supabase
           .from('user_click_counts')
           .upsert(
-            { user_id: user.id, click_count: clickCount },
+            { user_id: user.id, click_count: clickCount, updated_at: new Date().toISOString() },
             { onConflict: 'user_id' }
           );
         
@@ -77,6 +84,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     
     // Increment click count
     const newCount = clickCount + 1;
+    console.log('Click detected, new count:', newCount);
     setClickCount(newCount);
     
     // Check if user has reached the limit
@@ -88,6 +96,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       });
       navigate('/pricing');
     } else if (newCount > MAX_FREE_CLICKS) {
+      console.log('Redirecting to pricing page, clicks > MAX_FREE_CLICKS');
       navigate('/pricing');
     }
   };
@@ -96,7 +105,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
-  }, [clickCount]);
+  }, [clickCount, user]);
 
   return <>{children}</>;
 };
