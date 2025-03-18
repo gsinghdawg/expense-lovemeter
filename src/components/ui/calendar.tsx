@@ -10,24 +10,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
+// Extended caption props with our custom properties
+interface ExtendedCaptionProps extends CaptionProps {
+  fromYear?: number;
+  toYear?: number; 
+  onChange?: (date: Date) => void;
+}
+
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  // Function to generate array of years (from 1900 to current year)
-  function YearNavigation({ displayMonth, fromYear, toYear, onChange }: CaptionProps) {
-    const years = Array.from({ length: toYear - fromYear + 1 }, (_, i) => fromYear + i);
+  // Function to handle year selection
+  function YearNavigation({ displayMonth, fromYear = 1900, toYear = new Date().getFullYear(), onChange }: ExtendedCaptionProps) {
+    const years = Array.from({ length: (toYear - fromYear) + 1 }, (_, i) => fromYear + i);
+    
+    const handleYearChange = (year: string) => {
+      if (onChange) {
+        const newDate = new Date(displayMonth);
+        newDate.setFullYear(parseInt(year));
+        onChange(newDate);
+      }
+    };
     
     return (
       <Select
         value={displayMonth.getFullYear().toString()}
-        onValueChange={(year) => {
-          const newDate = new Date(displayMonth);
-          newDate.setFullYear(parseInt(year));
-          onChange(newDate);
-        }}
+        onValueChange={handleYearChange}
       >
         <SelectTrigger className="w-[100px] h-7 text-xs">
           <SelectValue placeholder={displayMonth.getFullYear()} />
@@ -84,14 +95,23 @@ function Calendar({
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
-        Caption: (props) => (
-          <div className="flex justify-center gap-1 items-center py-1">
-            <YearNavigation {...props} fromYear={1900} toYear={new Date().getFullYear()} />
-            <span className="text-sm font-medium">
-              {format(props.displayMonth, 'MMMM')}
-            </span>
-          </div>
-        ),
+        Caption: (props) => {
+          // Cast the props to our extended type
+          const extendedProps = props as ExtendedCaptionProps;
+          return (
+            <div className="flex justify-center gap-1 items-center py-1">
+              <YearNavigation 
+                {...extendedProps} 
+                fromYear={1900} 
+                toYear={new Date().getFullYear()} 
+                onChange={extendedProps.onChange} 
+              />
+              <span className="text-sm font-medium">
+                {format(props.displayMonth, 'MMMM')}
+              </span>
+            </div>
+          );
+        },
       }}
       {...props}
     />
@@ -100,4 +120,3 @@ function Calendar({
 Calendar.displayName = "Calendar";
 
 export { Calendar };
-
