@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Check if user has completed onboarding and redirect accordingly
   const checkProfileCompletion = async (userId: string) => {
     try {
+      console.log("Checking profile completion in AuthContext for user:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('onboarding_completed')
@@ -39,6 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
 
+      console.log("Profile completion data:", data);
       return data?.onboarding_completed || false;
     } catch (error) {
       console.error("Failed to check profile completion:", error);
@@ -56,13 +58,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
+    console.log("Handling auth state routing for user:", newUser.id);
+    
     // If we're already on the login or signup page, check profile completion
     if (location.pathname === '/signup' || location.pathname === '/home') {
       const isProfileComplete = await checkProfileCompletion(newUser.id);
       
       if (!isProfileComplete) {
+        console.log("Profile not complete, navigating to /profile-setup");
         navigate('/profile-setup');
       } else {
+        console.log("Profile already complete, navigating to /dashboard");
         navigate('/dashboard');
       }
     }
@@ -71,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Update user profile in Supabase
   const updateUserProfile = async (userId: string, userData: { name?: string }) => {
     try {
+      console.log("Updating user profile:", userId, userData);
       const { error } = await supabase
         .from('profiles')
         .update(userData)
@@ -85,8 +92,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
+    console.log("AuthContext useEffect running");
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -98,7 +107,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state changed:", event, session);
+        console.log("Auth state changed:", event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         

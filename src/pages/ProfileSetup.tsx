@@ -49,6 +49,8 @@ const ProfileSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  console.log("ProfileSetup - Current user:", user?.id);
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -60,6 +62,8 @@ const ProfileSetup = () => {
   });
 
   async function onSubmit(values: ProfileFormValues) {
+    console.log("ProfileSetup - Form submitted:", values);
+    
     if (!user) {
       toast({
         title: "Error",
@@ -75,7 +79,14 @@ const ProfileSetup = () => {
       const [month, day, year] = values.dateOfBirth.split('/').map(Number);
       const dateOfBirth = new Date(year, month - 1, day);
       
-      const { error } = await supabase
+      console.log("Updating profile with:", {
+        name: values.name,
+        age: values.age,
+        date_of_birth: dateOfBirth.toISOString(),
+        onboarding_completed: true,
+      });
+      
+      const { error, data } = await supabase
         .from('profiles')
         .update({
           name: values.name,
@@ -88,6 +99,8 @@ const ProfileSetup = () => {
       if (error) {
         throw error;
       }
+      
+      console.log("Profile update response:", data);
       
       toast({
         title: "Profile updated",
