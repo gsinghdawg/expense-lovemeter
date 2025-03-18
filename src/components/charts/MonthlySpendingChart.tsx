@@ -12,16 +12,28 @@ import {
 } from "recharts";
 import { Expense } from "@/types/expense";
 
+type ChartColors = {
+  savings: string;
+  spending: string;
+  budget: string;
+};
+
 type MonthlySpendingChartProps = {
   expenses: Expense[];
   getBudgetForMonth: (month: number, year: number) => number | null;
   onBarClick: (data: any) => void;
+  chartColors?: ChartColors;
 };
 
 export function MonthlySpendingChart({ 
   expenses, 
   getBudgetForMonth, 
-  onBarClick 
+  onBarClick,
+  chartColors = {
+    savings: "#4B5563",
+    spending: "#2563eb",
+    budget: "#4ade80"
+  }
 }: MonthlySpendingChartProps) {
   const monthlySpending = useMemo(() => {
     const spendingByMonth: Record<string, number> = {};
@@ -97,7 +109,7 @@ export function MonthlySpendingChart({
           />
           <Bar
             dataKey="savings"
-            fill="#4B5563"
+            fill={chartColors.savings}
             name="Monthly Savings"
             barSize={20}
             onClick={onBarClick}
@@ -106,34 +118,34 @@ export function MonthlySpendingChart({
             onMouseOver={(data) => {
               if (data && data.tooltipPayload && data.tooltipPayload[0]) {
                 const value = data.tooltipPayload[0].value;
-                const color = value >= 0 ? "#4ade80" : "#ef4444";
+                const color = value >= 0 ? chartColors.budget : "#ef4444";
                 data.element.style.fill = color;
               }
             }}
             onMouseOut={(data) => {
               if (data && data.element) {
-                data.element.style.fill = "#4B5563";
+                data.element.style.fill = chartColors.savings;
               }
             }}
           />
           <Line 
             type="monotone" 
             dataKey="spending" 
-            stroke="#2563eb" 
+            stroke={chartColors.spending} 
             strokeWidth={2}
-            dot={{ fill: "#2563eb" }}
+            dot={{ fill: chartColors.spending }}
             name="Monthly Spending"
           />
           <Line 
             type="monotone" 
             dataKey="budget" 
-            stroke="#4ade80"
+            stroke={chartColors.budget}
             strokeWidth={3}
             strokeDasharray="5 5"
-            dot={{ fill: "#4ade80", r: 4 }}
+            dot={{ fill: chartColors.budget, r: 4 }}
             name="Budget Goal"
             connectNulls={true}
-            activeDot={{ r: 6, fill: "#4ade80" }}
+            activeDot={{ r: 6, fill: chartColors.budget }}
           />
         </ComposedChart>
       </ResponsiveContainer>

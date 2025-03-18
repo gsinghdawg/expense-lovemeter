@@ -103,6 +103,11 @@ export function ExpenseSummary({
     }
   };
 
+  // Define chart colors as constants for consistency
+  const SAVINGS_COLOR = "#4B5563";
+  const SPENDING_COLOR = "#2563eb";
+  const BUDGET_COLOR = "#4ade80";
+
   return (
     <Card>
       <CardHeader>
@@ -142,12 +147,17 @@ export function ExpenseSummary({
                 expenses={expenses} 
                 getBudgetForMonth={getBudgetForMonth}
                 onBarClick={handleBarClick}
+                chartColors={{
+                  savings: SAVINGS_COLOR,
+                  spending: SPENDING_COLOR,
+                  budget: BUDGET_COLOR
+                }}
               />
               <ChartLegend 
                 items={[
-                  { color: "#4B5563", label: "Monthly Savings", type: "bar" },
-                  { color: "#2563eb", label: "Monthly Spending", type: "line", height: 1 },
-                  { color: "#4ade80", label: "Budget Goal", type: "dashed", height: 1 }
+                  { color: SAVINGS_COLOR, label: "Monthly Savings", type: "bar" },
+                  { color: SPENDING_COLOR, label: "Monthly Spending", type: "line", height: 1 },
+                  { color: BUDGET_COLOR, label: "Budget Goal", type: "dashed", height: 1 }
                 ]}
               />
               

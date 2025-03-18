@@ -18,11 +18,20 @@ export function ChartLegend({ items }: ChartLegendProps) {
       {items.map((item, index) => (
         <div key={index} className="flex items-center">
           {item.type === "line" ? (
-            <div className={`w-3 h-${item.height || 1} bg-[${item.color}] mr-1`}></div>
+            <div 
+              className={`w-6 h-${item.height || 1} mr-1.5`} 
+              style={{ backgroundColor: item.color }}
+            ></div>
           ) : item.type === "dashed" ? (
-            <div className={`w-3 h-${item.height || 1} bg-[${item.color}] mr-1 border-dashed border-t`}></div>
+            <div 
+              className={`w-6 h-${item.height || 1} mr-1.5 border-t-2 border-dashed`} 
+              style={{ borderColor: item.color }}
+            ></div>
           ) : (
-            <div className={`w-3 h-3 bg-[${item.color}] mr-1 cursor-pointer`}></div>
+            <div 
+              className="w-3 h-3 mr-1.5" 
+              style={{ backgroundColor: item.color }}
+            ></div>
           )}
           <span>{item.label}</span>
         </div>
