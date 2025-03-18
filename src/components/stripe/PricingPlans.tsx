@@ -56,7 +56,7 @@ export const PricingPlans = () => {
       price: '$39.99',
       priceId: billingInterval === 'monthly' 
         ? 'price_1R2g0XECEgtMuXU2ecCSvPJv' // Business monthly plan price ID
-        : 'price_1R2g0XECEgtMuXU259x0lLOp', // Business yearly plan price ID
+        : 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Business yearly plan price ID - using the same price ID for both as requested
       features: [
         'Multiple user accounts',
         'Team collaboration',
