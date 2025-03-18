@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckoutButton } from '@/components/stripe/CheckoutButton';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +54,7 @@ export const PricingPlans = () => {
       name: 'Semi-Annual',
       description: 'Professional features for serious budgeting',
       price: '$40',
-      priceId: 'price_1R2g0XECEgtMuXU259x0lLOp', // Biannual plan price ID
+      priceId: 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Swapped - now using Annual plan price ID
       features: [
         'Multiple user accounts',
         'Team collaboration',
@@ -70,7 +71,7 @@ export const PricingPlans = () => {
       name: 'Annual',
       description: 'Complete financial management suite',
       price: '$50',
-      priceId: 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Annual plan price ID
+      priceId: 'price_1R2g0XECEgtMuXU259x0lLOp', // Swapped - now using Biannual plan price ID
       features: [
         'All Semi-Annual features',
         'Year-end financial reporting',
