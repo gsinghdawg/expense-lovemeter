@@ -1,5 +1,4 @@
-
-import Stripe from 'stripe';
+import Stripe from 'npm:stripe@12.7.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -268,3 +267,4 @@ function createSupabaseClient(supabaseUrl: string, supabaseKey: string) {
     })
   };
 }
+
