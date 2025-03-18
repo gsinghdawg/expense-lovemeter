@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +35,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Fetch user profile data
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log("Fetching profile for user ID:", userId);
@@ -59,7 +57,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Update user profile in Supabase
   const updateUserProfile = async (userId: string, userData: { name?: string }) => {
     try {
       const { error } = await supabase
@@ -75,7 +72,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Function to handle routing based on authentication state and profile completion
   const handleAuthStateRouting = async (currentUser: User | null) => {
     if (!currentUser) {
       if (location.pathname !== "/home" && 
@@ -87,36 +83,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // User is authenticated, check profile
     const profile = await fetchUserProfile(currentUser.id);
     setUserProfile(profile);
     
     if (profile) {
       console.log("Profile onboarding status:", profile.onboarding_completed);
       
-      // If profile is not complete and not already on profile setup page
-      if (!profile.onboarding_completed && location.pathname !== "/profile-setup") {
+      if (profile.onboarding_completed === false) {
         console.log("Profile not complete, redirecting to /profile-setup");
         navigate("/profile-setup");
       } 
-      // If profile is complete and on profile setup page, redirect to dashboard
-      else if (profile.onboarding_completed && location.pathname === "/profile-setup") {
-        console.log("Profile complete, redirecting from setup to /dashboard");
-        navigate("/dashboard");
-      }
-      // If on signup or home page and already authenticated with complete profile
-      else if ((location.pathname === "/signup" || location.pathname === "/home") 
-               && profile.onboarding_completed) {
-        console.log("Already authenticated with complete profile, redirecting to /dashboard");
+      else if (profile.onboarding_completed === true && 
+              (location.pathname === "/signup" || 
+               location.pathname === "/home" || 
+               location.pathname === "/profile-setup")) {
+        console.log("Profile complete, redirecting to /dashboard");
         navigate("/dashboard");
       }
     } else {
-      console.warn("No profile found for authenticated user");
+      console.log("No profile found for authenticated user, redirecting to profile setup");
+      navigate("/profile-setup");
     }
+    
+    setIsLoading(false);
   };
 
   useEffect(() => {
-    // Get initial session
     const initializeAuth = async () => {
       setIsLoading(true);
       
@@ -140,26 +132,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initializeAuth();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session);
         setSession(session);
         setUser(session?.user ?? null);
         
-        // When user signs in, update their profile data
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-          // Get user metadata
           const name = session.user.user_metadata.name;
           
-          // Update profile if we have user metadata
           if (name) {
             updateUserProfile(session.user.id, { name });
           }
           
           await handleAuthStateRouting(session.user);
         } else if (event === 'SIGNED_OUT') {
-          // Clear profile data on sign out
           setUserProfile(null);
           setIsLoading(false);
         } else {
@@ -174,7 +161,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [navigate, location.pathname]);
 
-  // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
@@ -199,7 +185,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Sign up with email and password
   const signUp = async (email: string, password: string, name: string) => {
     try {
       setIsLoading(true);
@@ -232,23 +217,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Sign out
   const signOut = async () => {
     try {
       setIsLoading(true);
       
-      // First update the local state to ensure UI updates immediately
       setUser(null);
       setSession(null);
       setUserProfile(null);
 
-      // Then attempt to sign out from Supabase
       try {
         await supabase.auth.signOut();
       } catch (error: any) {
-        // Log the error but don't throw it - we've already updated the UI state
         console.warn("Error during Supabase sign out:", error);
-        // We don't throw the error here since we've already cleared the local state
       }
       
       toast({
@@ -256,7 +236,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "You've been successfully signed out."
       });
       
-      // Redirect to homepage after signing out
       navigate('/home');
     } catch (error: any) {
       console.error("Error during sign out:", error);
@@ -270,7 +249,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Reset password
   const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

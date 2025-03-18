@@ -27,8 +27,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/signup" replace />;
   }
 
-  // Handle the case where user is authenticated but needs to complete profile
-  if (user && userProfile && !userProfile.onboarding_completed && location.pathname !== "/profile-setup") {
+  // If user has a profile but onboarding is not completed and they're not already on profile setup page
+  if (user && userProfile && userProfile.onboarding_completed === false && location.pathname !== "/profile-setup") {
     console.log("ProtectedRoute: Profile not complete, redirecting to /profile-setup");
     return <Navigate to="/profile-setup" replace />;
   }
