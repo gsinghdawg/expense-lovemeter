@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { format } from "date-fns";
-import { CalendarIcon, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,19 +28,18 @@ import {
   CardContent, 
   CardFooter 
 } from "@/components/ui/card";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
 
 // Form validation schema
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   age: z.coerce.number().min(1, { message: "Please enter a valid age." }),
-  dob: z.date({ required_error: "Date of birth is required." }),
+  dob: z.string().refine(
+    (value) => {
+      // Validate MM/DD/YYYY format
+      return /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(value);
+    }, 
+    { message: "Please enter a valid date in MM/DD/YYYY format." }
+  ),
   country: z.string().min(2, { message: "Country must be at least 2 characters." }),
 });
 
@@ -58,6 +56,7 @@ const ProfileSetup = () => {
     defaultValues: {
       name: "",
       age: undefined,
+      dob: "",
       country: "",
     },
   });
@@ -76,12 +75,16 @@ const ProfileSetup = () => {
     setIsLoading(true);
     
     try {
+      // Parse the date string to a Date object
+      const [month, day, year] = values.dob.split('/').map(Number);
+      const dateObj = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+      
       const { error } = await supabase
         .from('profiles')
         .update({
           name: values.name,
           age: values.age,
-          date_of_birth: values.dob.toISOString(),
+          date_of_birth: dateObj.toISOString(),
           country: values.country,
           onboarding_completed: true
         })
@@ -175,41 +178,15 @@ const ProfileSetup = () => {
                 control={form.control}
                 name="dob"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Date of Birth</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                            disabled={isLoading}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <Input 
+                        placeholder="MM/DD/YYYY"
+                        {...field}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
