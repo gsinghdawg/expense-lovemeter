@@ -81,7 +81,8 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           // 4. We're done checking subscription status
           if (data.click_count >= MAX_FREE_CLICKS && 
               !isExcludedPath && 
-              !hasActiveSubscription) {
+              !hasActiveSubscription && 
+              location.pathname !== '/pricing') {
             console.log('User reached click limit and has no subscription, redirecting to pricing');
             navigate('/pricing');
           }
@@ -138,7 +139,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       return;
     }
     
-    // Increment click count
+    // Increment click count (always, even if it's already at or over MAX_FREE_CLICKS)
     const newCount = clickCount + 1;
     console.log('Click detected, new count:', newCount);
     setClickCount(newCount);
@@ -150,8 +151,12 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
         description: "You've reached the maximum number of interactions for the free plan.",
         variant: "destructive",
       });
-      navigate('/pricing');
-    } else if (newCount > MAX_FREE_CLICKS) {
+      
+      // Only redirect if not already on pricing page
+      if (location.pathname !== '/pricing') {
+        navigate('/pricing');
+      }
+    } else if (newCount > MAX_FREE_CLICKS && location.pathname !== '/pricing') {
       console.log('Redirecting to pricing page, clicks > MAX_FREE_CLICKS');
       navigate('/pricing');
     }
@@ -161,7 +166,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
-  }, [clickCount, user, isExcludedPath, hasActiveSubscription]);
+  }, [clickCount, user, isExcludedPath, hasActiveSubscription, location.pathname]);
 
   return <>{children}</>;
 };
