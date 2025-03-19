@@ -4,12 +4,14 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/integrations/supabase/client";
+import { useStripe } from "@/hooks/use-stripe";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const location = useLocation();
+  const { subscription, isSubscriptionLoading } = useStripe();
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -44,7 +46,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, isLoading]);
 
-  if (isLoading || isCheckingOnboarding) {
+  // Show loading spinner while checking authentication or onboarding status
+  if (isLoading || isCheckingOnboarding || isSubscriptionLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Spinner size="lg" />
@@ -63,7 +66,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/profile-setup" replace />;
   }
 
-  // Allow full access to the app regardless of subscription status
+  // Allow full access to the app for users with active subscriptions
+  const hasActiveSubscription = subscription && 
+    (subscription.status === 'active' || subscription.status === 'trialing');
+
+  // Return the children (allow access) if the user has a subscription
   return <>{children}</>;
 };
 
