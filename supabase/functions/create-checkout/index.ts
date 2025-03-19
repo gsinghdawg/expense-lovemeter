@@ -4,13 +4,16 @@
 // This enables autocomplete, go to definition, etc.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { stripe, isStripeConfigured, logStripeMode } from '../_shared/stripe.ts';
+import { stripe, isStripeConfigured, logStripeMode, verifyStripeConnection } from '../_shared/stripe.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getUser } from '../_shared/supabase.ts';
 
 console.log('Create checkout function loaded');
 
 serve(async (req) => {
+  // Log request received for debugging
+  console.log('Request received to create-checkout function');
+  
   // Log Stripe mode for debugging
   logStripeMode();
   
@@ -20,6 +23,21 @@ serve(async (req) => {
   }
 
   try {
+    // Verify Stripe connection
+    const stripeConnection = await verifyStripeConnection();
+    if (!stripeConnection.isValid) {
+      console.error('Stripe connection verification failed:', stripeConnection.message);
+      return new Response(JSON.stringify({
+        error: 'Payment provider configuration error',
+        details: stripeConnection.message,
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    console.log('Stripe connection verified successfully');
+
     // Check if Stripe is properly configured
     if (!isStripeConfigured()) {
       console.error('Stripe is not properly configured. Check STRIPE_SECRET_KEY environment variable.');
@@ -53,9 +71,12 @@ serve(async (req) => {
     }
 
     console.log('Authenticated user:', user.id);
+    
+    // Parse and log the request body
+    const requestBody = await req.json();
+    console.log('Request body:', JSON.stringify(requestBody));
 
-    // Parse the request body
-    const { priceId, mode, successUrl, cancelUrl } = await req.json();
+    const { priceId, mode, successUrl, cancelUrl } = requestBody;
 
     console.log(`Creating ${mode} checkout session for price: ${priceId}`);
     console.log(`Success URL: ${successUrl}, Cancel URL: ${cancelUrl}`);

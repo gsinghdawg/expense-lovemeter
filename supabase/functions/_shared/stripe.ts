@@ -20,3 +20,27 @@ export function logStripeMode(): void {
   console.log(`Using Stripe in mode: ${stripeKey.startsWith('sk_test') ? 'TEST' : 'LIVE'}`);
 }
 
+// Verify that the Stripe connection is working
+export async function verifyStripeConnection(): Promise<{ isValid: boolean; message: string }> {
+  try {
+    if (!isStripeConfigured()) {
+      return { 
+        isValid: false, 
+        message: 'Stripe API key is missing or invalid' 
+      };
+    }
+    
+    // Make a simple API call to verify the connection
+    await stripe.balance.retrieve();
+    
+    return { 
+      isValid: true, 
+      message: 'Stripe connection verified successfully' 
+    };
+  } catch (error) {
+    return { 
+      isValid: false, 
+      message: `Failed to connect to Stripe: ${error.message}` 
+    };
+  }
+}
