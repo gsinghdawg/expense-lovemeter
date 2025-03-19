@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,20 +49,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event, session);
-        
-        // IMPORTANT: For signout event, don't immediately clear user state
-        // This allows any cleanup code (like click counter saving) to complete
-        if (event === 'SIGNED_OUT') {
-          // Use a slight delay to allow other cleanup code to run first
-          setTimeout(() => {
-            setSession(null);
-            setUser(null);
-            setIsLoading(false);
-          }, 2000); // 2-second delay to ensure proper cleanup
-          return;
-        }
-        
-        // For all other auth events, update state normally
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
@@ -155,57 +140,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Capture current user ID before signing out
-      const currentUserId = user?.id;
-      
-      // Ensure we have time to save all click counts by using a delay
-      // This is crucial to prevent the click counter from resetting
-      if (currentUserId) {
-        console.log("Preparing for sign out, ensuring click counts are saved...");
-        
-        // First attempt to force a save of any pending click counts by querying DB
-        try {
-          // This query doesn't modify anything, but helps ensure all operations
-          // are complete before proceeding with sign out
-          await supabase
-            .from('user_click_counts')
-            .select('click_count')
-            .eq('user_id', currentUserId)
-            .single();
-        } catch (e) {
-          console.log("Pre-signout DB check completed");
-        }
-      }
-      
-      // Wait for any ongoing operations to complete
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      setUser(null);
+      setSession(null);
+
       try {
-        // Now proceed with sign out
         await supabase.auth.signOut();
-        console.log("Supabase sign out complete");
       } catch (error: any) {
         console.warn("Error during Supabase sign out:", error);
-        // Continue with local sign out even if server sign out fails
       }
       
-      // Wait again to ensure any remaining cleanup logic completes
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast({
+        title: "Signed out",
+        description: "You've been successfully signed out."
+      });
       
-      // Now we can safely update the UI
-      // We intentionally DON'T clear the user state immediately to allow other
-      // components to complete their cleanup based on user data
-      setTimeout(() => {
-        setUser(null);
-        setSession(null);
-        
-        toast({
-          title: "Signed out",
-          description: "You've been successfully signed out."
-        });
-        
-        navigate('/home');
-      }, 1000);
+      navigate('/home');
     } catch (error: any) {
       console.error("Error during sign out:", error);
       toast({

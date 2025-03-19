@@ -27,47 +27,5 @@ export const STRIPE_BUY_BUTTON_IDS = {
   annual: "buy_btn_1R4TuCECEgtMuXU2dS1WlFV8" // Replace with actual ID when available
 };
 
-// Add a helper for saving click counts during page unload events
-export const saveClickCountBeforeUnload = async (userId: string, count: number) => {
-  try {
-    // Use a more reliable approach for unload events
-    const blob = new Blob(
-      [JSON.stringify({ user_id: userId, click_count: count, updated_at: new Date().toISOString() })], 
-      { type: 'application/json' }
-    );
-    
-    // Use navigator.sendBeacon for better reliability during page unload
-    if (navigator.sendBeacon) {
-      const endpoint = `${SUPABASE_URL}/rest/v1/user_click_counts`;
-      const success = navigator.sendBeacon(
-        endpoint,
-        blob
-      );
-      
-      if (!success) {
-        // Fallback to traditional method if sendBeacon fails
-        await supabase
-          .from('user_click_counts')
-          .upsert(
-            { user_id: userId, click_count: count, updated_at: new Date().toISOString() },
-            { onConflict: 'user_id' }
-          );
-      }
-    } else {
-      // Fallback for browsers that don't support sendBeacon
-      await supabase
-        .from('user_click_counts')
-        .upsert(
-          { user_id: userId, click_count: count, updated_at: new Date().toISOString() },
-          { onConflict: 'user_id' }
-        );
-    }
-    return true;
-  } catch (error) {
-    console.error('Error saving click count on unload:', error);
-    return false;
-  }
-};
-
 // Keep this for compatibility with existing code
 export const STRIPE_PUBLISHABLE_KEY = "pk_live_51QzSAJECEgtMuXU2GLO1bMiyihcl0AZ4o318dV4Nbwga6d8K8M2YutpgcgV0EGHP882QgIX9MqXyaUtoXvhlZMAd00r7TMTC4R";

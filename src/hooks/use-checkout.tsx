@@ -57,27 +57,6 @@ export const useCheckout = ({
       return;
     }
 
-    // Before initiating a checkout, ensure click count is persisted
-    try {
-      // First, get the current click count
-      const { data: clickData } = await supabase
-        .from('user_click_counts')
-        .select('click_count')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      console.log('Retrieved current click count before checkout:', clickData?.click_count);
-
-      // If there's a click count in local state that's higher than what's in the database,
-      // make sure to save it before proceeding with checkout
-      if (clickData) {
-        // We could add code here to sync with any local state if needed
-        console.log('Click count is already saved in database');
-      }
-    } catch (error) {
-      console.warn('Failed to check click count before checkout, continuing anyway');
-    }
-
     setIsLoading(true);
     
     try {
