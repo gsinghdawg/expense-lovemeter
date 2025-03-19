@@ -41,39 +41,18 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
         console.log('User subscription status:', subscription.status, 'isActive:', isActive);
         setHasActiveSubscription(isActive);
         
-        // If user has a newly active subscription but previously hit the paywall,
-        // reset their click count in the database
-        if (isActive && clickCount >= MAX_FREE_CLICKS) {
-          console.log('Resetting click count for subscribed user');
-          try {
-            await supabase
-              .from('user_click_counts')
-              .upsert(
-                { user_id: user.id, click_count: 0, updated_at: new Date().toISOString() },
-                { onConflict: 'user_id' }
-              );
-            setClickCount(0);
-          } catch (error) {
-            console.error('Error resetting click count:', error);
-          }
-        }
+        // REMOVED: Reset click count section that was here previously
         setSubscriptionChecked(true);
       }
     };
     
     checkSubscription();
-  }, [user, subscription, isSubscriptionLoading, clickCount]);
+  }, [user, subscription, isSubscriptionLoading]);
 
   // Load the click count from Supabase when component mounts or user changes
   useEffect(() => {
     const loadClickCount = async () => {
       if (!user || !subscriptionChecked) return;
-      
-      // If user has an active subscription, we don't need to track clicks
-      if (hasActiveSubscription) {
-        console.log('User has active subscription, skipping click count load');
-        return;
-      }
       
       try {
         const { data, error } = await supabase
@@ -113,8 +92,8 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
 
   // Save the click count to Supabase when it changes, but not on every render
   useEffect(() => {
-    // Skip saving if clickCount is 0 or user has subscription
-    if (!user || clickCount === 0 || hasActiveSubscription) return;
+    // Skip saving if clickCount is 0 or no user is logged in
+    if (!user || clickCount === 0) return;
     
     const saveClickCount = async () => {
       try {
@@ -142,16 +121,18 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [clickCount, user, hasActiveSubscription]);
+  }, [clickCount, user]);
 
   // Handle clicking anywhere in the app
   const handleClick = (e: MouseEvent) => {
     // Only count clicks if the user is authenticated and not on excluded paths
     if (!user || isExcludedPath) return;
     
-    // Don't count clicks or show paywall if user has active subscription
+    // Check if user has an active subscription - if so, still count clicks but don't show paywall
     if (hasActiveSubscription) {
-      console.log('User has active subscription, skipping click tracking');
+      console.log('User has active subscription, tracking click but not showing paywall');
+      const newCount = clickCount + 1;
+      setClickCount(newCount);
       return;
     }
     
