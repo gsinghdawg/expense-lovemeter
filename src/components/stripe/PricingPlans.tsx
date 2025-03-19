@@ -54,6 +54,19 @@ export const PricingPlans = () => {
             />
           </div>
         </div>
+        
+        <div className="w-full max-w-[300px]">
+          <div className="text-center mb-4">
+            <h3 className="text-xl font-semibold">Biannual</h3>
+            <p className="text-muted-foreground">$40 for 6 months</p>
+          </div>
+          <div id="stripe-button-biannual" className="w-full">
+            <stripe-buy-button
+              buy-button-id="buy_btn_1R4U4HECEgtMuXU2iUJWTy7v"
+              publishable-key="pk_live_51QzSAJECEgtMuXU2GLO1bMiyihcl0AZ4o318dV4Nbwga6d8K8M2YutpgcgV0EGHP882QgIX9MqXyaUtoXvhlZMAd00r7TMTC4R"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
