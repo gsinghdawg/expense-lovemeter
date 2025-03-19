@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,35 +28,62 @@ export const useStripe = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  // Fetch user's subscription
+  // Fetch user's subscription with improved error handling
   const { 
     data: subscription, 
     isLoading: isSubscriptionLoading,
-    refetch: refetchSubscription
+    refetch: refetchSubscriptionInternal
   } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async (): Promise<Subscription | null> => {
       if (!user) return null;
       
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (error) {
-        if (error.code !== 'PGRST116') { // No rows returned
-          console.error('Error fetching subscription:', error);
+      try {
+        console.log('Fetching subscription for user:', user.id);
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (error) {
+          if (error.code !== 'PGRST116') { // No rows returned
+            console.error('Error fetching subscription:', error);
+          } else {
+            console.log('No subscription found for user');
+          }
+          return null;
         }
+        
+        console.log('Subscription data fetched:', data);
+        return data;
+      } catch (err) {
+        console.error('Unexpected error fetching subscription:', err);
         return null;
       }
-      
-      return data;
     },
     enabled: !!user,
   });
+
+  // Wrapper for refetch with better logging
+  const refetchSubscription = async () => {
+    console.log('Manually refetching subscription data...');
+    try {
+      const result = await refetchSubscriptionInternal();
+      console.log('Subscription refetch result:', result.data);
+      return result;
+    } catch (err) {
+      console.error('Error refetching subscription:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh subscription status. Please try again.',
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
 
   // Fetch user's payment history
   const { 

@@ -20,10 +20,13 @@ const Pricing = () => {
   // Add payment status check to handle redirects after payment
   usePaymentStatusCheck();
 
-  // Always force refresh subscription on mount (to catch latest payment status)
+  // Force refresh subscription on mount to get the latest status
   useEffect(() => {
     if (user) {
-      refetchSubscription();
+      console.log('Initial subscription check on Pricing page mount');
+      refetchSubscription().catch(err => {
+        console.error('Error during initial subscription check:', err);
+      });
     }
   }, [user, refetchSubscription]);
 
@@ -37,6 +40,8 @@ const Pricing = () => {
   // Handle subscription check and automatic redirect
   useEffect(() => {
     if (!isSubscriptionLoading && subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
+      console.log('Active subscription detected, preparing to redirect');
+      
       toast({
         title: "Active Subscription Detected",
         description: "You already have an active subscription. Redirecting to dashboard.",
@@ -44,6 +49,7 @@ const Pricing = () => {
       
       // Short delay before redirecting to ensure toast is visible
       const timer = setTimeout(() => {
+        console.log('Redirecting to dashboard due to active subscription');
         navigate('/dashboard', { replace: true });
       }, 2500);
       
@@ -56,22 +62,37 @@ const Pricing = () => {
   };
 
   const handleRefreshSubscription = async () => {
+    console.log('Manual subscription refresh requested');
     setIsRefreshing(true);
-    await refetchSubscription();
-    setIsRefreshing(false);
     
-    toast({
-      title: "Subscription Status Refreshed",
-      description: "Your subscription status has been updated."
-    });
-    
-    // If subscription is now active, redirect to dashboard
-    if (subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
-      const timer = setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 1000);
+    try {
+      await refetchSubscription();
       
-      return () => clearTimeout(timer);
+      toast({
+        title: "Subscription Status Refreshed",
+        description: "Your subscription status has been updated."
+      });
+      
+      // If subscription is now active, redirect to dashboard
+      if (subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
+        console.log('Active subscription found after refresh, redirecting to dashboard');
+        
+        // Short delay to ensure the toast is visible
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 1500);
+      } else {
+        console.log('No active subscription found after refresh');
+      }
+    } catch (error) {
+      console.error('Error refreshing subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh subscription status. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
