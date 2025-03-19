@@ -57,23 +57,34 @@ serve(async (req) => {
 
     // Get or create the customer
     let customerId;
-    const customerList = await stripe.customers.list({
-      email: user.email,
-      limit: 1,
-    });
-
-    if (customerList.data.length > 0) {
-      customerId = customerList.data[0].id;
-      console.log('Found existing customer:', customerId);
-    } else {
-      const customer = await stripe.customers.create({
+    try {
+      const customerList = await stripe.customers.list({
         email: user.email,
-        metadata: {
-          user_id: user.id,
-        },
+        limit: 1,
       });
-      customerId = customer.id;
-      console.log('Created new customer:', customerId);
+
+      if (customerList.data.length > 0) {
+        customerId = customerList.data[0].id;
+        console.log('Found existing customer:', customerId);
+      } else {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            user_id: user.id,
+          },
+        });
+        customerId = customer.id;
+        console.log('Created new customer:', customerId);
+      }
+    } catch (error) {
+      console.error('Error with customer creation/lookup:', error);
+      return new Response(JSON.stringify({
+        error: 'Failed to create or retrieve customer',
+        details: error.message,
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Create line items array based on provided priceIds
@@ -83,29 +94,42 @@ serve(async (req) => {
     }];
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      client_reference_id: user.id,
-      line_items: lineItems,
-      mode: mode,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      billing_address_collection: 'auto',
-    });
+    try {
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        client_reference_id: user.id,
+        line_items: lineItems,
+        mode: mode,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        billing_address_collection: 'auto',
+      });
 
-    console.log('Checkout session created:', session.id, 'Mode:', session.mode);
+      console.log('Checkout session created:', session.id, 'Mode:', session.mode);
 
-    // Return the session ID
-    return new Response(JSON.stringify({
-      sessionId: session.id,
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      // Return the session ID
+      return new Response(JSON.stringify({
+        sessionId: session.id,
+        url: session.url, // Include the direct URL as a fallback
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      return new Response(JSON.stringify({
+        error: 'Failed to create checkout session',
+        details: error.message,
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('Unexpected error:', error);
     return new Response(JSON.stringify({
-      error: error.message,
+      error: 'Internal server error',
+      details: error.message,
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

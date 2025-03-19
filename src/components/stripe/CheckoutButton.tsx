@@ -8,7 +8,7 @@ import { supabase, STRIPE_PUBLISHABLE_KEY } from '@/integrations/supabase/client
 import { useNavigate } from 'react-router-dom';
 import { useStripe } from '@/hooks/use-stripe';
 
-// Initialize Stripe with our LIVE mode publishable key
+// Initialize Stripe with our publishable key
 console.log('Initializing Stripe with key (first 8 chars):', STRIPE_PUBLISHABLE_KEY.substring(0, 8));
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
@@ -105,14 +105,25 @@ export const CheckoutButton = ({
 
       console.log('Response from create-checkout:', data, error);
       
-      if (error || !data?.sessionId) {
+      if (error || !data) {
         console.error('Edge function error:', error);
         throw new Error(error?.message || 'Failed to create checkout session.');
       }
       
+      if (!data.sessionId) {
+        throw new Error('No session ID returned from server');
+      }
+      
       console.log('Checkout session created:', data.sessionId);
       
-      // Redirect to Stripe Checkout
+      // If direct URL is available, use it (more reliable)
+      if (data.url) {
+        console.log('Redirecting to Stripe URL directly:', data.url);
+        window.location.href = data.url;
+        return;
+      }
+      
+      // Fallback to redirectToCheckout
       const { error: redirectError } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
@@ -124,7 +135,7 @@ export const CheckoutButton = ({
       console.error('Checkout error:', error);
       toast({
         title: 'Checkout Error',
-        description: error.message || 'There was an error processing your payment.',
+        description: error.message || 'There was an error processing your payment. Please try again later.',
         variant: 'destructive',
       });
     } finally {
