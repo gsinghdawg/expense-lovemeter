@@ -40,10 +40,10 @@ const App = () => (
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/home" element={<Home />} />
-                {/* Redirect all unmatched routes to /home */}
-                <Route path="/" element={<Navigate to="/home" replace />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<Navigate to="/home" replace />} />
+                {/* Set explicit route for root path */}
+                <Route path="/" element={<Home />} />
+                {/* Redirect all unmatched routes to home */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </ClickTracker>
           </TooltipProvider>

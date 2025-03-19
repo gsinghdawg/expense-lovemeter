@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { PricingPlans } from "@/components/stripe/PricingPlans";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,8 @@ const Pricing = () => {
   }, [user, navigate]);
 
   const handleBackToHome = () => {
-    navigate('/home', { replace: true });
+    // Navigate to root path instead of /home
+    navigate('/', { replace: true });
   };
 
   return (
