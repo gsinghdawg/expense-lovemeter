@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
     // Get the JWT token from the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header present');
       return new Response('No authorization header', { status: 401, headers: corsHeaders });
     }
 
@@ -45,32 +46,48 @@ Deno.serve(async (req) => {
     
     if (authError || !user) {
       console.error('Auth error:', authError);
-      return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Unauthorized', details: authError }), { 
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
 
     // Parse the request body
-    const { priceId, mode, successUrl, cancelUrl } = await req.json();
+    const requestData = await req.json();
+    console.log('Request body:', requestData);
+    
+    const { priceId, mode, successUrl, cancelUrl } = requestData;
     
     if (!priceId || !mode || !successUrl || !cancelUrl) {
-      return new Response('Missing required parameters', { 
+      console.error('Missing required parameters', { priceId, mode, successUrl, cancelUrl });
+      return new Response(JSON.stringify({ 
+        error: 'Missing required parameters',
+        receivedParams: { priceId, mode, successUrl, cancelUrl }
+      }), { 
         status: 400,
-        headers: corsHeaders
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     // Check if user already has a Stripe customer ID
-    const { data: customerData } = await supabase
+    const { data: customerData, error: customerError } = await supabase
       .from('stripe_customers')
       .select('stripe_customer_id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+    
+    if (customerError) {
+      console.error('Error fetching customer data:', customerError);
+    }
     
     let customerId;
     
     if (customerData?.stripe_customer_id) {
+      console.log('Found existing customer:', customerData.stripe_customer_id);
       customerId = customerData.stripe_customer_id;
     } else {
       // Create a new customer in Stripe
+      console.log('Creating new customer for user:', user.id);
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
@@ -79,17 +96,29 @@ Deno.serve(async (req) => {
       });
       
       customerId = customer.id;
+      console.log('Created new customer:', customerId);
       
       // Store the customer ID in the database
-      await supabase
+      const { error: insertError } = await supabase
         .from('stripe_customers')
         .insert({
           user_id: user.id,
           stripe_customer_id: customerId
         });
+        
+      if (insertError) {
+        console.error('Error storing customer ID:', insertError);
+      }
     }
 
     // Create a checkout session
+    console.log('Creating checkout session with:', {
+      customer: customerId,
+      client_reference_id: user.id,
+      mode,
+      priceId
+    });
+    
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       client_reference_id: user.id,
@@ -105,6 +134,8 @@ Deno.serve(async (req) => {
       cancel_url: cancelUrl,
     });
 
+    console.log('Checkout session created:', session.id);
+
     // Return the session ID
     return new Response(JSON.stringify({ sessionId: session.id }), {
       status: 200,
@@ -112,9 +143,13 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    return new Response(`Error: ${error.message}`, { 
+    return new Response(JSON.stringify({ 
+      error: 'Error creating checkout session', 
+      message: error.message,
+      stack: error.stack
+    }), { 
       status: 500,
-      headers: corsHeaders
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });

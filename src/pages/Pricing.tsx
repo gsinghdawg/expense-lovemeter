@@ -6,7 +6,6 @@ import { PricingPlans } from "@/components/stripe/PricingPlans";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useStripe } from "@/hooks/use-stripe";
 
 const Pricing = () => {
@@ -14,12 +13,8 @@ const Pricing = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const [clickCount, setClickCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const { subscription, isSubscriptionLoading } = useStripe();
-
-  // Maximum allowed clicks before paywall
-  const MAX_FREE_CLICKS = 40;
 
   // Check if payment was cancelled
   useEffect(() => {
@@ -50,45 +45,6 @@ const Pricing = () => {
     }
   }, [subscription, isSubscriptionLoading, navigate, toast]);
 
-  // Check if user has reached the click limit
-  useEffect(() => {
-    const checkClickCount = async () => {
-      if (!user) return;
-
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('user_click_counts')
-          .select('click_count')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error loading click count:', error);
-          return;
-        }
-
-        if (data) {
-          setClickCount(data.click_count);
-          
-          // If user hasn't reached the click limit, show that info but don't redirect
-          if (data.click_count < MAX_FREE_CLICKS) {
-            toast({
-              title: "Free Usage Available",
-              description: `You still have ${MAX_FREE_CLICKS - data.click_count} free interactions left.`
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching click count:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkClickCount();
-  }, [user, navigate, toast]);
-
   // Redirect to signup if not logged in
   useEffect(() => {
     if (!user) {
@@ -97,7 +53,6 @@ const Pricing = () => {
   }, [user, navigate]);
 
   const handleBackToHome = () => {
-    // Simply navigate to home page - click tracking is now disabled on home route
     navigate('/', { replace: true });
   };
 
@@ -118,9 +73,6 @@ const Pricing = () => {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-4">Upgrade Your LadyLedger Experience</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {clickCount >= MAX_FREE_CLICKS 
-              ? `You've reached the free usage limit (${clickCount}/${MAX_FREE_CLICKS} clicks).` 
-              : "Upgrade to unlock premium features and unlimited usage."} 
             Subscribe to continue using LadyLedger and unlock premium features.
           </p>
         </div>

@@ -93,8 +93,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/profile-setup" replace />;
   }
 
-  // Removed the automatic subscription check and redirect to pricing
-  // This allows users to use the app after payment is successful
+  // We've removed subscription requirement check to allow users to access the app after payment
+  // Allowing full access to the app regardless of subscription status
 
   return <>{children}</>;
 };

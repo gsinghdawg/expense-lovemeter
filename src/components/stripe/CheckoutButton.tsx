@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useStripe } from '@/hooks/use-stripe';
 
-// Initialize Stripe with the provided test key
+// Initialize Stripe with the key from the Supabase environment
 const stripePromise = loadStripe('pk_test_51QzSAJECEgtMuXU2UJ8hDINkw43JABnVFmbispZpwtT4HGK2ZIj4tuhb5STL48ERAnr1KOUb5KtCDtxS31IsQzjg009FXBPWY7');
 
 interface CheckoutButtonProps {
@@ -101,10 +101,12 @@ export const CheckoutButton = ({
           cancelUrl
         }
       });
+
+      console.log('Response from create-checkout:', data, error);
       
       if (error || !data?.sessionId) {
         console.error('Edge function error:', error);
-        throw new Error('Failed to create checkout session.');
+        throw new Error(error?.message || 'Failed to create checkout session.');
       }
       
       console.log('Checkout session created:', data.sessionId);
