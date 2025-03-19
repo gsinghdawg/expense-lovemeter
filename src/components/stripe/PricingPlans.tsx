@@ -2,8 +2,6 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckoutButton } from '@/components/stripe/CheckoutButton';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
 
 interface PricingTier {
   id: string;
@@ -65,14 +63,6 @@ export const PricingPlans = () => {
           Choose the plan that works best for your financial goals. All plans include access to our core budgeting tools.
         </p>
       </div>
-
-      <Alert className="mb-8 max-w-3xl mx-auto">
-        <Info className="h-4 w-4" />
-        <AlertTitle>Test Mode</AlertTitle>
-        <AlertDescription>
-          Use card number 4242 4242 4242 4242, any future expiration date, and any 3-digit CVC for testing.
-        </AlertDescription>
-      </Alert>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mt-8">
         {pricingTiers.map((tier) => (
