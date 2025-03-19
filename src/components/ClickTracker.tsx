@@ -17,6 +17,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   const [clickCount, setClickCount] = useState(0);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [subscriptionChecked, setSubscriptionChecked] = useState(false);
+  const [clickDataLoaded, setClickDataLoaded] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -108,8 +109,13 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
             navigate('/pricing');
           }
         }
+        
+        // Mark click data as loaded even if there was no data
+        setClickDataLoaded(true);
       } catch (error) {
         console.error('Error fetching click count:', error);
+        // Even on error, mark as loaded to prevent infinite loading state
+        setClickDataLoaded(true);
       }
     };
     
@@ -132,7 +138,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   // Save the click count to Supabase whenever it changes or when user changes
   useEffect(() => {
     // Skip saving if clickCount is 0 or no user
-    if (!user || clickCount === 0) return;
+    if (!user || clickCount === 0 || !clickDataLoaded) return;
     
     // Use a debounced save to prevent too many DB writes
     const timeoutId = setTimeout(() => {
@@ -140,12 +146,12 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [clickCount, user]);
+  }, [clickCount, user, clickDataLoaded]);
 
   // Handle clicking anywhere in the app
   const handleClick = (e: MouseEvent) => {
     // Only count clicks if the user is authenticated and not on excluded paths
-    if (!user || isExcludedPath) return;
+    if (!user || isExcludedPath || !clickDataLoaded) return;
     
     // Don't track clicks if user has active subscription, but still preserve the counter
     if (hasActiveSubscription) {
@@ -153,11 +159,17 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       return;
     }
     
-    // IMPORTANT: Increment click count even after reaching MAX_FREE_CLICKS
+    // Never reset the counter - always increment by 1
     // This ensures the counter never resets and continues to increase
     const newCount = clickCount + 1;
     console.log('Click detected, new count:', newCount);
     setClickCount(newCount);
+    
+    // Save the click count before showing notification or redirecting
+    if (user && newCount > 0) {
+      // Save immediately before potentially redirecting
+      saveClickCount(newCount, user.id);
+    }
     
     // Show notification and redirect at exactly the threshold
     if (newCount === MAX_FREE_CLICKS) {
@@ -167,22 +179,12 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
         variant: "destructive",
       });
       
-      // Save the click count immediately when redirecting
-      if (user && newCount > 0) {
-        saveClickCount(newCount, user.id);
-      }
-      
       // Only redirect if not already on pricing page
       if (location.pathname !== '/pricing') {
         navigate('/pricing');
       }
     } else if (newCount > MAX_FREE_CLICKS && location.pathname !== '/pricing') {
       // Continue redirecting to pricing for any click beyond the threshold
-      // But ALWAYS save the click count before redirecting
-      if (user && newCount > 0) {
-        saveClickCount(newCount, user.id);
-      }
-      
       console.log('Redirecting to pricing page, clicks > MAX_FREE_CLICKS');
       navigate('/pricing');
     }
@@ -190,20 +192,22 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
 
   // Add click event listener
   useEffect(() => {
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
-  }, [clickCount, user, isExcludedPath, hasActiveSubscription, location.pathname]);
+    if (clickDataLoaded) { // Only add listener after click data is loaded
+      window.addEventListener('click', handleClick);
+      return () => window.removeEventListener('click', handleClick);
+    }
+  }, [clickCount, user, isExcludedPath, hasActiveSubscription, location.pathname, clickDataLoaded]);
 
   // Save click count when component unmounts
   useEffect(() => {
     return () => {
-      if (user && clickCount > 0) {
+      if (user && clickCount > 0 && clickDataLoaded) {
         console.log('Component unmounting, saving click count:', clickCount);
         // Use immediate save with no delay during unmount
         saveClickCount(clickCount, user.id);
       }
     };
-  }, [clickCount, user]);
+  }, [clickCount, user, clickDataLoaded]);
 
   return <>{children}</>;
 };
