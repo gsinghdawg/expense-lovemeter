@@ -33,57 +33,95 @@ export const useStripe = () => {
   const { 
     data: subscription, 
     isLoading: isSubscriptionLoading,
-    refetch: refetchSubscription
+    refetch: refetchSubscription,
+    error: subscriptionError
   } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async (): Promise<Subscription | null> => {
       if (!user) return null;
       
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      console.log("Fetching subscription for user:", user.id);
       
-      if (error) {
-        if (error.code !== 'PGRST116') { // No rows returned
-          console.error('Error fetching subscription:', error);
+      try {
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (error) {
+          if (error.code !== 'PGRST116') { // No rows returned
+            console.error('Error fetching subscription:', error);
+          } else {
+            console.log("No subscription found for user");
+          }
+          return null;
         }
+        
+        console.log("Subscription found:", data);
+        return data;
+      } catch (error) {
+        console.error('Error in subscription query:', error);
         return null;
       }
-      
-      return data;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 1, // 1 minute
+    refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
   });
+
+  // Log subscription errors
+  useEffect(() => {
+    if (subscriptionError) {
+      console.error("Subscription fetch error:", subscriptionError);
+    }
+  }, [subscriptionError]);
 
   // Fetch user's payment history
   const { 
     data: paymentHistory, 
     isLoading: isPaymentHistoryLoading,
-    refetch: refetchPaymentHistory
+    refetch: refetchPaymentHistory,
+    error: paymentHistoryError
   } = useQuery({
     queryKey: ['paymentHistory', user?.id],
     queryFn: async (): Promise<PaymentHistory[]> => {
       if (!user) return [];
       
-      const { data, error } = await supabase
-        .from('payment_history')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      console.log("Fetching payment history for user:", user.id);
       
-      if (error) {
-        console.error('Error fetching payment history:', error);
+      try {
+        const { data, error } = await supabase
+          .from('payment_history')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching payment history:', error);
+          return [];
+        }
+        
+        console.log("Payment history found:", data?.length || 0, "records");
+        return data || [];
+      } catch (error) {
+        console.error('Error in payment history query:', error);
         return [];
       }
-      
-      return data;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 1, // 1 minute
+    refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
   });
+
+  // Log payment history errors
+  useEffect(() => {
+    if (paymentHistoryError) {
+      console.error("Payment history fetch error:", paymentHistoryError);
+    }
+  }, [paymentHistoryError]);
 
   // Create a checkout session
   const createCheckoutSession = async (options: {
@@ -104,6 +142,8 @@ export const useStripe = () => {
     setLoading(true);
     
     try {
+      console.log("Creating checkout session with options:", options);
+      
       const response = await supabase.functions.invoke('create-checkout', {
         body: options,
       });
@@ -112,6 +152,7 @@ export const useStripe = () => {
         throw new Error(response.error.message);
       }
       
+      console.log("Checkout session created:", response.data);
       return response.data.sessionId;
     } catch (error) {
       console.error('Error creating checkout session:', error);
@@ -209,6 +250,49 @@ export const useStripe = () => {
     }
   };
 
+  // Manual function to directly check the database for payments
+  const checkForDirectPayments = async (): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      console.log("Manually checking for direct payments in database");
+      const { data, error } = await supabase
+        .from('payment_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.length > 0) {
+        console.log("Direct payments found during manual check:", data);
+        
+        // Check for recent payments (within the last 24 hours)
+        const now = new Date();
+        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        
+        const hasRecentDirectPayment = data.some(payment => {
+          const paymentDate = new Date(payment.created_at);
+          return payment.status === 'succeeded' && paymentDate > twentyFourHoursAgo;
+        });
+        
+        if (hasRecentDirectPayment) {
+          console.log("Recent payment found during manual check");
+          return true;
+        }
+      }
+      
+      console.log("No recent payments found during manual check");
+      return false;
+    } catch (error) {
+      console.error('Error during manual payment check:', error);
+      return false;
+    }
+  };
+
   return {
     loading,
     subscription,
@@ -220,5 +304,6 @@ export const useStripe = () => {
     manageSubscription,
     refetchSubscription,
     refetchPaymentHistory,
+    checkForDirectPayments,
   };
 };

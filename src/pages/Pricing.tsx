@@ -25,12 +25,13 @@ const Pricing = () => {
   const [pollingCount, setPollingCount] = useState(0);
   const [directPayments, setDirectPayments] = useState<any[]>([]);
   const [isLoadingDirectPayments, setIsLoadingDirectPayments] = useState(false);
+  const [isManuallyChecking, setIsManuallyChecking] = useState(false);
   
   usePaymentStatusCheck();
 
   // Poll for subscription updates if payment is detected
   useEffect(() => {
-    if ((hasRecentPayment || directPayments.length > 0) && !hasActiveSubscription && pollingCount < 20) {
+    if ((hasRecentPayment || directPayments.length > 0 || isManuallyChecking) && !hasActiveSubscription && pollingCount < 20) {
       const timer = setTimeout(() => {
         console.log(`Polling for subscription updates (attempt ${pollingCount + 1}/20)...`);
         refetchSubscription();
@@ -41,26 +42,58 @@ const Pricing = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [hasRecentPayment, directPayments, hasActiveSubscription, pollingCount, refetchSubscription, refetchPaymentHistory]);
+  }, [hasRecentPayment, directPayments, hasActiveSubscription, pollingCount, isManuallyChecking, refetchSubscription, refetchPaymentHistory]);
 
-  // Check for direct payments in Supabase
+  // More thorough check for direct payments in Supabase
   const checkDirectPayments = async () => {
     if (!user) return;
     
     setIsLoadingDirectPayments(true);
     try {
+      console.log("Checking for direct payments in database...");
       const { data, error } = await supabase
         .from('payment_history')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(10);
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error checking direct payments:", error);
+        throw error;
+      }
+      
+      console.log("Payment history from database:", data);
       
       if (data && data.length > 0) {
         console.log("Direct payments found:", data);
         setDirectPayments(data);
+        
+        // Check for recent payments (within the last 24 hours)
+        const now = new Date();
+        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        
+        const hasRecentDirectPayment = data.some(payment => {
+          const paymentDate = new Date(payment.created_at);
+          const isRecent = paymentDate > twentyFourHoursAgo;
+          const isSuccessful = payment.status === 'succeeded';
+          
+          console.log(`Payment ${payment.id}: date=${paymentDate}, isRecent=${isRecent}, isSuccessful=${isSuccessful}`);
+          
+          return isSuccessful && isRecent;
+        });
+        
+        if (hasRecentDirectPayment) {
+          setHasRecentPayment(true);
+          if (!isProcessing) {
+            toast({
+              title: "Payment Found",
+              description: "We've found a recent payment for your account. You should now have access to all features!",
+            });
+          }
+        }
+      } else {
+        console.log("No direct payments found in database");
       }
     } catch (err) {
       console.error("Error checking direct payments:", err);
@@ -88,11 +121,11 @@ const Pricing = () => {
     if (!paymentHistory || isPaymentHistoryLoading) return;
 
     const now = new Date();
-    const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000); // 12 hours ago
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
     
     const recentSuccessfulPayment = paymentHistory.some(payment => {
       const paymentDate = new Date(payment.created_at);
-      return payment.status === 'succeeded' && paymentDate > twelveHoursAgo;
+      return payment.status === 'succeeded' && paymentDate > twentyFourHoursAgo;
     });
     
     setHasRecentPayment(recentSuccessfulPayment);
@@ -118,11 +151,11 @@ const Pricing = () => {
     if (!directPayments.length) return;
     
     const now = new Date();
-    const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     const hasRecentDirectPayment = directPayments.some(payment => {
       const paymentDate = new Date(payment.created_at);
-      return payment.status === 'succeeded' && paymentDate > twelveHoursAgo;
+      return payment.status === 'succeeded' && paymentDate > twentyFourHoursAgo;
     });
     
     if (hasRecentDirectPayment && !hasActiveSubscription && !isProcessing) {
@@ -156,12 +189,13 @@ const Pricing = () => {
   };
 
   const handleManualCheck = () => {
+    setIsManuallyChecking(true);
     refetchSubscription();
     refetchPaymentHistory();
     checkDirectPayments();
     toast({
       title: "Checking Payment Status",
-      description: "We're checking your payment status...",
+      description: "We're checking your payment status. This may take a moment...",
     });
   };
 
@@ -231,7 +265,32 @@ const Pricing = () => {
         )}
         
         {!hasActiveSubscription && !hasRecentPayment && directPayments.length === 0 && 
-          !isSubscriptionLoading && !isPaymentHistoryLoading && !isLoadingDirectPayments && <PricingPlans />}
+          !isSubscriptionLoading && !isPaymentHistoryLoading && !isLoadingDirectPayments && (
+            <div>
+              <div className="mb-6">
+                <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                  <AlertTitle className="text-blue-800 dark:text-blue-400">Purchase a Subscription</AlertTitle>
+                  <AlertDescription className="text-blue-700 dark:text-blue-300">
+                    Select a plan below to gain access to all features. If you've already purchased but don't see your subscription,
+                    use the 'Check Payment Status' button.
+                  </AlertDescription>
+                  {isManuallyChecking ? (
+                    <div className="mt-4 flex items-center gap-2">
+                      <Spinner size="sm" className="text-blue-600" />
+                      <span className="text-blue-700 dark:text-blue-300">Checking payment status...</span>
+                    </div>
+                  ) : (
+                    <div className="mt-4">
+                      <Button variant="outline" onClick={handleManualCheck} className="border-blue-400 text-blue-700 hover:bg-blue-100">
+                        Check Payment Status
+                      </Button>
+                    </div>
+                  )}
+                </Alert>
+              </div>
+              <PricingPlans />
+            </div>
+          )}
         
         {(isSubscriptionLoading || isPaymentHistoryLoading || isLoadingDirectPayments) && (
           <div className="flex justify-center my-20">
