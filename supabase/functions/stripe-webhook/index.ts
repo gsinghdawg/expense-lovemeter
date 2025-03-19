@@ -1,10 +1,5 @@
-
 import Stripe from 'npm:stripe@12.7.0';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/cors.ts';
 
 // Create a Stripe client with the secret key
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
@@ -12,7 +7,8 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   httpClient: Stripe.createFetchHttpClient(),
 });
 
-const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || '';
+// Update the webhook secret with the provided value
+const webhookSecret = 'whsec_7i5MDKN6OMEj6GnfdUwKvD2b1ZwrPCN8';
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -31,6 +27,8 @@ Deno.serve(async (req) => {
     if (!signature) {
       return new Response('Stripe signature missing', { status: 400, headers: corsHeaders });
     }
+    
+    console.log('Webhook received, verifying signature with secret starting with:', webhookSecret.substring(0, 4));
     
     // Verify the webhook signature
     let event;
