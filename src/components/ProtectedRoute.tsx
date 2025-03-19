@@ -13,19 +13,33 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [hasRecentPayment, setHasRecentPayment] = useState(false);
   const location = useLocation();
-  const { subscription, isSubscriptionLoading, paymentHistory, isPaymentHistoryLoading } = useStripe();
+  const { subscription, isSubscriptionLoading, paymentHistory, isPaymentHistoryLoading, refetchSubscription } = useStripe();
   const { toast } = useToast();
+
+  // Refetch subscription data periodically when payment detected but subscription not active
+  useEffect(() => {
+    // Only poll if there's a recent payment but no active subscription
+    if (hasRecentPayment && !subscription?.status) {
+      console.log("Payment detected but subscription not active yet, polling for updates...");
+      const pollingInterval = setInterval(() => {
+        refetchSubscription();
+      }, 5000); // Poll every 5 seconds
+      
+      return () => clearInterval(pollingInterval);
+    }
+  }, [hasRecentPayment, subscription, refetchSubscription]);
 
   // Check for recent payments (within the last hour)
   useEffect(() => {
     if (!paymentHistory || isPaymentHistoryLoading) return;
 
     const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour grace period
+    // Extend grace period to 6 hours to handle longer processing times
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000); 
     
     const recentSuccessfulPayment = paymentHistory.some(payment => {
       const paymentDate = new Date(payment.created_at);
-      return payment.status === 'succeeded' && paymentDate > oneHourAgo;
+      return payment.status === 'succeeded' && paymentDate > sixHoursAgo;
     });
     
     setHasRecentPayment(recentSuccessfulPayment);
@@ -96,23 +110,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   console.log("Subscription status:", subscription?.status || "No subscription");
   console.log("Has recent payment:", hasRecentPayment);
   
-  // If user doesn't have an active subscription and no recent payment,
-  // and isn't on the pricing page, redirect to pricing page
-  if (!hasActiveSubscription && !hasRecentPayment && location.pathname !== "/pricing") {
-    // Show toast with information about the subscription issue
-    if (location.pathname !== "/pricing") {
-      toast({
-        title: "Subscription Required",
-        description: "You need an active subscription to access this area. If you just paid, please wait a moment for our system to process your payment.",
-        variant: "destructive",
-      });
-    }
-    return <Navigate to="/pricing" replace />;
+  // Allow access if user has active subscription, recent payment, or is on the pricing page
+  if (hasActiveSubscription || hasRecentPayment || location.pathname === "/pricing") {
+    return <>{children}</>;
   }
-
-  // Return the children (allow access) if the user has a subscription, recent payment,
-  // or is on allowed pages
-  return <>{children}</>;
+  
+  // If there's no active subscription and no recent payment,
+  // redirect to pricing page with a toast message
+  if (location.pathname !== "/pricing") {
+    toast({
+      title: "Subscription Required",
+      description: "You need an active subscription to access this area. If you just paid, please wait a moment for our system to process your payment.",
+      variant: "destructive",
+    });
+  }
+  
+  return <Navigate to="/pricing" replace />;
 };
 
 export default ProtectedRoute;
