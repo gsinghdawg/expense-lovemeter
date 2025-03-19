@@ -35,7 +35,7 @@ export const usePaymentStatusCheck = () => {
           // Fetch one more time to be certain
           await refetchSubscription();
           // Redirect to main app after successful payment
-          navigate('/', { replace: true });
+          navigate('/dashboard', { replace: true });
         }, 2000);
       } else if (paymentCancelled === 'true') {
         // Clean up URL

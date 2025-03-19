@@ -71,8 +71,8 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
         }
         
         if (data) {
+          console.log('Loaded click count from DB:', data.click_count);
           setClickCount(data.click_count);
-          console.log('Loaded click count:', data.click_count);
           
           // Only redirect if:
           // 1. Not on an excluded path
@@ -92,15 +92,16 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     };
     
     loadClickCount();
-  }, [user, navigate, isExcludedPath, hasActiveSubscription, subscriptionChecked]);
+  }, [user, navigate, isExcludedPath, hasActiveSubscription, subscriptionChecked, location.pathname]);
 
-  // Save the click count to Supabase when it changes
+  // Save the click count to Supabase when it changes, but not on every render
   useEffect(() => {
+    // Skip saving if clickCount is 0 or user has subscription
+    if (!user || clickCount === 0 || hasActiveSubscription) return;
+    
     const saveClickCount = async () => {
-      if (!user || clickCount === 0 || hasActiveSubscription) return;
-      
       try {
-        console.log('Saving click count:', clickCount);
+        console.log('Saving click count to DB:', clickCount);
         const { error } = await supabase
           .from('user_click_counts')
           .upsert(
@@ -110,13 +111,20 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
         
         if (error) {
           console.error('Error saving click count:', error);
+        } else {
+          console.log('Successfully saved click count to DB');
         }
       } catch (error) {
         console.error('Error updating click count:', error);
       }
     };
     
-    saveClickCount();
+    // Use a small timeout to prevent too many DB writes
+    const timeoutId = setTimeout(() => {
+      saveClickCount();
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
   }, [clickCount, user, hasActiveSubscription]);
 
   // Handle clicking anywhere in the app
