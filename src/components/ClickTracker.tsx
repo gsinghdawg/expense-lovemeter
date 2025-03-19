@@ -30,7 +30,6 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     const checkSubscription = async () => {
       // If no user, reset subscription state
       if (!user) {
-        setHasActiveSubscription(false);
         setSubscriptionChecked(true);
         return;
       }
@@ -47,17 +46,36 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     checkSubscription();
   }, [user, subscription, isSubscriptionLoading]);
 
+  // Save click count to Supabase
+  const saveClickCount = async (count: number, userId: string) => {
+    if (count === 0) return;
+    
+    try {
+      console.log('Saving click count to DB:', count);
+      const { error } = await supabase
+        .from('user_click_counts')
+        .upsert(
+          { user_id: userId, click_count: count, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        );
+      
+      if (error) {
+        console.error('Error saving click count:', error);
+      } else {
+        console.log('Successfully saved click count to DB');
+      }
+    } catch (error) {
+      console.error('Error updating click count:', error);
+    }
+  };
+
   // Load the click count from Supabase when component mounts or user changes
   useEffect(() => {
     const loadClickCount = async () => {
       if (!user || !subscriptionChecked) return;
       
-      // If user has an active subscription, we don't need to track clicks
-      if (hasActiveSubscription) {
-        console.log('User has active subscription, skipping click count load');
-        return;
-      }
-      
+      // Even if user has active subscription, we still load the click count
+      // so it's preserved if subscription expires
       try {
         const { data, error } = await supabase
           .from('user_click_counts')
@@ -95,38 +113,34 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     loadClickCount();
   }, [user, navigate, isExcludedPath, hasActiveSubscription, subscriptionChecked, location.pathname]);
 
-  // Save the click count to Supabase when it changes, but not on every render
+  // Add event listener for beforeunload to save the click count before the page unloads
   useEffect(() => {
-    // Skip saving if clickCount is 0 or user has subscription
-    if (!user || clickCount === 0 || hasActiveSubscription) return;
-    
-    const saveClickCount = async () => {
-      try {
-        console.log('Saving click count to DB:', clickCount);
-        const { error } = await supabase
-          .from('user_click_counts')
-          .upsert(
-            { user_id: user.id, click_count: clickCount, updated_at: new Date().toISOString() },
-            { onConflict: 'user_id' }
-          );
-        
-        if (error) {
-          console.error('Error saving click count:', error);
-        } else {
-          console.log('Successfully saved click count to DB');
-        }
-      } catch (error) {
-        console.error('Error updating click count:', error);
+    const handleBeforeUnload = () => {
+      if (user && clickCount > 0) {
+        // Use a synchronous approach for beforeunload
+        navigator.sendBeacon(
+          '/api/save-clicks',
+          JSON.stringify({ userId: user.id, clickCount })
+        );
       }
     };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [clickCount, user]);
+
+  // Save the click count to Supabase when it changes or when user changes
+  useEffect(() => {
+    // Skip saving if clickCount is 0 or no user
+    if (!user || clickCount === 0) return;
     
     // Use a small timeout to prevent too many DB writes
     const timeoutId = setTimeout(() => {
-      saveClickCount();
+      saveClickCount(clickCount, user.id);
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [clickCount, user, hasActiveSubscription]);
+  }, [clickCount, user]);
 
   // Handle clicking anywhere in the app
   const handleClick = (e: MouseEvent) => {
@@ -167,6 +181,15 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
   }, [clickCount, user, isExcludedPath, hasActiveSubscription, location.pathname]);
+
+  // Save click count when component unmounts
+  useEffect(() => {
+    return () => {
+      if (user && clickCount > 0) {
+        saveClickCount(clickCount, user.id);
+      }
+    };
+  }, [clickCount, user]);
 
   return <>{children}</>;
 };

@@ -141,10 +141,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Important: We don't clear user data immediately to allow other components 
-      // to save any pending changes before the session is actually removed
-      
+      // IMPORTANT: Before signing out, we need to ensure any pending click counts are saved
+      // This is just an extra safety measure in case the ClickTracker's own save doesn't complete
       try {
+        // We'll wait for a short time to allow any ongoing save operations to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Now we can proceed with sign out
         await supabase.auth.signOut();
       } catch (error: any) {
         console.warn("Error during Supabase sign out:", error);
