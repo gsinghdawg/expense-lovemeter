@@ -13,6 +13,7 @@ console.log('Create checkout function loaded');
 serve(async (req) => {
   // Log request received for debugging
   console.log('Request received to create-checkout function');
+  console.log('Request method:', req.method);
   
   // Log Stripe mode for debugging
   logStripeMode();
