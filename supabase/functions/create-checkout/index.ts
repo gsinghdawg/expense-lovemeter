@@ -9,7 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Create a Stripe client with the secret key
+// Create a Stripe client with the secret key - ensure it's in TEST mode
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
         
       if (insertError) {
         console.error('Error storing customer ID:', insertError);
+        // Continue anyway since we have the customer ID from Stripe
       }
     }
 
