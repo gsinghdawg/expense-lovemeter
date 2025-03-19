@@ -1,49 +1,16 @@
 
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { PricingPlans } from "@/components/stripe/PricingPlans";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useStripe } from "@/hooks/use-stripe";
 
 const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const { subscription, isSubscriptionLoading } = useStripe();
-
-  // Check if payment was cancelled
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const paymentCancelled = url.searchParams.get('payment_cancelled');
-    
-    if (paymentCancelled === 'true') {
-      // Clean up URL
-      url.searchParams.delete('payment_cancelled');
-      window.history.replaceState({}, document.title, url.toString());
-      
-      toast({
-        title: "Payment Cancelled",
-        description: "Your payment was cancelled. You can try again whenever you're ready.",
-        variant: "destructive",
-      });
-    }
-  }, [location.search, toast]);
-
-  // Check if user has an active subscription
-  useEffect(() => {
-    if (!isSubscriptionLoading && subscription?.status === 'active') {
-      navigate('/', { replace: true });
-      toast({
-        title: "Subscription Active",
-        description: "You already have an active subscription. Redirecting to the app.",
-      });
-    }
-  }, [subscription, isSubscriptionLoading, navigate, toast]);
 
   // Redirect to signup if not logged in
   useEffect(() => {

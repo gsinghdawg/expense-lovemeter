@@ -1,15 +1,14 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckoutButton } from '@/components/stripe/CheckoutButton';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { STRIPE_PAYMENT_LINKS } from '@/integrations/supabase/client';
 
 interface PricingTier {
   id: string;
   name: string;
   description: string;
   price: string;
-  priceId: string;
-  mode: 'subscription';
   duration: string;
   popular?: boolean;
 }
@@ -21,8 +20,6 @@ export const PricingPlans = () => {
       name: 'Monthly',
       description: 'Full Access',
       price: '$10',
-      priceId: 'price_1R2frfECEgtMuXU25cEk0iVG', // Monthly plan price ID
-      mode: 'subscription',
       duration: '1 month'
     },
     {
@@ -30,9 +27,7 @@ export const PricingPlans = () => {
       name: 'Quarterly',
       description: 'Full Access',
       price: '$25',
-      priceId: 'price_1R2g0XECEgtMuXU2kVcXdMv3', // Quarterly plan price ID
       popular: true,
-      mode: 'subscription',
       duration: '3 months'
     },
     {
@@ -40,8 +35,6 @@ export const PricingPlans = () => {
       name: 'Semi-Annual',
       description: 'Full Access',
       price: '$40',
-      priceId: 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Semi-Annual plan price ID
-      mode: 'subscription',
       duration: '6 months'
     },
     {
@@ -49,11 +42,20 @@ export const PricingPlans = () => {
       name: 'Annual',
       description: 'Full Access',
       price: '$50',
-      priceId: 'price_1R2g0XECEgtMuXU259x0lLOp', // Annual plan price ID
-      mode: 'subscription',
       duration: '12 months'
     }
   ];
+
+  const handlePurchase = (planId: string) => {
+    // Get the payment link for this plan
+    const paymentLink = STRIPE_PAYMENT_LINKS[planId];
+    if (paymentLink) {
+      // Redirect to Stripe hosted payment page
+      window.location.href = paymentLink;
+    } else {
+      console.error(`No payment link found for plan: ${planId}`);
+    }
+  };
 
   return (
     <div className="container mx-auto py-12">
@@ -81,16 +83,16 @@ export const PricingPlans = () => {
               </div>
             </CardHeader>
             <CardContent className="flex-1">
-              {/* Feature list has been removed as requested */}
+              {/* No feature list as per previous version */}
             </CardContent>
             <CardFooter>
-              <CheckoutButton
-                priceId={tier.priceId}
-                mode={tier.mode}
-                buttonText={`Subscribe Now`}
+              <Button
+                onClick={() => handlePurchase(tier.id)}
                 className="w-full"
                 variant={tier.popular ? 'default' : 'outline'}
-              />
+              >
+                Subscribe Now
+              </Button>
             </CardFooter>
           </Card>
         ))}

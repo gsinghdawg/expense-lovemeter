@@ -1,8 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
-import { useCheckout } from '@/hooks/use-checkout';
-import { usePaymentStatusCheck } from '@/utils/payment-status';
+import { STRIPE_PAYMENT_LINKS } from '@/integrations/supabase/client';
 
 interface CheckoutButtonProps {
   priceId: string;
@@ -16,38 +14,37 @@ interface CheckoutButtonProps {
 
 export const CheckoutButton = ({
   priceId,
-  mode,
   buttonText,
-  successUrl = `${window.location.origin}/?payment_success=true`,
-  cancelUrl = `${window.location.origin}/pricing?payment_cancelled=true`,
   variant = 'default',
   className,
 }: CheckoutButtonProps) => {
-  // Check for payment status in URL (success/cancel)
-  usePaymentStatusCheck();
+  // Extract the plan ID from the priceId (simplified approach)
+  const getPlanIdFromPriceId = (priceId: string): string => {
+    if (priceId.includes('month')) return 'monthly';
+    if (priceId.includes('quarter')) return 'quarterly';
+    if (priceId.includes('biannual')) return 'biannual';
+    if (priceId.includes('annual')) return 'annual';
+    return 'monthly'; // Default fallback
+  };
+
+  const planId = getPlanIdFromPriceId(priceId);
   
-  // Use the checkout hook for handling the payment process
-  const { isLoading, handleCheckout } = useCheckout({
-    priceId,
-    mode,
-    successUrl,
-    cancelUrl
-  });
+  const handleClick = () => {
+    const paymentLink = STRIPE_PAYMENT_LINKS[planId];
+    if (paymentLink) {
+      window.location.href = paymentLink;
+    } else {
+      console.error(`No payment link found for plan: ${planId}`);
+    }
+  };
 
   return (
     <Button
       variant={variant}
       className={className}
-      onClick={handleCheckout}
-      disabled={isLoading}
+      onClick={handleClick}
     >
-      {isLoading ? (
-        <span className="flex items-center gap-2">
-          <Spinner size="sm" /> Processing...
-        </span>
-      ) : (
-        buttonText
-      )}
+      {buttonText}
     </Button>
   );
 };
