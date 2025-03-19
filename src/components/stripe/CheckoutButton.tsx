@@ -28,25 +28,17 @@ export const CheckoutButton = ({
   };
 
   const planId = getPlanIdFromPriceId(priceId);
+  const paymentLink = STRIPE_PAYMENT_LINKS[planId];
   
-  const handleClick = () => {
-    const paymentLink = STRIPE_PAYMENT_LINKS[planId];
-    if (paymentLink) {
-      console.log(`Redirecting to payment link: ${paymentLink}`);
-      // Force open in the same window
-      window.open(paymentLink, '_self');
-    } else {
-      console.error(`No payment link found for plan: ${planId}`);
-    }
-  };
-
   return (
-    <Button
-      variant={variant}
-      className={className}
-      onClick={handleClick}
-    >
-      {buttonText}
-    </Button>
+    <a href={paymentLink} target="_self" className="w-full">
+      <Button
+        variant={variant}
+        className={`w-full ${className}`}
+        type="button"
+      >
+        {buttonText}
+      </Button>
+    </a>
   );
 };
