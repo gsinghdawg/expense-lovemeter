@@ -1,13 +1,14 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
-// Initialize Stripe with the provided publishable key
-const stripePromise = loadStripe('pk_live_51QzSAJECEgtMuXU2GLO1bMiyihcl0AZ4o318dV4Nbwga6d8K8M2YutpgcgV0EGHP882QgIX9MqXyaUtoXvhlZMAd00r7TMTC4R');
+// Initialize Stripe with the provided test key
+const stripePromise = loadStripe('pk_test_51QzSAJECEgtMuXU2UJ8hDINkw43JABnVFmbispZpwtT4HGK2ZIj4tuhb5STL48ERAnr1KOUb5KtCDtxS31IsQzjg009FXBPWY7');
 
 interface CheckoutButtonProps {
   priceId: string;
@@ -31,6 +32,29 @@ export const CheckoutButton = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  // Check URL parameters for payment status
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const paymentSuccess = url.searchParams.get('payment_success');
+    
+    if (paymentSuccess === 'true') {
+      // Clean up URL
+      url.searchParams.delete('payment_success');
+      window.history.replaceState({}, document.title, url.toString());
+      
+      // Show success message
+      toast({
+        title: "Payment Successful!",
+        description: "Thank you for your subscription. You now have full access to the app.",
+        variant: "default",
+      });
+      
+      // Redirect to dashboard after successful payment
+      navigate('/dashboard');
+    }
+  }, [toast, navigate]);
 
   const handleCheckout = async () => {
     if (!user) {
@@ -52,6 +76,13 @@ export const CheckoutButton = ({
         throw new Error('Failed to load Stripe.');
       }
       
+      console.log('Creating checkout session with:', {
+        priceId,
+        mode,
+        successUrl,
+        cancelUrl
+      });
+      
       // Call the create-checkout Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
@@ -66,6 +97,8 @@ export const CheckoutButton = ({
         console.error('Edge function error:', error);
         throw new Error('Failed to create checkout session.');
       }
+      
+      console.log('Checkout session created:', data.sessionId);
       
       // Redirect to Stripe Checkout
       const { error: redirectError } = await stripe.redirectToCheckout({

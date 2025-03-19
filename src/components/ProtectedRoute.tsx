@@ -4,11 +4,13 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/integrations/supabase/client";
+import { useStripe } from "@/hooks/use-stripe";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const { subscription, isSubscriptionLoading } = useStripe();
   const location = useLocation();
 
   useEffect(() => {
@@ -44,7 +46,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, isLoading]);
 
-  if (isLoading || isCheckingOnboarding) {
+  if (isLoading || isCheckingOnboarding || isSubscriptionLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Spinner size="lg" />
@@ -61,6 +63,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   // redirect to profile setup
   if (onboardingCompleted === false && location.pathname !== "/profile-setup") {
     return <Navigate to="/profile-setup" replace />;
+  }
+
+  // Check if user has an active subscription
+  const hasActiveSubscription = subscription && 
+    (subscription.status === "active" || subscription.status === "trialing");
+
+  // If user doesn't have an active subscription and is not on the pricing page,
+  // redirect to pricing page
+  if (!hasActiveSubscription && location.pathname !== "/pricing") {
+    return <Navigate to="/pricing" replace />;
   }
 
   return <>{children}</>;
