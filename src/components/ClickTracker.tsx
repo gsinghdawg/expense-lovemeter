@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, saveClickCountBeforeUnload } from '@/integrations/supabase/client';
 import { useStripe } from '@/hooks/use-stripe';
 
 // Maximum number of clicks before showing paywall
@@ -61,6 +61,10 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Error saving click count:', error);
+        // Try again after a short delay if there was an error
+        setTimeout(() => {
+          saveClickCount(count, userId);
+        }, 1000);
       } else {
         console.log('Successfully saved click count to DB');
       }
@@ -74,8 +78,6 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     const loadClickCount = async () => {
       if (!user || !subscriptionChecked) return;
       
-      // Even if user has active subscription, we still load the click count
-      // to preserve it across sessions
       try {
         const { data, error } = await supabase
           .from('user_click_counts')
@@ -118,11 +120,8 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (user && clickCount > 0) {
-        // Use a synchronous approach for beforeunload
-        navigator.sendBeacon(
-          '/api/save-clicks',
-          JSON.stringify({ userId: user.id, clickCount })
-        );
+        // Use the helper function from client.ts for handling beforeunload events
+        saveClickCountBeforeUnload(user.id, clickCount);
       }
     };
 
@@ -135,7 +134,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     // Skip saving if clickCount is 0 or no user
     if (!user || clickCount === 0) return;
     
-    // Use a small timeout to prevent too many DB writes
+    // Use a debounced save to prevent too many DB writes
     const timeoutId = setTimeout(() => {
       saveClickCount(clickCount, user.id);
     }, 500);
@@ -154,12 +153,13 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       return;
     }
     
-    // Increment click count (always, even if it's already at or over MAX_FREE_CLICKS)
+    // IMPORTANT: Increment click count even after reaching MAX_FREE_CLICKS
+    // This ensures the counter never resets and continues to increase
     const newCount = clickCount + 1;
     console.log('Click detected, new count:', newCount);
     setClickCount(newCount);
     
-    // Notification at the threshold
+    // Show notification at exactly the threshold
     if (newCount === MAX_FREE_CLICKS) {
       toast({
         title: "Free Usage Limit Reached",
@@ -189,6 +189,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     return () => {
       if (user && clickCount > 0) {
         console.log('Component unmounting, saving click count:', clickCount);
+        // Use immediate save with no delay during unmount
         saveClickCount(clickCount, user.id);
       }
     };
