@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useStripe } from '@/hooks/use-stripe';
 
 // Initialize Stripe with the provided test key
 const stripePromise = loadStripe('pk_test_51QzSAJECEgtMuXU2UJ8hDINkw43JABnVFmbispZpwtT4HGK2ZIj4tuhb5STL48ERAnr1KOUb5KtCDtxS31IsQzjg009FXBPWY7');
@@ -33,28 +33,36 @@ export const CheckoutButton = ({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { refetchSubscription } = useStripe();
 
   // Check URL parameters for payment status
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const paymentSuccess = url.searchParams.get('payment_success');
+    const checkPaymentStatus = async () => {
+      const url = new URL(window.location.href);
+      const paymentSuccess = url.searchParams.get('payment_success');
+      
+      if (paymentSuccess === 'true') {
+        // Clean up URL
+        url.searchParams.delete('payment_success');
+        window.history.replaceState({}, document.title, url.toString());
+        
+        // Refetch subscription data to ensure it's up to date
+        await refetchSubscription();
+        
+        // Show success message
+        toast({
+          title: "Payment Successful!",
+          description: "Thank you for your subscription. You now have full access to the app.",
+          variant: "default",
+        });
+        
+        // Redirect to main app after successful payment
+        navigate('/', { replace: true });
+      }
+    };
     
-    if (paymentSuccess === 'true') {
-      // Clean up URL
-      url.searchParams.delete('payment_success');
-      window.history.replaceState({}, document.title, url.toString());
-      
-      // Show success message
-      toast({
-        title: "Payment Successful!",
-        description: "Thank you for your subscription. You now have full access to the app.",
-        variant: "default",
-      });
-      
-      // Redirect to dashboard after successful payment
-      navigate('/dashboard');
-    }
-  }, [toast, navigate]);
+    checkPaymentStatus();
+  }, [toast, navigate, refetchSubscription]);
 
   const handleCheckout = async () => {
     if (!user) {

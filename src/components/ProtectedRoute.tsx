@@ -5,13 +5,30 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStripe } from "@/hooks/use-stripe";
+import { useToast } from "@/hooks/use-toast";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
-  const { subscription, isSubscriptionLoading } = useStripe();
+  const { subscription, isSubscriptionLoading, refetchSubscription } = useStripe();
   const location = useLocation();
+  const { toast } = useToast();
+
+  // Check for payment success parameter in URL
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const paymentSuccess = url.searchParams.get('payment_success');
+    
+    if (paymentSuccess === 'true') {
+      // Refetch subscription data
+      refetchSubscription();
+      
+      // Clean up URL
+      url.searchParams.delete('payment_success');
+      window.history.replaceState({}, document.title, url.toString());
+    }
+  }, [location.search, refetchSubscription]);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
