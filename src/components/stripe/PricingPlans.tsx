@@ -1,7 +1,14 @@
 
 import { CheckoutButton } from './CheckoutButton';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import StripeKeysForm from './StripeKeysForm';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const PricingPlans = () => {
+  const [showKeysForm, setShowKeysForm] = useState(false);
+  const { user } = useAuth();
+  
   // Define the pricing plan details
   const plans = [
     {
@@ -37,6 +44,24 @@ export const PricingPlans = () => {
         <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
           Choose the plan that works best for you
         </p>
+        
+        {user && (
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowKeysForm(!showKeysForm)}
+              className="mt-4"
+            >
+              {showKeysForm ? 'Hide Stripe Settings' : 'Update Stripe Keys'}
+            </Button>
+          </div>
+        )}
+        
+        {showKeysForm && user && (
+          <div className="mt-8">
+            <StripeKeysForm />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col md:flex-row justify-center gap-8 mt-8">
