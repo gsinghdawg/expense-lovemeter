@@ -6,15 +6,9 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase, STRIPE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { useStripe } from '@/hooks/use-stripe';
 
-// Get the API key from localStorage or fall back to the default
-const getStripePublishableKey = () => {
-  const localKey = localStorage.getItem('STRIPE_PUBLISHABLE_KEY');
-  return localKey || STRIPE_PUBLISHABLE_KEY;
-};
-
 // Initialize Stripe with our publishable key
-console.log('Initializing Stripe with key (first 8 chars):', getStripePublishableKey()?.substring(0, 8) || 'not set');
-const stripePromise = getStripePublishableKey() ? loadStripe(getStripePublishableKey()!) : null;
+console.log('Initializing Stripe with key (first 8 chars):', STRIPE_PUBLISHABLE_KEY?.substring(0, 8) || 'not set');
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 // Ensure the Stripe initialization is working
 if (!stripePromise) {
@@ -48,21 +42,6 @@ export const useCheckout = ({
         variant: "destructive",
       });
       return;
-    }
-
-    // Check if the API key has been updated since page load
-    const currentKey = getStripePublishableKey();
-    if (currentKey !== STRIPE_PUBLISHABLE_KEY) {
-      // Reload Stripe with the new key
-      const newStripe = currentKey ? await loadStripe(currentKey) : null;
-      if (!newStripe) {
-        toast({
-          title: "Configuration Error",
-          description: "Stripe is not properly configured. Please check your API key.",
-          variant: "destructive",
-        });
-        return;
-      }
     }
 
     if (!stripePromise) {

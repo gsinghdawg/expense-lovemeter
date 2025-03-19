@@ -1,10 +1,10 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { PricingPlans } from "@/components/stripe/PricingPlans";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStripe } from "@/hooks/use-stripe";
 
@@ -59,7 +59,7 @@ const Pricing = () => {
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="container mx-auto max-w-7xl">
-        <div className="mb-10 flex justify-between items-center">
+        <div className="mb-10">
           <Button 
             variant="ghost" 
             className="flex items-center gap-2" 
@@ -67,15 +67,6 @@ const Pricing = () => {
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => navigate('/settings')}
-          >
-            <Settings className="h-4 w-4" />
-            API Settings
           </Button>
         </div>
         
