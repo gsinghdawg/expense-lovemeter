@@ -1,28 +1,27 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { PricingPlans } from "@/components/stripe/PricingPlans";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePaymentStatusCheck } from "@/utils/payment-status";
 import { useStripe } from "@/hooks/use-stripe";
 import { SubscriptionManager } from "@/components/stripe/SubscriptionManager";
-import { PaymentHistory } from "@/components/stripe/PaymentHistory";
-import { Spinner } from "@/components/ui/spinner";
 
 const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { subscription, isSubscriptionLoading, paymentHistory, isPaymentHistoryLoading } = useStripe();
+  const { subscription, isSubscriptionLoading } = useStripe();
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
-  const [hasRecentPayment, setHasRecentPayment] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   
+  // Add payment status check to handle redirects after payment
   usePaymentStatusCheck();
 
+  // Check subscription status
   useEffect(() => {
     if (subscription && ['active', 'trialing'].includes(subscription.status)) {
       setHasActiveSubscription(true);
@@ -31,30 +30,7 @@ const Pricing = () => {
     }
   }, [subscription]);
 
-  useEffect(() => {
-    if (!paymentHistory || isPaymentHistoryLoading) return;
-
-    const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
-    
-    const recentSuccessfulPayment = paymentHistory.some(payment => {
-      const paymentDate = new Date(payment.created_at);
-      return payment.status === 'succeeded' && paymentDate > oneHourAgo;
-    });
-    
-    setHasRecentPayment(recentSuccessfulPayment);
-    
-    if (recentSuccessfulPayment && !hasActiveSubscription && !isProcessing) {
-      setIsProcessing(true);
-      
-      const timer = setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 5000); // 5 seconds
-      
-      return () => clearTimeout(timer);
-    }
-  }, [paymentHistory, isPaymentHistoryLoading, hasActiveSubscription, navigate, isProcessing]);
-
+  // Redirect to signup if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/signup', { replace: true });
@@ -109,35 +85,8 @@ const Pricing = () => {
             </div>
           </div>
         )}
-
-        {hasRecentPayment && !hasActiveSubscription && (
-          <div className="mb-10">
-            <Alert className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
-              <Loader2 className="h-5 w-5 text-yellow-600 dark:text-yellow-400 animate-spin" />
-              <AlertTitle className="text-yellow-800 dark:text-yellow-400">Payment Processing</AlertTitle>
-              <AlertDescription className="text-yellow-700 dark:text-yellow-300">
-                Thank you for your payment! Your subscription is being processed. This may take a few moments.
-                You'll be redirected to the dashboard shortly.
-              </AlertDescription>
-              <div className="mt-4">
-                <Button onClick={handleGoToDashboard} className="bg-yellow-600 hover:bg-yellow-700 text-white">
-                  Go to Dashboard Now
-                </Button>
-              </div>
-            </Alert>
-            <div className="mt-8">
-              <PaymentHistory limit={3} />
-            </div>
-          </div>
-        )}
         
-        {!hasActiveSubscription && !hasRecentPayment && !isSubscriptionLoading && !isPaymentHistoryLoading && <PricingPlans />}
-        
-        {(isSubscriptionLoading || isPaymentHistoryLoading) && (
-          <div className="flex justify-center my-20">
-            <Spinner size="lg" />
-          </div>
-        )}
+        {!hasActiveSubscription && !isSubscriptionLoading && <PricingPlans />}
       </div>
     </div>
   );
