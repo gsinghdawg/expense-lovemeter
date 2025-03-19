@@ -43,6 +43,7 @@ serve(async (req) => {
     const { priceId, mode, successUrl, cancelUrl } = await req.json();
 
     console.log(`Creating ${mode} checkout session for price: ${priceId}`);
+    console.log(`Success URL: ${successUrl}, Cancel URL: ${cancelUrl}`);
 
     // Validate required parameters
     if (!priceId || !mode || !successUrl || !cancelUrl) {
@@ -86,7 +87,7 @@ serve(async (req) => {
       customer: customerId,
       client_reference_id: user.id,
       line_items: lineItems,
-      mode: mode as Stripe.Checkout.SessionCreateParams.Mode,
+      mode: mode,
       success_url: successUrl,
       cancel_url: cancelUrl,
       billing_address_collection: 'auto',
