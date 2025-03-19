@@ -31,7 +31,7 @@ export const CheckoutButton = ({
   variant = 'default',
   className,
 }: CheckoutButtonProps) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ export const CheckoutButton = ({
   }, [toast, navigate, refetchSubscription]);
 
   const handleCheckout = async () => {
-    if (!user) {
+    if (!user || !session) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to subscribe to a plan",
