@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,14 +141,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      setUser(null);
-      setSession(null);
-
+      // Important: We don't clear user data immediately to allow other components 
+      // to save any pending changes before the session is actually removed
+      
       try {
         await supabase.auth.signOut();
       } catch (error: any) {
         console.warn("Error during Supabase sign out:", error);
       }
+      
+      // Now we can safely clear the user and session state
+      setUser(null);
+      setSession(null);
       
       toast({
         title: "Signed out",
