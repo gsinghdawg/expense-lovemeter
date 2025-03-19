@@ -15,18 +15,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ProfileSetup from "./pages/ProfileSetup";
 import Pricing from "./pages/Pricing";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Increase stale time to reduce unnecessary refetching
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      // Enable retry for failed queries
-      retry: 3,
-      // Increase cache time to ensure data is available during navigation
-      cacheTime: 1000 * 60 * 30, // 30 minutes
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => (
   <ThemeProvider defaultTheme="light">
@@ -56,7 +45,12 @@ const App = () => (
               <Route path="/signup" element={<SignUp />} />
               {/* Routes without click tracking */}
               <Route path="/home" element={<Home />} />
-              <Route path="/" element={<Home />} />
+              {/* Redirect root to dashboard with protection */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Navigate to="/dashboard" replace />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>

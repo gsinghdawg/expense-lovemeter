@@ -1,3 +1,4 @@
+
 import Stripe from 'npm:stripe@12.7.0';
 import { corsHeaders } from '../_shared/cors.ts';
 
@@ -8,9 +9,11 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
 });
 
 // Update the webhook secret with the provided value
-const webhookSecret = 'whsec_7i5MDKN6OMEj6GnfdUwKvD2b1ZwrPCN8';
+const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || 'whsec_7i5MDKN6OMEj6GnfdUwKvD2b1ZwrPCN8';
 
 Deno.serve(async (req) => {
+  console.log('Webhook endpoint called!');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -24,44 +27,69 @@ Deno.serve(async (req) => {
     const body = await req.text();
     const signature = req.headers.get('stripe-signature');
     
+    console.log('Received webhook with signature:', signature ? 'Present' : 'Missing');
+    
     if (!signature) {
+      console.error('Webhook signature missing');
       return new Response('Stripe signature missing', { status: 400, headers: corsHeaders });
     }
     
-    console.log('Webhook received, verifying signature with secret starting with:', webhookSecret.substring(0, 4));
+    // Log key information for debugging
+    console.log('Webhook received, verifying with secret starting with:', webhookSecret.substring(0, 4));
+    console.log('Body length:', body.length);
     
     // Verify the webhook signature
     let event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
-      console.error(`Webhook signature verification failed: ${err}`);
+      console.error(`Webhook signature verification failed: ${err.message}`);
       return new Response(`Webhook Error: ${err.message}`, { status: 400, headers: corsHeaders });
     }
     
     console.log(`Event received: ${event.type}`);
+    console.log(`Event data: ${JSON.stringify(event.data.object, null, 2)}`);
     
     // Handle specific events
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        console.log('Processing checkout.session.completed event:', JSON.stringify(session, null, 2));
         await handleSuccessfulPayment(session);
+        break;
+      }
+      case 'checkout.session.async_payment_succeeded': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log('Processing checkout.session.async_payment_succeeded event:', JSON.stringify(session, null, 2));
+        await handleSuccessfulPayment(session);
+        break;
+      }
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log('Processing payment_intent.succeeded event:', JSON.stringify(paymentIntent, null, 2));
+        await handleSuccessfulPaymentIntent(paymentIntent);
         break;
       }
       case 'invoice.paid': {
         const invoice = event.data.object as Stripe.Invoice;
+        console.log('Processing invoice.paid event:', JSON.stringify(invoice, null, 2));
         await handleSuccessfulSubscription(invoice);
         break;
       }
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
+        console.log('Processing customer.subscription.updated event:', JSON.stringify(subscription, null, 2));
         await handleSubscriptionUpdate(subscription);
         break;
       }
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
+        console.log('Processing customer.subscription.deleted event:', JSON.stringify(subscription, null, 2));
         await handleSubscriptionCancellation(subscription);
         break;
+      }
+      default: {
+        console.log(`Unhandled event type: ${event.type}`);
       }
     }
     
@@ -70,7 +98,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error(`Error processing webhook: ${error}`);
+    console.error(`Error processing webhook: ${error.message}`);
+    console.error(error.stack);
     return new Response(`Webhook error: ${error.message}`, { 
       status: 500,
       headers: corsHeaders
@@ -78,12 +107,96 @@ Deno.serve(async (req) => {
   }
 });
 
+// Handle successful payment intent (direct payments)
+async function handleSuccessfulPaymentIntent(paymentIntent: Stripe.PaymentIntent) {
+  console.log('Processing payment intent:', paymentIntent.id);
+  
+  // Get the customer from the payment intent
+  const customerId = paymentIntent.customer?.toString();
+  if (!customerId) {
+    console.error('Missing customer ID in payment intent');
+    return;
+  }
+  
+  try {
+    // Create a Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseKey);
+    
+    // Get the user ID associated with this customer
+    const { data: customerData } = await supabaseAdmin
+      .from('stripe_customers')
+      .select('user_id')
+      .eq('stripe_customer_id', customerId)
+      .single();
+      
+    if (!customerData) {
+      // Try to get metadata from the customer object
+      const customer = await stripe.customers.retrieve(customerId);
+      const userId = customer.metadata?.user_id;
+      
+      if (!userId) {
+        console.error('Could not find user ID for customer:', customerId);
+        return;
+      }
+      
+      // Store customer mapping for future use
+      await storeCustomerId(supabaseAdmin, userId, customerId);
+      
+      // Record payment
+      await recordPayment(supabaseAdmin, userId, paymentIntent);
+    } else {
+      // Record payment for existing customer
+      await recordPayment(supabaseAdmin, customerData.user_id, paymentIntent);
+    }
+  } catch (error) {
+    console.error('Error processing payment intent:', error);
+  }
+}
+
+// Helper to record payment
+async function recordPayment(supabaseAdmin: any, userId: string, paymentIntent: Stripe.PaymentIntent) {
+  console.log('Recording payment in payment_history:', {
+    user_id: userId,
+    stripe_payment_intent_id: paymentIntent.id,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    status: paymentIntent.status,
+  });
+  
+  try {
+    // Record payment in payment_history table
+    await supabaseAdmin
+      .from('payment_history')
+      .insert({
+        user_id: userId,
+        stripe_payment_intent_id: paymentIntent.id,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        status: paymentIntent.status,
+        payment_method: paymentIntent.payment_method_types[0],
+        description: paymentIntent.description || 'One-time payment'
+      });
+      
+    console.log('Payment recorded successfully in payment_history');
+  } catch (error) {
+    console.error('Error recording payment:', error);
+  }
+}
+
 // Handle successful one-time payment
 async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
   console.log('Processing successful payment:', session.id);
   
-  if (!session.customer || !session.client_reference_id) {
-    console.error('Missing customer ID or user reference in session');
+  if (!session.customer) {
+    console.error('Missing customer ID in session');
+    return;
+  }
+  
+  const userId = session.client_reference_id || '';
+  if (!userId) {
+    console.error('Missing client_reference_id (user ID) in session');
     return;
   }
   
@@ -93,32 +206,64 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseKey);
 
-    // Get payment details
-    const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent as string);
-    
-    // Record payment in payment_history table
-    await supabaseAdmin
-      .from('payment_history')
-      .insert({
-        user_id: session.client_reference_id,
+    // Check if we need to store the customer ID
+    await storeCustomerId(supabaseAdmin, userId, session.customer.toString());
+
+    // Get payment details if payment_intent exists
+    if (session.payment_intent) {
+      const paymentIntentId = typeof session.payment_intent === 'string' 
+        ? session.payment_intent 
+        : session.payment_intent.id;
+        
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      console.log('Recording payment in payment_history:', {
+        user_id: userId,
         stripe_payment_intent_id: paymentIntent.id,
         amount: paymentIntent.amount,
         currency: paymentIntent.currency,
         status: paymentIntent.status,
-        payment_method: paymentIntent.payment_method_types[0],
-        description: session.metadata?.description || 'One-time payment'
       });
+      
+      // Record payment in payment_history table
+      await supabaseAdmin
+        .from('payment_history')
+        .insert({
+          user_id: userId,
+          stripe_payment_intent_id: paymentIntent.id,
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency,
+          status: paymentIntent.status,
+          payment_method: paymentIntent.payment_method_types[0],
+          description: session.metadata?.description || 'One-time payment'
+        });
+        
+      console.log('Payment recorded successfully in payment_history');
+    } else {
+      console.log('No payment_intent in session, skipping payment_history record');
+    }
       
     // If this is a subscription payment, also update the user's subscription
     if (session.mode === 'subscription' && session.subscription) {
-      const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+      const subscriptionId = typeof session.subscription === 'string' 
+        ? session.subscription 
+        : session.subscription.id;
+        
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      
+      console.log('Recording subscription:', {
+        user_id: userId,
+        stripe_customer_id: session.customer.toString(),
+        stripe_subscription_id: subscription.id,
+        status: subscription.status,
+      });
       
       // Create or update the subscription record in Supabase
       await supabaseAdmin
         .from('subscriptions')
         .upsert({
-          user_id: session.client_reference_id,
-          stripe_customer_id: session.customer as string,
+          user_id: userId,
+          stripe_customer_id: session.customer.toString(),
           stripe_subscription_id: subscription.id,
           plan_id: subscription.items.data[0]?.price.id || 'unknown',
           status: subscription.status,
@@ -126,11 +271,45 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
           cancel_at_period_end: subscription.cancel_at_period_end,
           updated_at: new Date().toISOString()
         });
+        
+      console.log('Subscription recorded successfully');
     }
       
-    console.log('Payment recorded successfully');
+    console.log('Payment and subscription processing completed successfully');
   } catch (error) {
-    console.error('Error recording payment:', error);
+    console.error('Error recording payment/subscription:', error);
+    console.error(error.stack);
+  }
+}
+
+// Store customer ID if not already stored
+async function storeCustomerId(supabaseAdmin: any, userId: string, customerId: string) {
+  try {
+    // Check if this customer ID is already stored
+    const { data } = await supabaseAdmin
+      .from('stripe_customers')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('stripe_customer_id', customerId)
+      .single();
+      
+    if (!data) {
+      console.log('Storing new customer ID mapping:', { user_id: userId, stripe_customer_id: customerId });
+      
+      // Store the mapping between Supabase user ID and Stripe customer ID
+      await supabaseAdmin
+        .from('stripe_customers')
+        .insert({
+          user_id: userId,
+          stripe_customer_id: customerId
+        });
+        
+      console.log('Customer ID stored successfully');
+    } else {
+      console.log('Customer ID mapping already exists');
+    }
+  } catch (error) {
+    console.error('Error storing customer ID:', error);
   }
 }
 
@@ -165,19 +344,39 @@ async function handleSuccessfulSubscription(invoice: Stripe.Invoice) {
     }
     
     // Record payment in payment_history
-    await supabaseAdmin
-      .from('payment_history')
-      .insert({
+    if (invoice.payment_intent) {
+      const paymentIntentId = typeof invoice.payment_intent === 'string' 
+        ? invoice.payment_intent 
+        : invoice.payment_intent.id;
+        
+      console.log('Recording invoice payment in payment_history:', {
         user_id: customerData.user_id,
-        stripe_payment_intent_id: invoice.payment_intent as string,
+        stripe_payment_intent_id: paymentIntentId,
         amount: invoice.amount_paid,
-        currency: invoice.currency,
-        status: 'succeeded',
-        payment_method: invoice.collection_method,
-        description: `Subscription payment for ${subscription.items.data[0]?.price.product}`
       });
+        
+      await supabaseAdmin
+        .from('payment_history')
+        .insert({
+          user_id: customerData.user_id,
+          stripe_payment_intent_id: paymentIntentId,
+          amount: invoice.amount_paid,
+          currency: invoice.currency,
+          status: 'succeeded',
+          payment_method: invoice.collection_method,
+          description: `Subscription payment for ${subscription.items.data[0]?.price.product}`
+        });
+        
+      console.log('Invoice payment recorded successfully in payment_history');
+    }
     
     // Update subscription record
+    console.log('Updating subscription record:', {
+      user_id: customerData.user_id,
+      stripe_subscription_id: subscription.id,
+      status: subscription.status,
+    });
+    
     await supabaseAdmin
       .from('subscriptions')
       .upsert({
@@ -191,9 +390,10 @@ async function handleSuccessfulSubscription(invoice: Stripe.Invoice) {
         updated_at: new Date().toISOString()
       });
     
-    console.log('Subscription payment recorded successfully');
+    console.log('Subscription payment processed successfully');
   } catch (error) {
     console.error('Error recording subscription payment:', error);
+    console.error(error.stack);
   }
 }
 
@@ -220,6 +420,12 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     }
     
     // Update the subscription in the database
+    console.log('Updating subscription record for update event:', {
+      user_id: customerData.user_id,
+      stripe_subscription_id: subscription.id,
+      status: subscription.status,
+    });
+    
     await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -233,6 +439,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     console.log('Subscription updated successfully');
   } catch (error) {
     console.error('Error updating subscription:', error);
+    console.error(error.stack);
   }
 }
 
@@ -247,6 +454,11 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription)
     const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseKey);
     
     // Update the subscription status in the database
+    console.log('Updating subscription record for cancellation event:', {
+      stripe_subscription_id: subscription.id,
+      status: 'canceled',
+    });
+    
     await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -258,6 +470,7 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription)
     console.log('Subscription cancellation recorded successfully');
   } catch (error) {
     console.error('Error recording subscription cancellation:', error);
+    console.error(error.stack);
   }
 }
 
