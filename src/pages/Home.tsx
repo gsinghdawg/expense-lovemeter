@@ -1,17 +1,17 @@
-
 import { Link } from "react-router-dom";
-import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3 } from "lucide-react";
+import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useEffect, useState } from "react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Home = () => {
   const { user, signOut } = useAuth();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(!!user);
 
-  // Update login status when auth changes
   useEffect(() => {
     setIsLoggedIn(!!user);
     console.log("Home component: Auth state changed", { user, isLoggedIn: !!user });
@@ -21,6 +21,27 @@ const Home = () => {
     await signOut();
     console.log("Sign out clicked, current user state:", user);
   };
+
+  const testimonials = [
+    {
+      name: "Sarah Johnson",
+      role: "Small Business Owner",
+      avatar: "/lovable-uploads/aee62957-15f2-456e-a356-50b3dab78200.png",
+      testimonial: "LadyLedger completely transformed how I manage my business finances. I can track expenses on the go and the visual reports help me understand my spending patterns instantly!"
+    },
+    {
+      name: "Michael Chen",
+      role: "Freelance Designer",
+      avatar: "",
+      testimonial: "As a freelancer, keeping track of expenses was always a hassle. LadyLedger made it simple with custom categories and budget goals. I've saved 15% more since using it!"
+    },
+    {
+      name: "Jessica Taylor",
+      role: "Working Mom",
+      avatar: "",
+      testimonial: "I love how easy it is to track our family budget with LadyLedger. Setting monthly budget goals has helped us save for our vacation while keeping daily expenses in check."
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col items-center justify-center p-4">
@@ -82,7 +103,6 @@ const Home = () => {
           </Card>
         </div>
 
-        {/* App Showcase Section - Expense Tracking */}
         <div className="my-16">
           <h2 className="text-3xl font-bold text-center mb-8">See How It Works</h2>
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -116,7 +136,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Budget & Transactions Showcase Section */}
         <div className="my-16">
           <div className="flex flex-col md:flex-row-reverse items-center justify-between gap-8">
             <div className="md:w-1/2">
@@ -148,7 +167,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Expense Management Showcase Section */}
         <div className="my-16">
           <h2 className="text-3xl font-bold text-center mb-8">Effortless Organization</h2>
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -192,7 +210,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Analytics & Insights Showcase Section */}
         <div className="my-16">
           <h2 className="text-3xl font-bold text-center mb-8">Powerful Analytics & Insights</h2>
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -236,7 +253,41 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Call to Action Section */}
+        <div className="my-20">
+          <h2 className="text-3xl font-bold text-center mb-2">What Our Users Say</h2>
+          <p className="text-muted-foreground text-center mb-10">Join thousands of happy users managing their finances with LadyLedger</p>
+          
+          <Carousel className="mx-auto max-w-3xl">
+            <CarouselContent>
+              {testimonials.map((testimonial, index) => (
+                <CarouselItem key={index}>
+                  <Card className="border-2 border-primary/10 bg-card/50 backdrop-blur-sm">
+                    <CardContent className="p-6 flex flex-col items-center text-center">
+                      <Quote className="h-8 w-8 text-primary/60 mb-4" />
+                      <p className="text-lg italic mb-6">{testimonial.testimonial}</p>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12 border-2 border-primary/20">
+                          {testimonial.avatar ? (
+                            <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
+                          ) : (
+                            <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="text-left">
+                          <p className="font-semibold">{testimonial.name}</p>
+                          <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-0 lg:-left-12" />
+            <CarouselNext className="right-0 lg:-right-12" />
+          </Carousel>
+        </div>
+
         <div className="mt-16 mb-8 text-center">
           <Card className="p-8 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/50 dark:to-blue-950/50 border-2 border-primary/20">
             <CardContent className="p-0">
