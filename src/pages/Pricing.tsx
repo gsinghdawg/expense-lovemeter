@@ -1,14 +1,16 @@
 
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { PricingPlans } from "@/components/stripe/PricingPlans";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Redirect to signup if not logged in
   useEffect(() => {
@@ -17,11 +19,6 @@ const Pricing = () => {
     }
   }, [user, navigate]);
 
-  const handleBackToDashboard = () => {
-    // Using replace: true to prevent navigation loops
-    navigate('/', { replace: true });
-  };
-
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="container mx-auto max-w-7xl">
@@ -29,10 +26,12 @@ const Pricing = () => {
           <Button 
             variant="ghost" 
             className="flex items-center gap-2" 
-            onClick={handleBackToDashboard}
+            asChild
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            <Link to="/home">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Link>
           </Button>
         </div>
         
