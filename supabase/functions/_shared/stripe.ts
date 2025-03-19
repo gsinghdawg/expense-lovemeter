@@ -11,13 +11,14 @@ export const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
 // Export a function to check if Stripe is properly configured
 export function isStripeConfigured(): boolean {
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-  return !!stripeKey && stripeKey.startsWith('sk_');
+  return !!stripeKey && (stripeKey.startsWith('sk_test') || stripeKey.startsWith('sk_live'));
 }
 
 // Helper function to log Stripe mode (test or live)
 export function logStripeMode(): void {
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
   console.log(`Using Stripe in mode: ${stripeKey.startsWith('sk_test') ? 'TEST' : 'LIVE'}`);
+  console.log(`Stripe key first 8 chars: ${stripeKey.substring(0, 8)}...`);
 }
 
 // Verify that the Stripe connection is working
@@ -38,6 +39,7 @@ export async function verifyStripeConnection(): Promise<{ isValid: boolean; mess
       message: 'Stripe connection verified successfully' 
     };
   } catch (error) {
+    console.error('Stripe connection error:', error);
     return { 
       isValid: false, 
       message: `Failed to connect to Stripe: ${error.message}` 
