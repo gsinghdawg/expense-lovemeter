@@ -11,12 +11,27 @@ export const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
 // Export a function to check if Stripe is properly configured
 export function isStripeConfigured(): boolean {
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-  return !!stripeKey && (stripeKey.startsWith('sk_test') || stripeKey.startsWith('sk_live'));
+  if (!stripeKey) {
+    console.error('STRIPE_SECRET_KEY is not set in environment variables');
+    return false;
+  }
+  
+  const isValid = stripeKey.startsWith('sk_test') || stripeKey.startsWith('sk_live');
+  if (!isValid) {
+    console.error('STRIPE_SECRET_KEY is invalid. It should start with sk_test or sk_live');
+  }
+  
+  return isValid;
 }
 
 // Helper function to log Stripe mode (test or live)
 export function logStripeMode(): void {
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
+  if (!stripeKey) {
+    console.error('STRIPE_SECRET_KEY is not set');
+    return;
+  }
+  
   console.log(`Using Stripe in mode: ${stripeKey.startsWith('sk_test') ? 'TEST' : 'LIVE'}`);
   console.log(`Stripe key first 8 chars: ${stripeKey.substring(0, 8)}...`);
 }
