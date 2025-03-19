@@ -32,6 +32,7 @@ export const CheckoutButton = ({
   const handleClick = () => {
     const paymentLink = STRIPE_PAYMENT_LINKS[planId];
     if (paymentLink) {
+      console.log(`Redirecting to payment link: ${paymentLink}`);
       window.location.href = paymentLink;
     } else {
       console.error(`No payment link found for plan: ${planId}`);

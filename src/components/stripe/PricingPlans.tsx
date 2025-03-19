@@ -51,6 +51,7 @@ export const PricingPlans = () => {
     const paymentLink = STRIPE_PAYMENT_LINKS[planId];
     if (paymentLink) {
       // Redirect to Stripe hosted payment page
+      console.log(`Redirecting to payment link: ${paymentLink}`);
       window.location.href = paymentLink;
     } else {
       console.error(`No payment link found for plan: ${planId}`);
