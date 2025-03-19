@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useStripe } from '@/hooks/use-stripe';
 
 // Maximum number of clicks before showing paywall
 const MAX_FREE_CLICKS = 40;
@@ -14,12 +15,26 @@ const EXCLUDED_PATHS = ['/', '/home', '/pricing', '/signup'];
 export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const [clickCount, setClickCount] = useState(0);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { subscription, isSubscriptionLoading } = useStripe();
 
   // Check if current path should be excluded from tracking
   const isExcludedPath = EXCLUDED_PATHS.includes(location.pathname);
+
+  // Check if user has an active subscription
+  useEffect(() => {
+    if (subscription) {
+      const isActive = subscription.status === 'active' || 
+                        subscription.status === 'trialing';
+      console.log('User subscription status:', subscription.status, 'isActive:', isActive);
+      setHasActiveSubscription(isActive);
+    } else {
+      setHasActiveSubscription(false);
+    }
+  }, [subscription]);
 
   // Load the click count from Supabase when component mounts or user changes
   useEffect(() => {
@@ -42,10 +57,9 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           setClickCount(data.click_count);
           console.log('Loaded click count:', data.click_count);
           
-          // Check if user has already reached the limit on initial load
-          // Only redirect if not on an excluded path
-          if (data.click_count >= MAX_FREE_CLICKS && !isExcludedPath) {
-            console.log('User already reached click limit, redirecting to pricing');
+          // Only redirect if not on an excluded path AND user has no active subscription
+          if (data.click_count >= MAX_FREE_CLICKS && !isExcludedPath && !hasActiveSubscription && !isSubscriptionLoading) {
+            console.log('User reached click limit and has no subscription, redirecting to pricing');
             navigate('/pricing');
           }
         }
@@ -54,8 +68,10 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       }
     };
     
-    loadClickCount();
-  }, [user, navigate, isExcludedPath]);
+    if (!isSubscriptionLoading) {
+      loadClickCount();
+    }
+  }, [user, navigate, isExcludedPath, hasActiveSubscription, isSubscriptionLoading]);
 
   // Save the click count to Supabase when it changes
   useEffect(() => {
@@ -92,6 +108,12 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     console.log('Click detected, new count:', newCount);
     setClickCount(newCount);
     
+    // Skip paywall redirect if user has active subscription
+    if (hasActiveSubscription) {
+      console.log('User has active subscription, skipping paywall redirect');
+      return;
+    }
+    
     // Check if user has reached the limit
     if (newCount === MAX_FREE_CLICKS) {
       toast({
@@ -110,7 +132,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
-  }, [clickCount, user, isExcludedPath]);
+  }, [clickCount, user, isExcludedPath, hasActiveSubscription]);
 
   return <>{children}</>;
 };
