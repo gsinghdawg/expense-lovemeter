@@ -66,11 +66,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/profile-setup" replace />;
   }
 
-  // Allow full access to the app for users with active subscriptions
+  // Check for active subscription
   const hasActiveSubscription = subscription && 
     (subscription.status === 'active' || subscription.status === 'trialing');
+  
+  // If user doesn't have an active subscription and isn't on the pricing page,
+  // redirect to pricing page
+  if (!hasActiveSubscription && location.pathname !== "/pricing") {
+    return <Navigate to="/pricing" replace />;
+  }
 
-  // Return the children (allow access) if the user has a subscription
+  // Return the children (allow access) if the user has a subscription or is on allowed pages
   return <>{children}</>;
 };
 
