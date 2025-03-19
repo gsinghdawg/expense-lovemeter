@@ -22,8 +22,8 @@ const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes
       // Enable retry for failed queries
       retry: 3,
-      // Increase garbage collection time to ensure data is available during navigation
-      gcTime: 1000 * 60 * 30, // 30 minutes
+      // Increase cache time to ensure data is available during navigation
+      cacheTime: 1000 * 60 * 30, // 30 minutes
     },
   },
 });
