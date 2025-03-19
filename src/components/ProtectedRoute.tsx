@@ -16,39 +16,86 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { subscription, isSubscriptionLoading, paymentHistory, isPaymentHistoryLoading, refetchSubscription } = useStripe();
   const { toast } = useToast();
   const [pollingCount, setPollingCount] = useState(0);
+  const [isManuallyChecking, setIsManuallyChecking] = useState(false);
 
   // Poll for subscription updates if we detect recent payment but no active subscription
   useEffect(() => {
     // If we have a recent payment but no active subscription, poll for updates
-    if (hasRecentPayment && !subscription && pollingCount < 5) {
+    if ((hasRecentPayment || isManuallyChecking) && !subscription && pollingCount < 10) {
       const timer = setTimeout(() => {
-        console.log(`Polling for subscription updates (attempt ${pollingCount + 1}/5)...`);
+        console.log(`Polling for subscription updates (attempt ${pollingCount + 1}/10)...`);
         refetchSubscription();
-        setPollingCount(prev => prev +.01);
-      }, 5000); // Check every 5 seconds, up to 5 times
+        setPollingCount(prev => prev + 1);
+      }, 3000); // Check every 3 seconds, up to 10 times
       
       return () => clearTimeout(timer);
     }
-  }, [hasRecentPayment, subscription, pollingCount, refetchSubscription]);
+  }, [hasRecentPayment, isManuallyChecking, subscription, pollingCount, refetchSubscription]);
 
-  // Check for recent payments (within the last 6 hours)
+  // Check for recent payments (within the last 12 hours)
   useEffect(() => {
     if (!paymentHistory || isPaymentHistoryLoading) return;
 
     const now = new Date();
-    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000); // 6 hour grace period
+    const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000); // 12 hour grace period
     
     const recentSuccessfulPayment = paymentHistory.some(payment => {
       const paymentDate = new Date(payment.created_at);
-      return payment.status === 'succeeded' && paymentDate > sixHoursAgo;
+      return payment.status === 'succeeded' && paymentDate > twelveHoursAgo;
     });
-    
-    setHasRecentPayment(recentSuccessfulPayment);
     
     if (recentSuccessfulPayment) {
       console.log("Recent successful payment found. Allowing access during grace period.");
+      setHasRecentPayment(true);
+      // If we find a recent payment but no subscription, start polling
+      if (!subscription) {
+        setIsManuallyChecking(true);
+      }
+    } else {
+      setHasRecentPayment(false);
     }
-  }, [paymentHistory, isPaymentHistoryLoading]);
+  }, [paymentHistory, isPaymentHistoryLoading, subscription]);
+
+  // Manual check for direct payment (Stripe Buy Button)
+  useEffect(() => {
+    const checkDirectPayment = async () => {
+      if (!user) return;
+      
+      try {
+        // Query payment_history table directly for recent payments
+        const { data, error } = await supabase
+          .from('payment_history')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          const now = new Date();
+          const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+          
+          const recentPayment = data.some(payment => {
+            const paymentDate = new Date(payment.created_at);
+            return payment.status === 'succeeded' && paymentDate > twelveHoursAgo;
+          });
+          
+          if (recentPayment) {
+            console.log("Recent payment found in database. Allowing access.");
+            setHasRecentPayment(true);
+          }
+        }
+      } catch (err) {
+        console.error("Error checking payment history:", err);
+      }
+    };
+    
+    // Only run this check on initial load if we don't already have payment history
+    if (user && !isLoading && !paymentHistory?.length && !hasRecentPayment) {
+      checkDirectPayment();
+    }
+  }, [user, isLoading, paymentHistory, hasRecentPayment]);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {

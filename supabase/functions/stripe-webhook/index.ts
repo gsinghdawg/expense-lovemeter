@@ -9,9 +9,11 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
 });
 
 // Update the webhook secret with the provided value
-const webhookSecret = 'whsec_7i5MDKN6OMEj6GnfdUwKvD2b1ZwrPCN8';
+const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || 'whsec_7i5MDKN6OMEj6GnfdUwKvD2b1ZwrPCN8';
 
 Deno.serve(async (req) => {
+  console.log('Webhook endpoint called!');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -25,22 +27,28 @@ Deno.serve(async (req) => {
     const body = await req.text();
     const signature = req.headers.get('stripe-signature');
     
+    console.log('Received webhook with signature:', signature ? 'Present' : 'Missing');
+    
     if (!signature) {
+      console.error('Webhook signature missing');
       return new Response('Stripe signature missing', { status: 400, headers: corsHeaders });
     }
     
-    console.log('Webhook received, verifying signature with secret starting with:', webhookSecret.substring(0, 4));
+    // Log key information for debugging
+    console.log('Webhook received, verifying with secret starting with:', webhookSecret.substring(0, 4));
+    console.log('Body length:', body.length);
     
     // Verify the webhook signature
     let event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
-      console.error(`Webhook signature verification failed: ${err}`);
+      console.error(`Webhook signature verification failed: ${err.message}`);
       return new Response(`Webhook Error: ${err.message}`, { status: 400, headers: corsHeaders });
     }
     
     console.log(`Event received: ${event.type}`);
+    console.log(`Event data: ${JSON.stringify(event.data.object, null, 2)}`);
     
     // Handle specific events
     switch (event.type) {
@@ -54,6 +62,12 @@ Deno.serve(async (req) => {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log('Processing checkout.session.async_payment_succeeded event:', JSON.stringify(session, null, 2));
         await handleSuccessfulPayment(session);
+        break;
+      }
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log('Processing payment_intent.succeeded event:', JSON.stringify(paymentIntent, null, 2));
+        await handleSuccessfulPaymentIntent(paymentIntent);
         break;
       }
       case 'invoice.paid': {
@@ -74,6 +88,9 @@ Deno.serve(async (req) => {
         await handleSubscriptionCancellation(subscription);
         break;
       }
+      default: {
+        console.log(`Unhandled event type: ${event.type}`);
+      }
     }
     
     return new Response(JSON.stringify({ received: true }), { 
@@ -81,13 +98,92 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error(`Error processing webhook: ${error}`);
+    console.error(`Error processing webhook: ${error.message}`);
+    console.error(error.stack);
     return new Response(`Webhook error: ${error.message}`, { 
       status: 500,
       headers: corsHeaders
     });
   }
 });
+
+// Handle successful payment intent (direct payments)
+async function handleSuccessfulPaymentIntent(paymentIntent: Stripe.PaymentIntent) {
+  console.log('Processing payment intent:', paymentIntent.id);
+  
+  // Get the customer from the payment intent
+  const customerId = paymentIntent.customer?.toString();
+  if (!customerId) {
+    console.error('Missing customer ID in payment intent');
+    return;
+  }
+  
+  try {
+    // Create a Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseKey);
+    
+    // Get the user ID associated with this customer
+    const { data: customerData } = await supabaseAdmin
+      .from('stripe_customers')
+      .select('user_id')
+      .eq('stripe_customer_id', customerId)
+      .single();
+      
+    if (!customerData) {
+      // Try to get metadata from the customer object
+      const customer = await stripe.customers.retrieve(customerId);
+      const userId = customer.metadata?.user_id;
+      
+      if (!userId) {
+        console.error('Could not find user ID for customer:', customerId);
+        return;
+      }
+      
+      // Store customer mapping for future use
+      await storeCustomerId(supabaseAdmin, userId, customerId);
+      
+      // Record payment
+      await recordPayment(supabaseAdmin, userId, paymentIntent);
+    } else {
+      // Record payment for existing customer
+      await recordPayment(supabaseAdmin, customerData.user_id, paymentIntent);
+    }
+  } catch (error) {
+    console.error('Error processing payment intent:', error);
+  }
+}
+
+// Helper to record payment
+async function recordPayment(supabaseAdmin: any, userId: string, paymentIntent: Stripe.PaymentIntent) {
+  console.log('Recording payment in payment_history:', {
+    user_id: userId,
+    stripe_payment_intent_id: paymentIntent.id,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    status: paymentIntent.status,
+  });
+  
+  try {
+    // Record payment in payment_history table
+    await supabaseAdmin
+      .from('payment_history')
+      .insert({
+        user_id: userId,
+        stripe_payment_intent_id: paymentIntent.id,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        status: paymentIntent.status,
+        payment_method: paymentIntent.payment_method_types[0],
+        description: paymentIntent.description || 'One-time payment'
+      });
+      
+    console.log('Payment recorded successfully in payment_history');
+  } catch (error) {
+    console.error('Error recording payment:', error);
+  }
+}
 
 // Handle successful one-time payment
 async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
@@ -182,6 +278,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     console.log('Payment and subscription processing completed successfully');
   } catch (error) {
     console.error('Error recording payment/subscription:', error);
+    console.error(error.stack);
   }
 }
 
@@ -296,6 +393,7 @@ async function handleSuccessfulSubscription(invoice: Stripe.Invoice) {
     console.log('Subscription payment processed successfully');
   } catch (error) {
     console.error('Error recording subscription payment:', error);
+    console.error(error.stack);
   }
 }
 
@@ -341,6 +439,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     console.log('Subscription updated successfully');
   } catch (error) {
     console.error('Error updating subscription:', error);
+    console.error(error.stack);
   }
 }
 
@@ -371,6 +470,7 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription)
     console.log('Subscription cancellation recorded successfully');
   } catch (error) {
     console.error('Error recording subscription cancellation:', error);
+    console.error(error.stack);
   }
 }
 
