@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,11 +8,18 @@ import { supabase } from '@/integrations/supabase/client';
 // Maximum number of clicks before showing paywall
 const MAX_FREE_CLICKS = 40;
 
+// Paths that should be excluded from click tracking
+const EXCLUDED_PATHS = ['/', '/home', '/pricing', '/signup'];
+
 export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const [clickCount, setClickCount] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+
+  // Check if current path should be excluded from tracking
+  const isExcludedPath = EXCLUDED_PATHS.includes(location.pathname);
 
   // Load the click count from Supabase when component mounts or user changes
   useEffect(() => {
@@ -36,7 +43,8 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           console.log('Loaded click count:', data.click_count);
           
           // Check if user has already reached the limit on initial load
-          if (data.click_count >= MAX_FREE_CLICKS) {
+          // Only redirect if not on an excluded path
+          if (data.click_count >= MAX_FREE_CLICKS && !isExcludedPath) {
             console.log('User already reached click limit, redirecting to pricing');
             navigate('/pricing');
           }
@@ -47,7 +55,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     };
     
     loadClickCount();
-  }, [user, navigate]);
+  }, [user, navigate, isExcludedPath]);
 
   // Save the click count to Supabase when it changes
   useEffect(() => {
@@ -76,11 +84,8 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
 
   // Handle clicking anywhere in the app
   const handleClick = (e: MouseEvent) => {
-    // Only count clicks if the user is authenticated
-    if (!user) return;
-    
-    // Exclude clicks on the paywall page itself
-    if (window.location.pathname.includes('/pricing')) return;
+    // Only count clicks if the user is authenticated and not on excluded paths
+    if (!user || isExcludedPath) return;
     
     // Increment click count
     const newCount = clickCount + 1;
@@ -105,7 +110,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
-  }, [clickCount, user]);
+  }, [clickCount, user, isExcludedPath]);
 
   return <>{children}</>;
 };

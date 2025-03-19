@@ -25,27 +25,29 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <ClickTracker>
-              <Routes>
-                <Route path="/dashboard" element={
+            {/* Routes that need click tracking */}
+            <Routes>
+              <Route path="/dashboard" element={
+                <ClickTracker>
                   <ProtectedRoute>
                     <Index />
                   </ProtectedRoute>
-                } />
-                <Route path="/profile-setup" element={
+                </ClickTracker>
+              } />
+              <Route path="/profile-setup" element={
+                <ClickTracker>
                   <ProtectedRoute>
                     <ProfileSetup />
                   </ProtectedRoute>
-                } />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/home" element={<Home />} />
-                {/* Set explicit route for root path */}
-                <Route path="/" element={<Home />} />
-                {/* Redirect all unmatched routes to home */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </ClickTracker>
+                </ClickTracker>
+              } />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/signup" element={<SignUp />} />
+              {/* Routes without click tracking */}
+              <Route path="/home" element={<Home />} />
+              <Route path="/" element={<Home />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </TooltipProvider>
         </AuthProvider>
       </BrowserRouter>

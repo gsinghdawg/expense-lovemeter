@@ -20,10 +20,8 @@ const Pricing = () => {
   }, [user, navigate]);
 
   const handleBackToHome = () => {
-    // Force navigation to home page regardless of click limit
-    // We're using window.location.href to ensure a full page reload
-    // which bypasses any redirect logic in the click tracker
-    window.location.href = '/';
+    // Simply navigate to home page - click tracking is now disabled on home route
+    navigate('/', { replace: true });
   };
 
   return (
