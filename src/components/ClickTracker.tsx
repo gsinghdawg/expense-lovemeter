@@ -28,7 +28,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   // Check if user has an active subscription
   useEffect(() => {
     const checkSubscription = async () => {
-      // If no user, reset subscription state
+      // If no user, maintain the subscription state
       if (!user) {
         setSubscriptionChecked(true);
         return;
@@ -46,7 +46,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     checkSubscription();
   }, [user, subscription, isSubscriptionLoading]);
 
-  // Save click count to Supabase
+  // Persist click count to Supabase database
   const saveClickCount = async (count: number, userId: string) => {
     if (count === 0) return;
     
@@ -75,7 +75,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       if (!user || !subscriptionChecked) return;
       
       // Even if user has active subscription, we still load the click count
-      // so it's preserved if subscription expires
+      // to preserve it across sessions
       try {
         const { data, error } = await supabase
           .from('user_click_counts')
@@ -97,6 +97,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           // 2. User has no active subscription
           // 3. User has reached the click limit
           // 4. We're done checking subscription status
+          // 5. Not already on the pricing page
           if (data.click_count >= MAX_FREE_CLICKS && 
               !isExcludedPath && 
               !hasActiveSubscription && 
@@ -129,7 +130,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [clickCount, user]);
 
-  // Save the click count to Supabase when it changes or when user changes
+  // Save the click count to Supabase whenever it changes or when user changes
   useEffect(() => {
     // Skip saving if clickCount is 0 or no user
     if (!user || clickCount === 0) return;
@@ -147,7 +148,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     // Only count clicks if the user is authenticated and not on excluded paths
     if (!user || isExcludedPath) return;
     
-    // Don't count clicks or show paywall if user has active subscription
+    // Don't track clicks if user has active subscription, but still preserve the counter
     if (hasActiveSubscription) {
       console.log('User has active subscription, skipping click tracking');
       return;
@@ -158,7 +159,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     console.log('Click detected, new count:', newCount);
     setClickCount(newCount);
     
-    // Check if user has reached the limit
+    // Notification at the threshold
     if (newCount === MAX_FREE_CLICKS) {
       toast({
         title: "Free Usage Limit Reached",
@@ -171,6 +172,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
         navigate('/pricing');
       }
     } else if (newCount > MAX_FREE_CLICKS && location.pathname !== '/pricing') {
+      // Continue redirecting to pricing for any click beyond the threshold
       console.log('Redirecting to pricing page, clicks > MAX_FREE_CLICKS');
       navigate('/pricing');
     }
@@ -186,6 +188,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     return () => {
       if (user && clickCount > 0) {
+        console.log('Component unmounting, saving click count:', clickCount);
         saveClickCount(clickCount, user.id);
       }
     };

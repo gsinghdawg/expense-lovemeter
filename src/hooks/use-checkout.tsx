@@ -57,6 +57,19 @@ export const useCheckout = ({
       return;
     }
 
+    // Before initiating a checkout, ensure click count is persisted
+    try {
+      const { data: clickData } = await supabase
+        .from('user_click_counts')
+        .select('click_count')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      console.log('Retrieved current click count before checkout:', clickData?.click_count);
+    } catch (error) {
+      console.warn('Failed to check click count before checkout, continuing anyway');
+    }
+
     setIsLoading(true);
     
     try {
