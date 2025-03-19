@@ -11,7 +11,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
-  const { subscription, isSubscriptionLoading, refetchSubscription } = useStripe();
   const location = useLocation();
   const { toast } = useToast();
 
@@ -26,9 +25,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         url.searchParams.delete('payment_success');
         window.history.replaceState({}, document.title, url.toString());
         
-        // Refetch subscription data
-        await refetchSubscription();
-        
         // Show success message
         toast({
           title: "Payment Successful!",
@@ -39,7 +35,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     };
     
     checkPaymentSuccess();
-  }, [location.search, refetchSubscription, toast]);
+  }, [location.search, toast]);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -74,7 +70,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, isLoading]);
 
-  if (isLoading || isCheckingOnboarding || isSubscriptionLoading) {
+  if (isLoading || isCheckingOnboarding) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Spinner size="lg" />
@@ -93,9 +89,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/profile-setup" replace />;
   }
 
-  // We've removed subscription requirement check to allow users to access the app after payment
-  // Allowing full access to the app regardless of subscription status
-
+  // Allow full access to the app regardless of subscription status
+  // We've removed the subscription check to allow users to access after payment
   return <>{children}</>;
 };
 
