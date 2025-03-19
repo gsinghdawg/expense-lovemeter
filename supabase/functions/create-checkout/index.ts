@@ -4,13 +4,16 @@
 // This enables autocomplete, go to definition, etc.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { stripe, isStripeConfigured } from '../_shared/stripe.ts';
+import { stripe, isStripeConfigured, logStripeMode } from '../_shared/stripe.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getUser } from '../_shared/supabase.ts';
 
 console.log('Create checkout function loaded');
 
 serve(async (req) => {
+  // Log Stripe mode for debugging
+  logStripeMode();
+  
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -109,6 +112,8 @@ serve(async (req) => {
     // Create checkout session
     try {
       console.log('Attempting to create checkout session with Stripe...');
+      
+      // Add payment method types for more options and compatibility
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         client_reference_id: user.id,
@@ -117,9 +122,12 @@ serve(async (req) => {
         success_url: successUrl,
         cancel_url: cancelUrl,
         billing_address_collection: 'auto',
+        payment_method_types: ['card'],
+        allow_promotion_codes: true,
       });
 
       console.log('Checkout session created successfully:', session.id, 'Mode:', session.mode);
+      console.log('Checkout URL:', session.url);
 
       // Return the session ID and URL
       return new Response(JSON.stringify({
@@ -141,6 +149,9 @@ serve(async (req) => {
       } else if (error.type === 'StripeAuthenticationError') {
         errorMessage = 'Payment provider authentication failed';
         errorDetails = 'Invalid API credentials for payment provider.';
+      } else if (error.code === 'resource_missing') {
+        errorMessage = 'Payment configuration error';
+        errorDetails = 'The specified price ID does not exist or is not active.';
       }
       
       return new Response(JSON.stringify({

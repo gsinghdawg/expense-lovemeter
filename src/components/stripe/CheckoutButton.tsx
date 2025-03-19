@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase, STRIPE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useStripe } from '@/hooks/use-stripe';
+import { Spinner } from '@/components/ui/spinner';
 
 // Initialize Stripe with our publishable key
 console.log('Initializing Stripe with key (first 8 chars):', STRIPE_PUBLISHABLE_KEY.substring(0, 8));
@@ -34,7 +35,7 @@ export const CheckoutButton = ({
   const { user, session } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
   const { refetchSubscription } = useStripe();
 
@@ -67,7 +68,7 @@ export const CheckoutButton = ({
     checkPaymentStatus();
   }, [toast, navigate, refetchSubscription]);
 
-  const handleCheckout = async (retry = false) => {
+  const handleCheckout = async () => {
     if (!user || !session) {
       toast({
         title: "Authentication Required",
@@ -77,11 +78,7 @@ export const CheckoutButton = ({
       return;
     }
 
-    if (retry) {
-      setIsRetrying(true);
-    } else {
-      setIsLoading(true);
-    }
+    setIsLoading(true);
     
     try {
       // Get Stripe.js instance
@@ -134,14 +131,14 @@ export const CheckoutButton = ({
       
       console.log('Checkout session created:', data.sessionId);
       
-      // If direct URL is available, use it (more reliable)
+      // Direct redirection method - always try this first
       if (data.url) {
         console.log('Redirecting to Stripe URL directly:', data.url);
         window.location.href = data.url;
         return;
       }
       
-      // Fallback to redirectToCheckout
+      // Fallback to redirectToCheckout if direct URL is not available
       const { error: redirectError } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
@@ -159,6 +156,17 @@ export const CheckoutButton = ({
           description: 'We\'re having trouble connecting to our payment provider. Please try again in a few moments.',
           variant: 'destructive',
         });
+        
+        // If retried less than 2 times, increment count
+        if (retryCount < 2) {
+          setRetryCount(retryCount + 1);
+        }
+      } else if (error.message && error.message.includes('configuration error')) {
+        toast({
+          title: 'Configuration Error',
+          description: 'There is an issue with the payment configuration. Please contact support.',
+          variant: 'destructive',
+        });
       } else {
         toast({
           title: 'Checkout Error',
@@ -168,7 +176,6 @@ export const CheckoutButton = ({
       }
     } finally {
       setIsLoading(false);
-      setIsRetrying(false);
     }
   };
 
@@ -176,10 +183,16 @@ export const CheckoutButton = ({
     <Button
       variant={variant}
       className={className}
-      onClick={() => handleCheckout(false)}
-      disabled={isLoading || isRetrying}
+      onClick={handleCheckout}
+      disabled={isLoading}
     >
-      {isLoading ? 'Processing...' : isRetrying ? 'Retrying...' : buttonText}
+      {isLoading ? (
+        <span className="flex items-center gap-2">
+          <Spinner size="sm" /> Processing...
+        </span>
+      ) : (
+        buttonText
+      )}
     </Button>
   );
 };
