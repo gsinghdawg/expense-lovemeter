@@ -1,11 +1,9 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
-// Updated interface to match the implementation
 interface AuthContextProps {
   user: User | null;
   session: Session | null;
@@ -14,6 +12,7 @@ interface AuthContextProps {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  resendConfirmationEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -25,7 +24,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Update user profile in Supabase
   const updateUserProfile = async (userId: string, userData: { name?: string }) => {
     try {
       const { error } = await supabase
@@ -42,14 +40,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event, session);
@@ -57,12 +53,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setIsLoading(false);
         
-        // When user signs in or token is refreshed, update their profile data
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-          // Get user metadata
           const name = session.user.user_metadata.name;
           
-          // Update profile if we have user metadata
           if (name) {
             updateUserProfile(session.user.id, { name });
           }
@@ -73,16 +66,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
+        if (error.message === "Email not confirmed" || error.code === "email_not_confirmed") {
+          toast({
+            title: "Email not confirmed",
+            description: "Please check your email for a confirmation link or click resend confirmation.",
+            variant: "destructive"
+          });
+          throw error;
+        }
         throw error;
       }
       
-      // Update local state immediately to improve perceived performance
       if (data.user) {
         setUser(data.user);
         setSession(data.session);
@@ -96,16 +95,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return data;
     } catch (error: any) {
       console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: error.message || "There was an error logging in",
-        variant: "destructive"
-      });
+      
+      if (error.message !== "Email not confirmed" && error.code !== "email_not_confirmed") {
+        toast({
+          title: "Login failed",
+          description: error.message || "There was an error logging in",
+          variant: "destructive"
+        });
+      }
+      
       throw error;
     }
   };
 
-  // Sign up with email and password
   const signUp = async (email: string, password: string, name: string) => {
     try {
       const { error } = await supabase.auth.signUp({ 
@@ -136,20 +138,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Sign out
   const signOut = async () => {
     try {
-      // First update the local state to ensure UI updates immediately
       setUser(null);
       setSession(null);
 
-      // Then attempt to sign out from Supabase
       try {
         await supabase.auth.signOut();
       } catch (error: any) {
-        // Log the error but don't throw it - we've already updated the UI state
         console.warn("Error during Supabase sign out:", error);
-        // We don't throw the error here since we've already cleared the local state
       }
       
       toast({
@@ -157,7 +154,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "You've been successfully signed out."
       });
       
-      // Redirect to homepage after signing out
       navigate('/home');
     } catch (error: any) {
       console.error("Error during sign out:", error);
@@ -169,7 +165,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Reset password
   const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -194,6 +189,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const resendConfirmationEmail = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Confirmation email sent",
+        description: "Please check your email for the confirmation link."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to resend confirmation",
+        description: error.message || "There was an error sending the confirmation email",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const value = {
     user,
     session,
@@ -201,7 +221,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signUp,
     signOut,
-    resetPassword
+    resetPassword,
+    resendConfirmationEmail
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

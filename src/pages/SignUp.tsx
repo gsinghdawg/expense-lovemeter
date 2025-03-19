@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Sparkles, Mail, Lock, User, Home } from "lucide-react";
+import { Sparkles, Mail, Lock, User, Home, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 import {
@@ -61,7 +61,9 @@ const SignUp = () => {
   const [resetLoading, setResetLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState("signup");
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const [resendLoading, setResendLoading] = useState<boolean>(false);
+  const [emailNeedsConfirmation, setEmailNeedsConfirmation] = useState<string | null>(null);
+  const { signIn, signUp, user, resendConfirmationEmail } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -104,12 +106,12 @@ const SignUp = () => {
       await signUp(values.email, values.password, values.name);
       signupForm.reset();
       
-      // After signup, switch to login tab
-      setActiveTab("login");
+      // After signup, inform the user about confirmation email
+      setEmailNeedsConfirmation(values.email);
       
       toast({
         title: "Account created",
-        description: "Please check your email for verification if required, or login with your credentials.",
+        description: "Please check your email for confirmation instructions.",
       });
     } catch (error) {
       console.error("Sign up error:", error);
@@ -134,9 +136,13 @@ const SignUp = () => {
           description: "Welcome back to LadyLedger!",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      // Keep the error toast handling in AuthContext.tsx
+      
+      // Check if this is an email confirmation error
+      if (error.message === "Email not confirmed" || error.code === "email_not_confirmed") {
+        setEmailNeedsConfirmation(values.email);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -172,6 +178,23 @@ const SignUp = () => {
     }
   }
 
+  async function handleResendConfirmation() {
+    if (!emailNeedsConfirmation) return;
+    
+    setResendLoading(true);
+    try {
+      await resendConfirmationEmail(emailNeedsConfirmation);
+      toast({
+        title: "Confirmation email sent",
+        description: "Please check your inbox for a new confirmation link.",
+      });
+    } catch (error) {
+      console.error("Resend confirmation error:", error);
+    } finally {
+      setResendLoading(false);
+    }
+  }
+
   return (
     <div className="py-8 px-4 sm:px-6 min-h-screen flex flex-col">
       <div className="absolute right-4 top-4">
@@ -196,6 +219,47 @@ const SignUp = () => {
             <h2 className="text-muted-foreground text-sm italic mb-6">Your Finance Companion</h2>
           </div>
         </div>
+
+        {emailNeedsConfirmation ? (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Email Confirmation Required
+            </h3>
+            <p className="text-sm mt-2 text-yellow-700 dark:text-yellow-300">
+              Your account requires email confirmation. Please check your inbox at <span className="font-medium">{emailNeedsConfirmation}</span> for a confirmation link.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleResendConfirmation}
+                disabled={resendLoading}
+                className="text-yellow-800 border-yellow-300 hover:bg-yellow-100 dark:text-yellow-300 dark:border-yellow-700 dark:hover:bg-yellow-900/40"
+              >
+                {resendLoading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Resend Confirmation
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setEmailNeedsConfirmation(null)}
+                className="text-yellow-800 hover:bg-yellow-100 dark:text-yellow-300 dark:hover:bg-yellow-900/40"
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-2 mb-6">
