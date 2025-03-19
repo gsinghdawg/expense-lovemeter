@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePaymentStatusCheck } from "@/utils/payment-status";
 import { useStripe } from "@/hooks/use-stripe";
+import { Spinner } from "@/components/ui/spinner";
 
 const Pricing = () => {
   const { user } = useAuth();
@@ -27,7 +28,7 @@ const Pricing = () => {
 
   // Handle subscription check and automatic redirect
   useEffect(() => {
-    if (subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
+    if (!isSubscriptionLoading && subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
       toast({
         title: "Active Subscription Detected",
         description: "You already have an active subscription. Redirecting to dashboard.",
@@ -40,7 +41,7 @@ const Pricing = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [subscription, navigate, toast]);
+  }, [subscription, navigate, toast, isSubscriptionLoading]);
 
   const handleBackToHome = () => {
     navigate('/', { replace: true });
@@ -53,6 +54,18 @@ const Pricing = () => {
       description: "Your subscription status has been updated."
     });
   };
+
+  // Show loading state while checking subscription
+  if (isSubscriptionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Spinner size="lg" className="mb-4" />
+          <p className="text-muted-foreground">Checking subscription status...</p>
+        </div>
+      </div>
+    );
+  }
 
   // If user has an active subscription, show appropriate message
   if (subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {

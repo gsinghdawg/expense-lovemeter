@@ -57,8 +57,15 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           setClickCount(data.click_count);
           console.log('Loaded click count:', data.click_count);
           
-          // Only redirect if not on an excluded path AND user has no active subscription
-          if (data.click_count >= MAX_FREE_CLICKS && !isExcludedPath && !hasActiveSubscription && !isSubscriptionLoading) {
+          // Only redirect if:
+          // 1. Not on an excluded path
+          // 2. User has no active subscription
+          // 3. User has reached the click limit
+          // 4. We're done checking subscription status
+          if (data.click_count >= MAX_FREE_CLICKS && 
+              !isExcludedPath && 
+              !hasActiveSubscription && 
+              !isSubscriptionLoading) {
             console.log('User reached click limit and has no subscription, redirecting to pricing');
             navigate('/pricing');
           }
@@ -103,16 +110,16 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     // Only count clicks if the user is authenticated and not on excluded paths
     if (!user || isExcludedPath) return;
     
+    // Don't count clicks or show paywall if user has active subscription
+    if (hasActiveSubscription) {
+      console.log('User has active subscription, skipping click tracking');
+      return;
+    }
+    
     // Increment click count
     const newCount = clickCount + 1;
     console.log('Click detected, new count:', newCount);
     setClickCount(newCount);
-    
-    // Skip paywall redirect if user has active subscription
-    if (hasActiveSubscription) {
-      console.log('User has active subscription, skipping paywall redirect');
-      return;
-    }
     
     // Check if user has reached the limit
     if (newCount === MAX_FREE_CLICKS) {
