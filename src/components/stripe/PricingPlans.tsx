@@ -95,7 +95,7 @@ export const PricingPlans = () => {
                 <stripe-buy-button
                   buy-button-id={STRIPE_BUY_BUTTON_IDS[tier.id]}
                   publishable-key={STRIPE_PUBLISHABLE_KEY}
-                ></stripe-buy-button>
+                />
               </div>
             </CardFooter>
           </Card>

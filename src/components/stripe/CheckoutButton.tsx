@@ -1,11 +1,10 @@
 
 import { useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { STRIPE_BUY_BUTTON_IDS, STRIPE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 
 interface CheckoutButtonProps {
   priceId: string;
-  mode: 'payment' | 'subscription';
+  mode?: 'payment' | 'subscription';
   buttonText: string;
   successUrl?: string;
   cancelUrl?: string;
@@ -38,10 +37,14 @@ export const CheckoutButton = ({
     const script = document.createElement('script');
     script.src = 'https://js.stripe.com/v3/buy-button.js';
     script.async = true;
-    document.body.appendChild(script);
+    
+    // Add script to document only if it doesn't exist
+    if (!document.querySelector('script[src="https://js.stripe.com/v3/buy-button.js"]')) {
+      document.body.appendChild(script);
+    }
     
     // Create buy button element when script is loaded
-    script.onload = () => {
+    const handleScriptLoad = () => {
       if (buttonContainerRef.current) {
         // Clear previous content
         buttonContainerRef.current.innerHTML = '';
@@ -56,9 +59,20 @@ export const CheckoutButton = ({
       }
     };
     
+    // Check if script is already loaded
+    if (window.customElements && window.customElements.get('stripe-buy-button')) {
+      handleScriptLoad();
+    } else {
+      script.onload = handleScriptLoad;
+    }
+    
+    // Append script to body if not already there
+    if (!document.querySelector('script[src="https://js.stripe.com/v3/buy-button.js"]')) {
+      document.body.appendChild(script);
+    }
+    
     return () => {
-      // Cleanup script on unmount
-      document.body.removeChild(script);
+      // No need to remove the script on unmount
     };
   }, [buyButtonId]);
   
