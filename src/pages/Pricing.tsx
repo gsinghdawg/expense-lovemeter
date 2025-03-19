@@ -27,14 +27,10 @@ const Pricing = () => {
     navigate('/', { replace: true });
   };
 
-  const goToTestPage = () => {
-    navigate('/payment-test');
-  };
-
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="container mx-auto max-w-7xl">
-        <div className="mb-10 flex justify-between items-center">
+        <div className="mb-10">
           <Button 
             variant="ghost" 
             className="flex items-center gap-2" 
@@ -43,16 +39,6 @@ const Pricing = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to Home
           </Button>
-          
-          {process.env.NODE_ENV !== 'production' && (
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2" 
-              onClick={goToTestPage}
-            >
-              Test Payment Flow
-            </Button>
-          )}
         </div>
         
         <div className="text-center mb-10">
