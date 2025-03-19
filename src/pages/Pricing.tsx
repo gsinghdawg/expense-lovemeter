@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +10,7 @@ import { usePaymentStatusCheck } from "@/utils/payment-status";
 import { useStripe } from "@/hooks/use-stripe";
 import { SubscriptionManager } from "@/components/stripe/SubscriptionManager";
 import { PaymentHistory } from "@/components/stripe/PaymentHistory";
+import { Spinner } from "@/components/ui/spinner";
 
 const Pricing = () => {
   const { user } = useAuth();
@@ -21,10 +21,8 @@ const Pricing = () => {
   const [hasRecentPayment, setHasRecentPayment] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Add payment status check to handle redirects after payment
   usePaymentStatusCheck();
 
-  // Check subscription status
   useEffect(() => {
     if (subscription && ['active', 'trialing'].includes(subscription.status)) {
       setHasActiveSubscription(true);
@@ -33,7 +31,6 @@ const Pricing = () => {
     }
   }, [subscription]);
 
-  // Check for recent payments
   useEffect(() => {
     if (!paymentHistory || isPaymentHistoryLoading) return;
 
@@ -47,11 +44,9 @@ const Pricing = () => {
     
     setHasRecentPayment(recentSuccessfulPayment);
     
-    // If there's a recent payment but no subscription yet, show "processing" state
     if (recentSuccessfulPayment && !hasActiveSubscription && !isProcessing) {
       setIsProcessing(true);
       
-      // Auto-redirect to dashboard after a short delay if there's a recent payment
       const timer = setTimeout(() => {
         navigate('/dashboard', { replace: true });
       }, 5000); // 5 seconds
@@ -60,7 +55,6 @@ const Pricing = () => {
     }
   }, [paymentHistory, isPaymentHistoryLoading, hasActiveSubscription, navigate, isProcessing]);
 
-  // Redirect to signup if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/signup', { replace: true });
