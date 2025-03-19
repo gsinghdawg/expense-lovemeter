@@ -16,30 +16,47 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const [clickCount, setClickCount] = useState(0);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [subscriptionChecked, setSubscriptionChecked] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { subscription, isSubscriptionLoading } = useStripe();
+  const { subscription, isSubscriptionLoading, refetchSubscription } = useStripe();
 
   // Check if current path should be excluded from tracking
   const isExcludedPath = EXCLUDED_PATHS.includes(location.pathname);
 
   // Check if user has an active subscription
   useEffect(() => {
-    if (subscription) {
-      const isActive = subscription.status === 'active' || 
+    const checkSubscription = async () => {
+      // If no user, reset subscription state
+      if (!user) {
+        setHasActiveSubscription(false);
+        setSubscriptionChecked(true);
+        return;
+      }
+
+      if (!isSubscriptionLoading && subscription) {
+        const isActive = subscription.status === 'active' || 
                         subscription.status === 'trialing';
-      console.log('User subscription status:', subscription.status, 'isActive:', isActive);
-      setHasActiveSubscription(isActive);
-    } else {
-      setHasActiveSubscription(false);
-    }
-  }, [subscription]);
+        console.log('User subscription status:', subscription.status, 'isActive:', isActive);
+        setHasActiveSubscription(isActive);
+        setSubscriptionChecked(true);
+      }
+    };
+    
+    checkSubscription();
+  }, [user, subscription, isSubscriptionLoading]);
 
   // Load the click count from Supabase when component mounts or user changes
   useEffect(() => {
     const loadClickCount = async () => {
-      if (!user) return;
+      if (!user || !subscriptionChecked) return;
+      
+      // If user has an active subscription, we don't need to track clicks
+      if (hasActiveSubscription) {
+        console.log('User has active subscription, skipping click count load');
+        return;
+      }
       
       try {
         const { data, error } = await supabase
@@ -64,8 +81,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           // 4. We're done checking subscription status
           if (data.click_count >= MAX_FREE_CLICKS && 
               !isExcludedPath && 
-              !hasActiveSubscription && 
-              !isSubscriptionLoading) {
+              !hasActiveSubscription) {
             console.log('User reached click limit and has no subscription, redirecting to pricing');
             navigate('/pricing');
           }
@@ -75,15 +91,13 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       }
     };
     
-    if (!isSubscriptionLoading) {
-      loadClickCount();
-    }
-  }, [user, navigate, isExcludedPath, hasActiveSubscription, isSubscriptionLoading]);
+    loadClickCount();
+  }, [user, navigate, isExcludedPath, hasActiveSubscription, subscriptionChecked]);
 
   // Save the click count to Supabase when it changes
   useEffect(() => {
     const saveClickCount = async () => {
-      if (!user || clickCount === 0) return;
+      if (!user || clickCount === 0 || hasActiveSubscription) return;
       
       try {
         console.log('Saving click count:', clickCount);
@@ -103,7 +117,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     };
     
     saveClickCount();
-  }, [clickCount, user]);
+  }, [clickCount, user, hasActiveSubscription]);
 
   // Handle clicking anywhere in the app
   const handleClick = (e: MouseEvent) => {

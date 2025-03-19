@@ -20,7 +20,7 @@ export const usePaymentStatusCheck = () => {
         url.searchParams.delete('payment_success');
         window.history.replaceState({}, document.title, url.toString());
         
-        // Refetch subscription data to ensure it's up to date
+        // Refetch subscription data immediately to ensure it's up to date
         await refetchSubscription();
         
         // Show success message
@@ -30,8 +30,13 @@ export const usePaymentStatusCheck = () => {
           variant: "default",
         });
         
-        // Redirect to main app after successful payment
-        navigate('/', { replace: true });
+        // Short delay before redirecting to make sure subscription data has time to update
+        setTimeout(async () => {
+          // Fetch one more time to be certain
+          await refetchSubscription();
+          // Redirect to main app after successful payment
+          navigate('/', { replace: true });
+        }, 2000);
       } else if (paymentCancelled === 'true') {
         // Clean up URL
         url.searchParams.delete('payment_cancelled');
