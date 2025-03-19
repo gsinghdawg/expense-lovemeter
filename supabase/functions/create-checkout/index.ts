@@ -9,8 +9,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Create a Stripe client with the secret key - ensure it's in TEST mode
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+// Get the stripe secret key from environment variables - ensure we're using TEST mode
+const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
+console.log('Using Stripe in mode:', stripeSecretKey.startsWith('sk_test') ? 'TEST' : 'LIVE');
+
+// Create a Stripe client with the test secret key
+const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
 });
@@ -135,7 +139,7 @@ Deno.serve(async (req) => {
       cancel_url: cancelUrl,
     });
 
-    console.log('Checkout session created:', session.id);
+    console.log('Checkout session created:', session.id, 'Mode:', session.mode);
 
     // Return the session ID
     return new Response(JSON.stringify({ sessionId: session.id }), {

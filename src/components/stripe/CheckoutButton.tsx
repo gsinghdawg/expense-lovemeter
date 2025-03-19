@@ -4,12 +4,13 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, STRIPE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useStripe } from '@/hooks/use-stripe';
 
-// Initialize Stripe with the key from environment variable
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51QzSAJECEgtMuXU2UJ8hDINkw43JABnVFmbispZpwtT4HGK2ZIj4tuhb5STL48ERAnr1KOUb5KtCDtxS31IsQzjg009FXBPWY7');
+// Initialize Stripe with our TEST mode publishable key
+console.log('Initializing Stripe with key (first 8 chars):', STRIPE_PUBLISHABLE_KEY.substring(0, 8));
+const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
 interface CheckoutButtonProps {
   priceId: string;
