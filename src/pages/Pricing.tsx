@@ -19,6 +19,10 @@ const Pricing = () => {
     }
   }, [user, navigate]);
 
+  const handleBackToHome = () => {
+    navigate('/home', { replace: true });
+  };
+
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="container mx-auto max-w-7xl">
@@ -26,12 +30,10 @@ const Pricing = () => {
           <Button 
             variant="ghost" 
             className="flex items-center gap-2" 
-            asChild
+            onClick={handleBackToHome}
           >
-            <Link to="/home">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Link>
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
           </Button>
         </div>
         
