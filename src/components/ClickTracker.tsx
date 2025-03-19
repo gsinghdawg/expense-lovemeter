@@ -40,12 +40,29 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
                         subscription.status === 'trialing';
         console.log('User subscription status:', subscription.status, 'isActive:', isActive);
         setHasActiveSubscription(isActive);
+        
+        // If user has a newly active subscription but previously hit the paywall,
+        // reset their click count in the database
+        if (isActive && clickCount >= MAX_FREE_CLICKS) {
+          console.log('Resetting click count for subscribed user');
+          try {
+            await supabase
+              .from('user_click_counts')
+              .upsert(
+                { user_id: user.id, click_count: 0, updated_at: new Date().toISOString() },
+                { onConflict: 'user_id' }
+              );
+            setClickCount(0);
+          } catch (error) {
+            console.error('Error resetting click count:', error);
+          }
+        }
         setSubscriptionChecked(true);
       }
     };
     
     checkSubscription();
-  }, [user, subscription, isSubscriptionLoading]);
+  }, [user, subscription, isSubscriptionLoading, clickCount]);
 
   // Load the click count from Supabase when component mounts or user changes
   useEffect(() => {

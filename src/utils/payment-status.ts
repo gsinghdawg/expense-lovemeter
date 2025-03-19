@@ -3,11 +3,14 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useStripe } from '@/hooks/use-stripe';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const usePaymentStatusCheck = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { refetchSubscription } = useStripe();
+  const { user } = useAuth();
 
   useEffect(() => {
     const checkPaymentStatus = async () => {
@@ -26,6 +29,21 @@ export const usePaymentStatusCheck = () => {
         try {
           console.log('Refetching subscription after successful payment');
           await refetchSubscription();
+          
+          // Reset click count for the user since they've paid
+          if (user) {
+            console.log('Resetting click count for subscribed user after payment');
+            try {
+              await supabase
+                .from('user_click_counts')
+                .upsert(
+                  { user_id: user.id, click_count: 0, updated_at: new Date().toISOString() },
+                  { onConflict: 'user_id' }
+                );
+            } catch (error) {
+              console.error('Error resetting click count after payment:', error);
+            }
+          }
           
           // Show success message
           toast({
@@ -80,5 +98,5 @@ export const usePaymentStatusCheck = () => {
     };
     
     checkPaymentStatus();
-  }, [toast, navigate, refetchSubscription]);
+  }, [toast, navigate, refetchSubscription, user]);
 };
