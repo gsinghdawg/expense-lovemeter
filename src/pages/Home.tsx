@@ -25,21 +25,21 @@ const Home = () => {
   const testimonials = [
     {
       name: "Sarah Johnson",
-      role: "Small Business Owner",
+      role: "Dating Enthusiast",
       avatar: "/lovable-uploads/aee62957-15f2-456e-a356-50b3dab78200.png",
-      testimonial: "LadyLedger completely transformed how I manage my business finances. I can track expenses on the go and the visual reports help me understand my spending patterns instantly!"
+      testimonial: "LadyLedger helped me track my dating expenses and stay on budget! The categories feature lets me see how much I spend on dining out vs. activities. I've saved over $200 a month while still enjoying quality time with my partner."
     },
     {
       name: "Michael Chen",
-      role: "Freelance Designer",
+      role: "Relationship Planner",
       avatar: "",
-      testimonial: "As a freelancer, keeping track of expenses was always a hassle. LadyLedger made it simple with custom categories and budget goals. I've saved 15% more since using it!"
+      testimonial: "As someone who loves planning special dates, LadyLedger's budget goals feature has been a game-changer. I can save for anniversary gifts while keeping our regular date nights affordable. The expense tracking made me realize where we could cut costs without sacrificing romance!"
     },
     {
       name: "Jessica Taylor",
-      role: "Working Mom",
+      role: "Long-term Relationship",
       avatar: "",
-      testimonial: "I love how easy it is to track our family budget with LadyLedger. Setting monthly budget goals has helped us save for our vacation while keeping daily expenses in check."
+      testimonial: "My partner and I use LadyLedger to manage our shared dating expenses. The visual charts help us see our spending patterns and have better conversations about money. We've cut our entertainment costs by 30% while actually enjoying more meaningful experiences together."
     }
   ];
 
@@ -255,7 +255,7 @@ const Home = () => {
 
         <div className="my-20">
           <h2 className="text-3xl font-bold text-center mb-2">What Our Users Say</h2>
-          <p className="text-muted-foreground text-center mb-10">Join thousands of happy users managing their finances with LadyLedger</p>
+          <p className="text-muted-foreground text-center mb-10">Join thousands of happy users managing their dating finances with LadyLedger</p>
           
           <Carousel className="mx-auto max-w-3xl">
             <CarouselContent>
@@ -291,10 +291,10 @@ const Home = () => {
         <div className="mt-16 mb-8 text-center">
           <Card className="p-8 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/50 dark:to-blue-950/50 border-2 border-primary/20">
             <CardContent className="p-0">
-              <h3 className="text-2xl font-bold mb-4">Ready to Take Control of Your Finances?</h3>
+              <h3 className="text-2xl font-bold mb-4">Ready to Take Control of Your Dating Finances?</h3>
               <p className="text-lg mb-6 max-w-2xl mx-auto">
-                Join thousands of users who have transformed their financial dating habits with LadyLedger. 
-                Start your journey to financial freedom today!
+                Join thousands of users who have transformed their dating habits with LadyLedger. 
+                Start your journey to affordable and meaningful relationships today!
               </p>
               <Button asChild size="lg" className="px-8">
                 <Link to="/signup">Sign Up for Free</Link>
