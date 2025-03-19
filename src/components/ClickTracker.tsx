@@ -159,7 +159,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
     console.log('Click detected, new count:', newCount);
     setClickCount(newCount);
     
-    // Show notification at exactly the threshold
+    // Show notification and redirect at exactly the threshold
     if (newCount === MAX_FREE_CLICKS) {
       toast({
         title: "Free Usage Limit Reached",
@@ -167,12 +167,22 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
         variant: "destructive",
       });
       
+      // Save the click count immediately when redirecting
+      if (user && newCount > 0) {
+        saveClickCount(newCount, user.id);
+      }
+      
       // Only redirect if not already on pricing page
       if (location.pathname !== '/pricing') {
         navigate('/pricing');
       }
     } else if (newCount > MAX_FREE_CLICKS && location.pathname !== '/pricing') {
       // Continue redirecting to pricing for any click beyond the threshold
+      // But ALWAYS save the click count before redirecting
+      if (user && newCount > 0) {
+        saveClickCount(newCount, user.id);
+      }
+      
       console.log('Redirecting to pricing page, clicks > MAX_FREE_CLICKS');
       navigate('/pricing');
     }
