@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,26 @@ const Home = () => {
       name: "Jessica Taylor",
       avatar: "",
       testimonial: "My partner and I use LadyLedger to manage our shared dating expenses. The visual charts help us see our spending patterns and have better conversations about money. We've cut our entertainment costs by 30% while actually enjoying more meaningful experiences together."
+    },
+    {
+      name: "David Wilson",
+      avatar: "",
+      testimonial: "LadyLedger transformed how my girlfriend and I handle our date nights. The monthly spending reports showed we were spending too much on expensive restaurants. Now we cook together at home twice a week and put that money toward weekend getaways instead!"
+    },
+    {
+      name: "Emily Rodriguez",
+      avatar: "",
+      testimonial: "I was always the 'spender' in our relationship until I started using LadyLedger. The visual breakdown of my expenses made me realize how little moments add up. We've managed to pay off date-related debt and start saving for our engagement trip!"
+    },
+    {
+      name: "Ryan Park",
+      avatar: "",
+      testimonial: "The custom categories feature is perfect! I created a 'Surprise Gifts' category that my partner can't see, and a 'Shared Activities' one we both contribute to. LadyLedger has made money conversations so much easier in our relationship."
+    },
+    {
+      name: "Alicia Washington",
+      avatar: "",
+      testimonial: "After three years of dating and overspending, LadyLedger helped us create a realistic dating budget. Now we alternate between budget-friendly dates and occasional splurges. The monthly reports keep us accountable without feeling restricted."
     }
   ];
 
