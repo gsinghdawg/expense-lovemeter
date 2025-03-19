@@ -10,8 +10,8 @@ import { useStripe } from '@/hooks/use-stripe';
 import { Spinner } from '@/components/ui/spinner';
 
 // Initialize Stripe with our publishable key
-console.log('Initializing Stripe with key (first 8 chars):', STRIPE_PUBLISHABLE_KEY.substring(0, 8));
-const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+console.log('Initializing Stripe with key (first 8 chars):', STRIPE_PUBLISHABLE_KEY?.substring(0, 8) || 'not set');
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 interface CheckoutButtonProps {
   priceId: string;
@@ -78,16 +78,18 @@ export const CheckoutButton = ({
       return;
     }
 
+    if (!stripePromise) {
+      toast({
+        title: "Configuration Error",
+        description: "Stripe is not properly configured. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Get Stripe.js instance
-      const stripe = await stripePromise;
-      
-      if (!stripe) {
-        throw new Error('Failed to load Stripe.');
-      }
-      
       console.log('Creating checkout session with:', {
         priceId,
         mode,
@@ -139,6 +141,11 @@ export const CheckoutButton = ({
       }
       
       // Fallback to redirectToCheckout if direct URL is not available
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Failed to load Stripe.');
+      }
+      
       const { error: redirectError } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
