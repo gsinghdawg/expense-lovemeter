@@ -6,11 +6,15 @@ import { PricingPlans } from "@/components/stripe/PricingPlans";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePaymentStatusCheck } from "@/utils/payment-status";
 
 const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Add payment status check to handle redirects after payment
+  usePaymentStatusCheck();
 
   // Redirect to signup if not logged in
   useEffect(() => {
