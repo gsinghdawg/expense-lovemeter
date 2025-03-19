@@ -45,7 +45,6 @@ const App = () => (
               <Route path="/signup" element={<SignUp />} />
               {/* Routes without click tracking */}
               <Route path="/home" element={<Home />} />
-              {/* Redirect root to dashboard with protection */}
               <Route path="/" element={
                 <ProtectedRoute>
                   <Navigate to="/dashboard" replace />
