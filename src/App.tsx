@@ -1,58 +1,52 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import React, { useState } from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ThemeProvider } from "@/components/ThemeProvider";
+
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ClickTracker } from "@/components/ClickTracker";
-import Index from "./pages/Index";
-import Home from "./pages/Home";
-import SignUp from "./pages/SignUp";
-import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/ProtectedRoute";
-import ProfileSetup from "./pages/ProfileSetup";
-import Pricing from "./pages/Pricing";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 
-const queryClient = new QueryClient();
+import Home from "@/pages/Home";
+import SignUp from "@/pages/SignUp";
+import Pricing from "@/pages/Pricing";
+import ProfileSetup from "@/pages/ProfileSetup";
+import NotFound from "@/pages/NotFound";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import PaymentTest from "@/pages/PaymentTest";
 
-const App = () => (
-  <ThemeProvider defaultTheme="light">
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+function App() {
+  const [queryClient] = useState(() => new QueryClient());
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider>
+          <ThemeProvider defaultTheme="system" storageKey="ui-theme">
             <Toaster />
-            <Sonner />
-            {/* Routes that need click tracking */}
-            <Routes>
-              <Route path="/dashboard" element={
-                <ClickTracker>
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                </ClickTracker>
-              } />
-              <Route path="/profile-setup" element={
-                <ClickTracker>
-                  <ProtectedRoute>
-                    <ProfileSetup />
-                  </ProtectedRoute>
-                </ClickTracker>
-              } />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/signup" element={<SignUp />} />
-              {/* Routes without click tracking */}
-              <Route path="/home" element={<Home />} />
-              <Route path="/" element={<Home />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
+            <Router>
+              <Routes>
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/profile-setup" element={<ProfileSetup />} />
+                <Route path="/payment-test" element={<PaymentTest />} {/* Add new test route */}
+                <Route
+                  path="/*"
+                  element={
+                    <ProtectedRoute>
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </Router>
+          </ThemeProvider>
         </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  </ThemeProvider>
-);
+      </QueryClientProvider>
+    </div>
+  );
+}
 
 export default App;
