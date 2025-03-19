@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -104,6 +103,14 @@ const SignUp = () => {
     try {
       await signUp(values.email, values.password, values.name);
       signupForm.reset();
+      
+      // After signup, switch to login tab
+      setActiveTab("login");
+      
+      toast({
+        title: "Account created",
+        description: "Please check your email for verification if required, or login with your credentials.",
+      });
     } catch (error) {
       console.error("Sign up error:", error);
     } finally {
@@ -117,11 +124,17 @@ const SignUp = () => {
     try {
       await signIn(values.email, values.password);
       
-      // After successful login, the ProtectedRoute component will
-      // check if onboarding is completed and redirect accordingly
+      // A successful login should trigger the useEffect above to redirect
+      // But let's also add explicit navigation to make sure
       navigate("/dashboard");
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back to LadyLedger!",
+      });
     } catch (error) {
       console.error("Login error:", error);
+      // Keep the error toast handling in AuthContext.tsx
     } finally {
       setIsLoading(false);
     }
@@ -165,7 +178,7 @@ const SignUp = () => {
       
       <div className="app-container max-w-md mx-auto w-full">
         <Button asChild size="sm" variant="outline" className="gap-2 absolute left-4 top-4">
-          <Link to="/home">
+          <Link to="/">
             <Home className="h-4 w-4" />
             Back to Home
           </Link>

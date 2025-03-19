@@ -75,17 +75,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
         throw error;
+      }
+      
+      // Update local state immediately to improve perceived performance
+      if (data.user) {
+        setUser(data.user);
+        setSession(data.session);
       }
       
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in to LadyLedger."
       });
+      
+      return data;
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "There was an error logging in",
