@@ -17,18 +17,29 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   // Check for payment success parameter in URL
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const paymentSuccess = url.searchParams.get('payment_success');
-    
-    if (paymentSuccess === 'true') {
-      // Refetch subscription data
-      refetchSubscription();
+    const checkPaymentSuccess = async () => {
+      const url = new URL(window.location.href);
+      const paymentSuccess = url.searchParams.get('payment_success');
       
-      // Clean up URL
-      url.searchParams.delete('payment_success');
-      window.history.replaceState({}, document.title, url.toString());
-    }
-  }, [location.search, refetchSubscription]);
+      if (paymentSuccess === 'true') {
+        // Clean up URL
+        url.searchParams.delete('payment_success');
+        window.history.replaceState({}, document.title, url.toString());
+        
+        // Refetch subscription data
+        await refetchSubscription();
+        
+        // Show success message
+        toast({
+          title: "Payment Successful!",
+          description: "Thank you for your subscription. You now have full access to LadyLedger.",
+          variant: "default",
+        });
+      }
+    };
+    
+    checkPaymentSuccess();
+  }, [location.search, refetchSubscription, toast]);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -83,7 +94,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   // Removed the automatic subscription check and redirect to pricing
-  // This allows users to use the app until they hit the click limit
+  // This allows users to use the app after payment is successful
 
   return <>{children}</>;
 };

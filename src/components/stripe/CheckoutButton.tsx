@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
@@ -24,8 +25,8 @@ export const CheckoutButton = ({
   priceId,
   mode,
   buttonText,
-  successUrl = `${window.location.origin}/dashboard?payment_success=true`,
-  cancelUrl = `${window.location.origin}/dashboard?payment_cancelled=true`,
+  successUrl = `${window.location.origin}/?payment_success=true`,
+  cancelUrl = `${window.location.origin}/pricing?payment_cancelled=true`,
   variant = 'default',
   className,
 }: CheckoutButtonProps) => {

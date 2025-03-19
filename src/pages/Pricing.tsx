@@ -1,22 +1,54 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { PricingPlans } from "@/components/stripe/PricingPlans";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useStripe } from "@/hooks/use-stripe";
 
 const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [clickCount, setClickCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const { subscription, isSubscriptionLoading } = useStripe();
 
   // Maximum allowed clicks before paywall
   const MAX_FREE_CLICKS = 40;
+
+  // Check if payment was cancelled
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const paymentCancelled = url.searchParams.get('payment_cancelled');
+    
+    if (paymentCancelled === 'true') {
+      // Clean up URL
+      url.searchParams.delete('payment_cancelled');
+      window.history.replaceState({}, document.title, url.toString());
+      
+      toast({
+        title: "Payment Cancelled",
+        description: "Your payment was cancelled. You can try again whenever you're ready.",
+        variant: "destructive",
+      });
+    }
+  }, [location.search, toast]);
+
+  // Check if user has an active subscription
+  useEffect(() => {
+    if (!isSubscriptionLoading && subscription?.status === 'active') {
+      navigate('/', { replace: true });
+      toast({
+        title: "Subscription Active",
+        description: "You already have an active subscription. Redirecting to the app.",
+      });
+    }
+  }, [subscription, isSubscriptionLoading, navigate, toast]);
 
   // Check if user has reached the click limit
   useEffect(() => {
@@ -39,9 +71,8 @@ const Pricing = () => {
         if (data) {
           setClickCount(data.click_count);
           
-          // If user hasn't reached the click limit, redirect to home
+          // If user hasn't reached the click limit, show that info but don't redirect
           if (data.click_count < MAX_FREE_CLICKS) {
-            navigate('/', { replace: true });
             toast({
               title: "Free Usage Available",
               description: `You still have ${MAX_FREE_CLICKS - data.click_count} free interactions left.`
@@ -87,7 +118,9 @@ const Pricing = () => {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-4">Upgrade Your LadyLedger Experience</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            You've reached the free usage limit ({clickCount}/{MAX_FREE_CLICKS} clicks). 
+            {clickCount >= MAX_FREE_CLICKS 
+              ? `You've reached the free usage limit (${clickCount}/${MAX_FREE_CLICKS} clicks).` 
+              : "Upgrade to unlock premium features and unlimited usage."} 
             Subscribe to continue using LadyLedger and unlock premium features.
           </p>
         </div>

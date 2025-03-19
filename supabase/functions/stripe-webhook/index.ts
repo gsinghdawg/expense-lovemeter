@@ -1,3 +1,4 @@
+
 import Stripe from 'npm:stripe@12.7.0';
 
 const corsHeaders = {
@@ -110,6 +111,25 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
         description: session.metadata?.description || 'One-time payment'
       });
       
+    // If this is a subscription payment, also update the user's subscription
+    if (session.mode === 'subscription' && session.subscription) {
+      const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+      
+      // Create or update the subscription record in Supabase
+      await supabaseAdmin
+        .from('subscriptions')
+        .upsert({
+          user_id: session.client_reference_id,
+          stripe_customer_id: session.customer as string,
+          stripe_subscription_id: subscription.id,
+          plan_id: subscription.items.data[0]?.price.id || 'unknown',
+          status: subscription.status,
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          updated_at: new Date().toISOString()
+        });
+    }
+      
     console.log('Payment recorded successfully');
   } catch (error) {
     console.error('Error recording payment:', error);
@@ -157,6 +177,20 @@ async function handleSuccessfulSubscription(invoice: Stripe.Invoice) {
         status: 'succeeded',
         payment_method: invoice.collection_method,
         description: `Subscription payment for ${subscription.items.data[0]?.price.product}`
+      });
+    
+    // Update subscription record
+    await supabaseAdmin
+      .from('subscriptions')
+      .upsert({
+        user_id: customerData.user_id,
+        stripe_customer_id: invoice.customer as string,
+        stripe_subscription_id: subscription.id,
+        plan_id: subscription.items.data[0]?.price.id || 'unknown',
+        status: subscription.status,
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        updated_at: new Date().toISOString()
       });
     
     console.log('Subscription payment recorded successfully');
@@ -242,6 +276,16 @@ function createSupabaseClient(supabaseUrl: string, supabaseKey: string) {
         },
         body: JSON.stringify(data)
       }),
+      upsert: (data: any) => fetch(`${supabaseUrl}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(data)
+      }),
       update: (data: any) => ({
         eq: (column: string, value: string) => fetch(`${supabaseUrl}/rest/v1/${table}?${column}=eq.${value}`, {
           method: 'PATCH',
@@ -267,4 +311,3 @@ function createSupabaseClient(supabaseUrl: string, supabaseKey: string) {
     })
   };
 }
-
