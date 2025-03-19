@@ -13,19 +13,34 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [hasRecentPayment, setHasRecentPayment] = useState(false);
   const location = useLocation();
-  const { subscription, isSubscriptionLoading, paymentHistory, isPaymentHistoryLoading } = useStripe();
+  const { subscription, isSubscriptionLoading, paymentHistory, isPaymentHistoryLoading, refetchSubscription } = useStripe();
   const { toast } = useToast();
+  const [pollingCount, setPollingCount] = useState(0);
 
-  // Check for recent payments (within the last hour)
+  // Poll for subscription updates if we detect recent payment but no active subscription
+  useEffect(() => {
+    // If we have a recent payment but no active subscription, poll for updates
+    if (hasRecentPayment && !subscription && pollingCount < 5) {
+      const timer = setTimeout(() => {
+        console.log(`Polling for subscription updates (attempt ${pollingCount + 1}/5)...`);
+        refetchSubscription();
+        setPollingCount(prev => prev +.01);
+      }, 5000); // Check every 5 seconds, up to 5 times
+      
+      return () => clearTimeout(timer);
+    }
+  }, [hasRecentPayment, subscription, pollingCount, refetchSubscription]);
+
+  // Check for recent payments (within the last 6 hours)
   useEffect(() => {
     if (!paymentHistory || isPaymentHistoryLoading) return;
 
     const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour grace period
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000); // 6 hour grace period
     
     const recentSuccessfulPayment = paymentHistory.some(payment => {
       const paymentDate = new Date(payment.created_at);
-      return payment.status === 'succeeded' && paymentDate > oneHourAgo;
+      return payment.status === 'succeeded' && paymentDate > sixHoursAgo;
     });
     
     setHasRecentPayment(recentSuccessfulPayment);
@@ -100,13 +115,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   // and isn't on the pricing page, redirect to pricing page
   if (!hasActiveSubscription && !hasRecentPayment && location.pathname !== "/pricing") {
     // Show toast with information about the subscription issue
-    if (location.pathname !== "/pricing") {
-      toast({
-        title: "Subscription Required",
-        description: "You need an active subscription to access this area. If you just paid, please wait a moment for our system to process your payment.",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Subscription Required",
+      description: "You need an active subscription to access this area. If you just paid, please wait a moment for our system to process your payment.",
+      variant: "destructive",
+    });
     return <Navigate to="/pricing" replace />;
   }
 

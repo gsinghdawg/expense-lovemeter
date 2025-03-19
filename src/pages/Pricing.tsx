@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,12 +17,26 @@ const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { subscription, isSubscriptionLoading, paymentHistory, isPaymentHistoryLoading } = useStripe();
+  const { subscription, isSubscriptionLoading, paymentHistory, isPaymentHistoryLoading, refetchSubscription } = useStripe();
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [hasRecentPayment, setHasRecentPayment] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pollingCount, setPollingCount] = useState(0);
   
   usePaymentStatusCheck();
+
+  // Poll for subscription updates if payment is detected
+  useEffect(() => {
+    if (hasRecentPayment && !hasActiveSubscription && pollingCount < 10) {
+      const timer = setTimeout(() => {
+        console.log(`Polling for subscription updates (attempt ${pollingCount + 1}/10)...`);
+        refetchSubscription();
+        setPollingCount(prev => prev + 1);
+      }, 3000); // Poll every 3 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [hasRecentPayment, hasActiveSubscription, pollingCount, refetchSubscription]);
 
   useEffect(() => {
     if (subscription && ['active', 'trialing'].includes(subscription.status)) {
@@ -35,11 +50,11 @@ const Pricing = () => {
     if (!paymentHistory || isPaymentHistoryLoading) return;
 
     const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000); // 6 hours ago
     
     const recentSuccessfulPayment = paymentHistory.some(payment => {
       const paymentDate = new Date(payment.created_at);
-      return payment.status === 'succeeded' && paymentDate > oneHourAgo;
+      return payment.status === 'succeeded' && paymentDate > sixHoursAgo;
     });
     
     setHasRecentPayment(recentSuccessfulPayment);
@@ -47,6 +62,7 @@ const Pricing = () => {
     if (recentSuccessfulPayment && !hasActiveSubscription && !isProcessing) {
       setIsProcessing(true);
       
+      // Redirect after a short delay
       const timer = setTimeout(() => {
         navigate('/dashboard', { replace: true });
       }, 5000); // 5 seconds
