@@ -11,6 +11,5 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Using Stripe publishable key from Supabase secrets
-export const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-
+// Define a fixed Stripe publishable key instead of relying on environment variables
+export const STRIPE_PUBLISHABLE_KEY = "pk_test_51R2WEMECEgtMuXU2n9SnGnkc70E4sVNnH9HuXaQtJOxmZWYQ1FrOlF9ykrLNX2a2SvXP2cXjy1jkwMVERBa23PeC00u5G7CtZ4";

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
@@ -207,4 +208,4 @@ export const CheckoutButton = ({
       )}
     </Button>
   );
-};
+}
