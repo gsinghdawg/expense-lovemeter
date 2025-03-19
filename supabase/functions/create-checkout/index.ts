@@ -1,3 +1,4 @@
+
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
@@ -80,8 +81,8 @@ serve(async (req) => {
 
     const { priceId, mode, successUrl, cancelUrl } = requestBody;
 
-    console.log(`Creating ${mode} checkout session for price: ${priceId}`);
-    console.log(`Success URL: ${successUrl}, Cancel URL: ${cancelUrl}`);
+    // Log the priceId for debugging
+    console.log(`Price ID: ${priceId}`);
 
     // Validate required parameters
     if (!priceId || !mode || !successUrl || !cancelUrl) {

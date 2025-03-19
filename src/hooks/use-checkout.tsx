@@ -7,8 +7,9 @@ import { supabase, STRIPE_PUBLISHABLE_KEY } from '@/integrations/supabase/client
 import { useStripe } from '@/hooks/use-stripe';
 
 // Initialize Stripe with our publishable key
-console.log('Initializing Stripe with key (first 8 chars):', STRIPE_PUBLISHABLE_KEY?.substring(0, 8) || 'not set');
-const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
+const stripeKey = STRIPE_PUBLISHABLE_KEY;
+console.log('Using Stripe key (first 8 chars):', stripeKey?.substring(0, 8) || 'not set');
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 // Ensure the Stripe initialization is working
 if (!stripePromise) {
@@ -35,6 +36,8 @@ export const useCheckout = ({
   const { refetchSubscription } = useStripe();
 
   const handleCheckout = async () => {
+    console.log('Checkout button clicked for price ID:', priceId);
+    
     if (!user || !session) {
       toast({
         title: "Authentication Required",
@@ -44,7 +47,7 @@ export const useCheckout = ({
       return;
     }
 
-    if (!stripePromise) {
+    if (!stripeKey || !stripePromise) {
       toast({
         title: "Configuration Error",
         description: "Stripe is not properly configured. Please check the console for details.",

@@ -13,6 +13,7 @@ export const usePaymentStatusCheck = () => {
     const checkPaymentStatus = async () => {
       const url = new URL(window.location.href);
       const paymentSuccess = url.searchParams.get('payment_success');
+      const paymentCancelled = url.searchParams.get('payment_cancelled');
       
       if (paymentSuccess === 'true') {
         // Clean up URL
@@ -31,6 +32,17 @@ export const usePaymentStatusCheck = () => {
         
         // Redirect to main app after successful payment
         navigate('/', { replace: true });
+      } else if (paymentCancelled === 'true') {
+        // Clean up URL
+        url.searchParams.delete('payment_cancelled');
+        window.history.replaceState({}, document.title, url.toString());
+        
+        // Show cancellation message
+        toast({
+          title: "Payment Cancelled",
+          description: "Your payment was cancelled. You can try again whenever you're ready.",
+          variant: "destructive",
+        });
       }
     };
     
