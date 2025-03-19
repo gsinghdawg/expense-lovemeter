@@ -82,15 +82,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/profile-setup" replace />;
   }
 
-  // Check if user has an active subscription
-  const hasActiveSubscription = subscription && 
-    (subscription.status === "active" || subscription.status === "trialing");
-
-  // If user doesn't have an active subscription and is not on the pricing page,
-  // redirect to pricing page
-  if (!hasActiveSubscription && location.pathname !== "/pricing") {
-    return <Navigate to="/pricing" replace />;
-  }
+  // Removed the automatic subscription check and redirect to pricing
+  // This allows users to use the app until they hit the click limit
 
   return <>{children}</>;
 };
