@@ -122,16 +122,18 @@ const SignUp = () => {
     setIsLoading(true);
     
     try {
-      await signIn(values.email, values.password);
+      const data = await signIn(values.email, values.password);
       
-      // A successful login should trigger the useEffect above to redirect
-      // But let's also add explicit navigation to make sure
-      navigate("/dashboard");
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back to LadyLedger!",
-      });
+      if (data && data.user) {
+        // A successful login should trigger the useEffect above to redirect
+        // But let's also add explicit navigation to make sure
+        navigate("/dashboard");
+        
+        toast({
+          title: "Login successful",
+          description: "Welcome back to LadyLedger!",
+        });
+      }
     } catch (error) {
       console.error("Login error:", error);
       // Keep the error toast handling in AuthContext.tsx
