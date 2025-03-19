@@ -38,7 +38,7 @@ const Pricing = () => {
         </div>
         
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold mb-4">Upgrade Your LadyLedger Experience</h1>
+          <h1 className="text-4xl font-bold mb-4">Gain Full Access</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Subscribe to continue using LadyLedger and unlock premium features.
           </p>
