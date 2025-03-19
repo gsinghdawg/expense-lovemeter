@@ -25,19 +25,16 @@ const Home = () => {
   const testimonials = [
     {
       name: "Sarah Johnson",
-      role: "Dating Enthusiast",
       avatar: "/lovable-uploads/aee62957-15f2-456e-a356-50b3dab78200.png",
       testimonial: "LadyLedger helped me track my dating expenses and stay on budget! The categories feature lets me see how much I spend on dining out vs. activities. I've saved over $200 a month while still enjoying quality time with my partner."
     },
     {
       name: "Michael Chen",
-      role: "Relationship Planner",
       avatar: "",
       testimonial: "As someone who loves planning special dates, LadyLedger's budget goals feature has been a game-changer. I can save for anniversary gifts while keeping our regular date nights affordable. The expense tracking made me realize where we could cut costs without sacrificing romance!"
     },
     {
       name: "Jessica Taylor",
-      role: "Long-term Relationship",
       avatar: "",
       testimonial: "My partner and I use LadyLedger to manage our shared dating expenses. The visual charts help us see our spending patterns and have better conversations about money. We've cut our entertainment costs by 30% while actually enjoying more meaningful experiences together."
     }
@@ -275,7 +272,6 @@ const Home = () => {
                         </Avatar>
                         <div className="text-left">
                           <p className="font-semibold">{testimonial.name}</p>
-                          <p className="text-sm text-muted-foreground">{testimonial.role}</p>
                         </div>
                       </div>
                     </CardContent>
