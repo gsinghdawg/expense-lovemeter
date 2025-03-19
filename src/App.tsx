@@ -15,7 +15,18 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ProfileSetup from "./pages/ProfileSetup";
 import Pricing from "./pages/Pricing";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Increase stale time to reduce unnecessary refetching
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      // Enable retry for failed queries
+      retry: 3,
+      // Increase cache time to ensure data is available during navigation
+      cacheTime: 1000 * 60 * 30, // 30 minutes
+    },
+  },
+});
 
 const App = () => (
   <ThemeProvider defaultTheme="light">

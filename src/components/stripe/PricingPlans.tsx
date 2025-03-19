@@ -1,86 +1,109 @@
 
 import { useEffect } from 'react';
-import { STRIPE_BUY_BUTTON_IDS, STRIPE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
+import { STRIPE_PAYMENT_LINKS } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const PricingPlans = () => {
-  useEffect(() => {
-    // Load Stripe Buy Button script
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/buy-button.js';
-    script.async = true;
-    
-    // Add script to document only if it doesn't exist
-    if (!document.querySelector('script[src="https://js.stripe.com/v3/buy-button.js"]')) {
-      document.body.appendChild(script);
-    }
-    
-    return () => {
-      // No need to remove script on unmount as it may be used by other components
-    };
-  }, []);
-
   return (
     <div className="container mx-auto py-12">
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold tracking-tight">Subscription</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Subscription Plans</h2>
         <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
           Choose the plan that works best for you
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-center gap-8 mt-8">
-        <div className="w-full max-w-[300px]">
-          <div className="text-center mb-4">
-            <h3 className="text-xl font-semibold">Monthly</h3>
-            <p className="text-muted-foreground">$10 per month</p>
-          </div>
-          <div id="stripe-button-monthly" className="w-full">
-            <stripe-buy-button
-              buy-button-id={STRIPE_BUY_BUTTON_IDS.monthly}
-              publishable-key={STRIPE_PUBLISHABLE_KEY}
-            />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-center">
+        <PlanCard 
+          title="Monthly" 
+          price="$10"
+          description="/month"
+          features={["Full app access", "All features", "Email support"]}
+          paymentLink={STRIPE_PAYMENT_LINKS.monthly}
+        />
         
-        <div className="w-full max-w-[300px]">
-          <div className="text-center mb-4">
-            <h3 className="text-xl font-semibold">Quarterly</h3>
-            <p className="text-muted-foreground">$25 for 3 months</p>
-          </div>
-          <div id="stripe-button-quarterly" className="w-full">
-            <stripe-buy-button
-              buy-button-id="buy_btn_1R4U07ECEgtMuXU24vxJsFPe"
-              publishable-key="pk_live_51QzSAJECEgtMuXU2GLO1bMiyihcl0AZ4o318dV4Nbwga6d8K8M2YutpgcgV0EGHP882QgIX9MqXyaUtoXvhlZMAd00r7TMTC4R"
-            />
-          </div>
-        </div>
+        <PlanCard 
+          title="Quarterly" 
+          price="$25"
+          description="for 3 months"
+          features={["Full app access", "All features", "Email support", "Save 16%"]}
+          paymentLink={STRIPE_PAYMENT_LINKS.quarterly}
+          highlight
+        />
         
-        <div className="w-full max-w-[300px]">
-          <div className="text-center mb-4">
-            <h3 className="text-xl font-semibold">Biannual</h3>
-            <p className="text-muted-foreground">$40 for 6 months</p>
-          </div>
-          <div id="stripe-button-biannual" className="w-full">
-            <stripe-buy-button
-              buy-button-id="buy_btn_1R4U4HECEgtMuXU2iUJWTy7v"
-              publishable-key="pk_live_51QzSAJECEgtMuXU2GLO1bMiyihcl0AZ4o318dV4Nbwga6d8K8M2YutpgcgV0EGHP882QgIX9MqXyaUtoXvhlZMAd00r7TMTC4R"
-            />
-          </div>
-        </div>
+        <PlanCard 
+          title="Biannual" 
+          price="$40"
+          description="for 6 months"
+          features={["Full app access", "All features", "Priority support", "Save 33%"]}
+          paymentLink={STRIPE_PAYMENT_LINKS.biannual}
+        />
         
-        <div className="w-full max-w-[300px]">
-          <div className="text-center mb-4">
-            <h3 className="text-xl font-semibold">Annual</h3>
-            <p className="text-muted-foreground">$50 for 1 year</p>
-          </div>
-          <div id="stripe-button-annual" className="w-full">
-            <stripe-buy-button
-              buy-button-id="buy_btn_1R4U6BECEgtMuXU2u8mmVj1B"
-              publishable-key="pk_live_51QzSAJECEgtMuXU2GLO1bMiyihcl0AZ4o318dV4Nbwga6d8K8M2YutpgcgV0EGHP882QgIX9MqXyaUtoXvhlZMAd00r7TMTC4R"
-            />
-          </div>
-        </div>
+        <PlanCard 
+          title="Annual" 
+          price="$50"
+          description="for 1 year"
+          features={["Full app access", "All features", "Priority support", "Save 58%"]}
+          paymentLink={STRIPE_PAYMENT_LINKS.annual}
+          highlight
+        />
       </div>
     </div>
+  );
+};
+
+interface PlanCardProps {
+  title: string;
+  price: string;
+  description: string;
+  features: string[];
+  paymentLink: string;
+  highlight?: boolean;
+}
+
+const PlanCard = ({ title, price, description, features, paymentLink, highlight }: PlanCardProps) => {
+  return (
+    <Card className={`flex flex-col ${highlight ? 'border-primary shadow-lg' : ''}`}>
+      <CardHeader>
+        <CardTitle className="text-2xl">{title}</CardTitle>
+        <div className="mt-2">
+          <span className="text-3xl font-bold">{price}</span>
+          <span className="text-muted-foreground"> {description}</span>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <ul className="space-y-2">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mr-2 h-4 w-4 text-primary"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              {feature}
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+      <CardFooter>
+        <Button
+          className="w-full"
+          variant={highlight ? "default" : "outline"}
+          onClick={() => window.location.href = paymentLink}
+        >
+          Subscribe
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };

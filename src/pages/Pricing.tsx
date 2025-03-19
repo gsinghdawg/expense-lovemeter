@@ -15,7 +15,7 @@ const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { subscription, isSubscriptionLoading } = useStripe();
+  const { subscription, isSubscriptionLoading, refetchSubscription } = useStripe();
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   
   // Add payment status check to handle redirects after payment
@@ -36,6 +36,17 @@ const Pricing = () => {
       navigate('/signup', { replace: true });
     }
   }, [user, navigate]);
+
+  // Periodically refresh subscription status after payment attempt
+  useEffect(() => {
+    if (user && !hasActiveSubscription) {
+      const checkInterval = setInterval(() => {
+        refetchSubscription();
+      }, 5000); // Check every 5 seconds
+      
+      return () => clearInterval(checkInterval);
+    }
+  }, [user, hasActiveSubscription, refetchSubscription]);
 
   const handleBackToHome = () => {
     navigate('/', { replace: true });
@@ -62,7 +73,7 @@ const Pricing = () => {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-4">Gain Full Access</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            
+            Choose a subscription plan to get full access to all features
           </p>
         </div>
 
@@ -86,7 +97,24 @@ const Pricing = () => {
           </div>
         )}
         
-        {!hasActiveSubscription && !isSubscriptionLoading && <PricingPlans />}
+        {!hasActiveSubscription && !isSubscriptionLoading && (
+          <>
+            <PricingPlans />
+            <div className="text-center mt-8">
+              <p className="text-sm text-muted-foreground">
+                After payment, you'll be automatically redirected to your dashboard.
+                If you're not redirected, click the refresh button to check your subscription status.
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-2" 
+                onClick={() => refetchSubscription()}
+              >
+                Refresh Subscription Status
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
