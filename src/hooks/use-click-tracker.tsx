@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { saveClickCount, saveClickCountBeforeUnload } from '@/utils/click-utils';
 import { useSubscriptionCheck } from '@/hooks/use-subscription-check';
+import { supabase } from '@/integrations/supabase/client';
 
 // Maximum number of clicks before showing paywall
 const MAX_FREE_CLICKS = 40;
