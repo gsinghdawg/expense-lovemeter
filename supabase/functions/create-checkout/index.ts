@@ -9,11 +9,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Get the stripe secret key from environment variables - ensure we're using TEST mode
+// Get the stripe secret key from environment variables - now using LIVE mode
 const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
 console.log('Using Stripe in mode:', stripeSecretKey.startsWith('sk_test') ? 'TEST' : 'LIVE');
 
-// Create a Stripe client with the test secret key
+// Create a Stripe client with the live secret key
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),

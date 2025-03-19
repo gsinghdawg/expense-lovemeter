@@ -8,7 +8,7 @@ import { supabase, STRIPE_PUBLISHABLE_KEY } from '@/integrations/supabase/client
 import { useNavigate } from 'react-router-dom';
 import { useStripe } from '@/hooks/use-stripe';
 
-// Initialize Stripe with our TEST mode publishable key
+// Initialize Stripe with our LIVE mode publishable key
 console.log('Initializing Stripe with key (first 8 chars):', STRIPE_PUBLISHABLE_KEY.substring(0, 8));
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
