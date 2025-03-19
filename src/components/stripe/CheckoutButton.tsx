@@ -34,6 +34,7 @@ export const CheckoutButton = ({
   const { user, session } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const navigate = useNavigate();
   const { refetchSubscription } = useStripe();
 
@@ -66,7 +67,7 @@ export const CheckoutButton = ({
     checkPaymentStatus();
   }, [toast, navigate, refetchSubscription]);
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (retry = false) => {
     if (!user || !session) {
       toast({
         title: "Authentication Required",
@@ -76,7 +77,11 @@ export const CheckoutButton = ({
       return;
     }
 
-    setIsLoading(true);
+    if (retry) {
+      setIsRetrying(true);
+    } else {
+      setIsLoading(true);
+    }
     
     try {
       // Get Stripe.js instance
@@ -105,9 +110,22 @@ export const CheckoutButton = ({
 
       console.log('Response from create-checkout:', data, error);
       
-      if (error || !data) {
+      if (error) {
         console.error('Edge function error:', error);
-        throw new Error(error?.message || 'Failed to create checkout session.');
+        throw new Error(error.message || 'Failed to create checkout session.');
+      }
+      
+      if (!data) {
+        throw new Error('No data returned from server');
+      }
+
+      if (data.error) {
+        // Check for specific provider error
+        if (data.provider_error) {
+          throw new Error(data.error + ': ' + (data.details || 'Please try again later.'));
+        } else {
+          throw new Error(data.error);
+        }
       }
       
       if (!data.sessionId) {
@@ -133,13 +151,24 @@ export const CheckoutButton = ({
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      toast({
-        title: 'Checkout Error',
-        description: error.message || 'There was an error processing your payment. Please try again later.',
-        variant: 'destructive',
-      });
+      
+      // Special handling for payment provider connection issues
+      if (error.message && error.message.includes('provider cannot be reached')) {
+        toast({
+          title: 'Payment Provider Issue',
+          description: 'We\'re having trouble connecting to our payment provider. Please try again in a few moments.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Checkout Error',
+          description: error.message || 'There was an error processing your payment. Please try again later.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsLoading(false);
+      setIsRetrying(false);
     }
   };
 
@@ -147,10 +176,10 @@ export const CheckoutButton = ({
     <Button
       variant={variant}
       className={className}
-      onClick={handleCheckout}
-      disabled={isLoading}
+      onClick={() => handleCheckout(false)}
+      disabled={isLoading || isRetrying}
     >
-      {isLoading ? 'Loading...' : buttonText}
+      {isLoading ? 'Processing...' : isRetrying ? 'Retrying...' : buttonText}
     </Button>
   );
 };

@@ -4,7 +4,7 @@
 // This enables autocomplete, go to definition, etc.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { stripe } from '../_shared/stripe.ts';
+import { stripe, isStripeConfigured } from '../_shared/stripe.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getUser } from '../_shared/supabase.ts';
 
@@ -17,6 +17,18 @@ serve(async (req) => {
   }
 
   try {
+    // Check if Stripe is properly configured
+    if (!isStripeConfigured()) {
+      console.error('Stripe is not properly configured. Check STRIPE_SECRET_KEY environment variable.');
+      return new Response(JSON.stringify({
+        error: 'Payment provider configuration error',
+        details: 'Stripe API key is missing or invalid',
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({
@@ -81,6 +93,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         error: 'Failed to create or retrieve customer',
         details: error.message,
+        provider_error: true
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -95,6 +108,7 @@ serve(async (req) => {
 
     // Create checkout session
     try {
+      console.log('Attempting to create checkout session with Stripe...');
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         client_reference_id: user.id,
@@ -105,28 +119,41 @@ serve(async (req) => {
         billing_address_collection: 'auto',
       });
 
-      console.log('Checkout session created:', session.id, 'Mode:', session.mode);
+      console.log('Checkout session created successfully:', session.id, 'Mode:', session.mode);
 
-      // Return the session ID
+      // Return the session ID and URL
       return new Response(JSON.stringify({
         sessionId: session.id,
-        url: session.url, // Include the direct URL as a fallback
+        url: session.url, // Include the direct URL for redirection
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      console.error('Error creating checkout session with Stripe:', error);
+      let errorMessage = 'Failed to create checkout session';
+      let errorDetails = error.message;
+      
+      // Check for specific Stripe error types
+      if (error.type === 'StripeConnectionError') {
+        errorMessage = 'Payment provider cannot be reached';
+        errorDetails = 'Unable to connect to Stripe API. Please try again later.';
+      } else if (error.type === 'StripeAuthenticationError') {
+        errorMessage = 'Payment provider authentication failed';
+        errorDetails = 'Invalid API credentials for payment provider.';
+      }
+      
       return new Response(JSON.stringify({
-        error: 'Failed to create checkout session',
-        details: error.message,
+        error: errorMessage,
+        details: errorDetails,
+        provider_error: true
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Unexpected error in create-checkout function:', error);
     return new Response(JSON.stringify({
       error: 'Internal server error',
       details: error.message,
