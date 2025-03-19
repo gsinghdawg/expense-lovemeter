@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { STRIPE_PAYMENT_LINKS } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface PricingTier {
   id: string;
@@ -14,6 +15,7 @@ interface PricingTier {
 }
 
 export const PricingPlans = () => {
+  const { toast } = useToast();
   const pricingTiers: PricingTier[] = [
     {
       id: 'monthly',
@@ -52,9 +54,29 @@ export const PricingPlans = () => {
     if (paymentLink) {
       // Redirect to Stripe hosted payment page
       console.log(`Redirecting to payment link: ${paymentLink}`);
-      window.location.href = paymentLink;
+      try {
+        // Force open in same window
+        window.open(paymentLink, '_self');
+        
+        // Backup method in case the above fails
+        setTimeout(() => {
+          window.location.href = paymentLink;
+        }, 100);
+      } catch (error) {
+        console.error('Redirection error:', error);
+        toast({
+          title: "Redirection Issue",
+          description: "There was a problem opening the payment page. Please try again.",
+          variant: "destructive"
+        });
+      }
     } else {
       console.error(`No payment link found for plan: ${planId}`);
+      toast({
+        title: "Configuration Error",
+        description: "Payment link not found. Please contact support.",
+        variant: "destructive"
+      });
     }
   };
 

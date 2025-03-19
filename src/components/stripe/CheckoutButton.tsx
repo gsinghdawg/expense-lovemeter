@@ -33,7 +33,8 @@ export const CheckoutButton = ({
     const paymentLink = STRIPE_PAYMENT_LINKS[planId];
     if (paymentLink) {
       console.log(`Redirecting to payment link: ${paymentLink}`);
-      window.location.href = paymentLink;
+      // Force open in the same window
+      window.open(paymentLink, '_self');
     } else {
       console.error(`No payment link found for plan: ${planId}`);
     }
