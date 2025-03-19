@@ -40,7 +40,7 @@ export const PricingPlans = () => {
       name: 'Semi-Annual',
       description: 'Full Access',
       price: '$40',
-      priceId: 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Swapped - now using Annual plan price ID
+      priceId: 'price_1R2g0XECEgtMuXU2ecCSvPJv', // Semi-Annual plan price ID
       mode: 'subscription',
       duration: '6 months'
     },
@@ -49,7 +49,7 @@ export const PricingPlans = () => {
       name: 'Annual',
       description: 'Full Access',
       price: '$50',
-      priceId: 'price_1R2g0XECEgtMuXU259x0lLOp', // Swapped - now using Biannual plan price ID
+      priceId: 'price_1R2g0XECEgtMuXU259x0lLOp', // Annual plan price ID
       mode: 'subscription',
       duration: '12 months'
     }
