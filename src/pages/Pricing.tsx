@@ -20,8 +20,10 @@ const Pricing = () => {
   }, [user, navigate]);
 
   const handleBackToHome = () => {
-    // Navigate to root path instead of /home
-    navigate('/', { replace: true });
+    // Force navigation to home page regardless of click limit
+    // We're using window.location.href to ensure a full page reload
+    // which bypasses any redirect logic in the click tracker
+    window.location.href = '/';
   };
 
   return (
