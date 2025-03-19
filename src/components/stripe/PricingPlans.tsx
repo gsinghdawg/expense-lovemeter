@@ -1,8 +1,8 @@
 
+import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { STRIPE_PAYMENT_LINKS } from '@/integrations/supabase/client';
+import { STRIPE_BUY_BUTTON_IDS, STRIPE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 
 interface PricingTier {
   id: string;
@@ -46,6 +46,22 @@ export const PricingPlans = () => {
     }
   ];
 
+  useEffect(() => {
+    // Load Stripe Buy Button script
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/buy-button.js';
+    script.async = true;
+    
+    // Add script to document only if it doesn't exist
+    if (!document.querySelector('script[src="https://js.stripe.com/v3/buy-button.js"]')) {
+      document.body.appendChild(script);
+    }
+    
+    return () => {
+      // No need to remove script on unmount as it may be used by other components
+    };
+  }, []);
+
   return (
     <div className="container mx-auto py-12">
       <div className="text-center mb-12">
@@ -74,19 +90,13 @@ export const PricingPlans = () => {
             <CardContent className="flex-1">
               {/* No feature list as per previous version */}
             </CardContent>
-            <CardFooter>
-              <a 
-                href={STRIPE_PAYMENT_LINKS[tier.id]} 
-                target="_self" 
-                className="w-full"
-              >
-                <Button
-                  className="w-full"
-                  variant={tier.popular ? 'default' : 'outline'}
-                >
-                  Subscribe Now
-                </Button>
-              </a>
+            <CardFooter className="flex justify-center">
+              <div className="w-full" id={`stripe-button-${tier.id}`}>
+                <stripe-buy-button
+                  buy-button-id={STRIPE_BUY_BUTTON_IDS[tier.id]}
+                  publishable-key={STRIPE_PUBLISHABLE_KEY}
+                ></stripe-buy-button>
+              </div>
             </CardFooter>
           </Card>
         ))}

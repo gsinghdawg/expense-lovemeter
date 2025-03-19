@@ -19,5 +19,13 @@ export const STRIPE_PAYMENT_LINKS = {
   annual: "https://buy.stripe.com/test_28o15j37g3I09za3ce"
 };
 
+// Stripe Buy Button IDs for embedded buttons
+export const STRIPE_BUY_BUTTON_IDS = {
+  monthly: "buy_btn_1R4TuCECEgtMuXU2dS1WlFV8",
+  quarterly: "buy_btn_1R4TuCECEgtMuXU2dS1WlFV8", // Replace with actual ID when available
+  biannual: "buy_btn_1R4TuCECEgtMuXU2dS1WlFV8", // Replace with actual ID when available
+  annual: "buy_btn_1R4TuCECEgtMuXU2dS1WlFV8" // Replace with actual ID when available
+};
+
 // Keep this for compatibility with existing code
 export const STRIPE_PUBLISHABLE_KEY = "pk_live_51QzSAJECEgtMuXU2GLO1bMiyihcl0AZ4o318dV4Nbwga6d8K8M2YutpgcgV0EGHP882QgIX9MqXyaUtoXvhlZMAd00r7TMTC4R";
