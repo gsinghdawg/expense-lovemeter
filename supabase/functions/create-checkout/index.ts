@@ -1,4 +1,3 @@
-
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
@@ -15,7 +14,7 @@ serve(async (req) => {
   console.log('Request received to create-checkout function');
   console.log('Request method:', req.method);
   
-  // Log Stripe mode for debugging
+  // Log Stripe mode and publishable key for debugging
   logStripeMode();
   
   // Handle CORS preflight request
@@ -31,6 +30,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         error: 'Payment provider configuration error',
         details: stripeConnection.message,
+        provider_error: true
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -45,6 +45,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         error: 'Payment provider configuration error',
         details: 'Stripe API key is missing or invalid',
+        provider_error: true
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -134,6 +135,8 @@ serve(async (req) => {
     // Create checkout session
     try {
       console.log('Attempting to create checkout session with Stripe...');
+      console.log('Customer ID:', customerId);
+      console.log('Price ID:', priceId);
       
       // Add payment method types for more options and compatibility
       const session = await stripe.checkout.sessions.create({

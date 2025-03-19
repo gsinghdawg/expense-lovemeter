@@ -27,13 +27,20 @@ export function isStripeConfigured(): boolean {
 // Helper function to log Stripe mode (test or live)
 export function logStripeMode(): void {
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
+  const stripePublishableKey = Deno.env.get('STRIPE_PUBLISHABLE_KEY') || '';
+  
   if (!stripeKey) {
     console.error('STRIPE_SECRET_KEY is not set');
-    return;
+  } else {
+    console.log(`Using Stripe in mode: ${stripeKey.startsWith('sk_test') ? 'TEST' : 'LIVE'}`);
+    console.log(`Stripe key first 8 chars: ${stripeKey.substring(0, 8)}...`);
   }
   
-  console.log(`Using Stripe in mode: ${stripeKey.startsWith('sk_test') ? 'TEST' : 'LIVE'}`);
-  console.log(`Stripe key first 8 chars: ${stripeKey.substring(0, 8)}...`);
+  if (!stripePublishableKey) {
+    console.error('STRIPE_PUBLISHABLE_KEY is not set');
+  } else {
+    console.log(`Stripe publishable key first 8 chars: ${stripePublishableKey.substring(0, 8)}...`);
+  }
 }
 
 // Verify that the Stripe connection is working

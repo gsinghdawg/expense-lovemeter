@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,11 @@ import { Spinner } from '@/components/ui/spinner';
 // Initialize Stripe with our publishable key
 console.log('Initializing Stripe with key (first 8 chars):', STRIPE_PUBLISHABLE_KEY?.substring(0, 8) || 'not set');
 const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
+
+// Ensure the Stripe initialization is working
+if (!stripePromise) {
+  console.error('Failed to initialize Stripe. Please check that STRIPE_PUBLISHABLE_KEY is set correctly.');
+}
 
 interface CheckoutButtonProps {
   priceId: string;
@@ -81,9 +85,10 @@ export const CheckoutButton = ({
     if (!stripePromise) {
       toast({
         title: "Configuration Error",
-        description: "Stripe is not properly configured. Please contact support.",
+        description: "Stripe is not properly configured. Please check the console for details.",
         variant: "destructive",
       });
+      console.error('Stripe is not properly initialized. STRIPE_PUBLISHABLE_KEY may be missing.');
       return;
     }
 
