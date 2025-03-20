@@ -28,27 +28,31 @@ export const useSubscriptionCheck = () => {
         return;
       }
 
-      try {
-        if (!isSubscriptionLoading && subscription) {
-          const isActive = subscription.status === 'active' || 
-                          subscription.status === 'trialing';
-          console.log('User subscription status:', subscription.status, 'isActive:', isActive);
-          setHasActiveSubscription(isActive);
-        } else {
-          // Fallback to free tier if subscription data is not available
-          console.log('No subscription data available, treating as free tier');
-          setHasActiveSubscription(false);
-        }
-      } catch (error) {
-        console.error('Error checking subscription:', error);
-        setHasActiveSubscription(false);
+      if (!isSubscriptionLoading && subscription) {
+        const isActive = subscription.status === 'active' || 
+                        subscription.status === 'trialing';
+        console.log('User subscription status:', subscription.status, 'isActive:', isActive);
+        setHasActiveSubscription(isActive);
+        setSubscriptionChecked(true);
       }
-      
-      setSubscriptionChecked(true);
     };
     
     checkSubscription();
   }, [user, subscription, isSubscriptionLoading]);
+
+  // Handle redirection for subscription-required paths
+  useEffect(() => {
+    if (
+      user && 
+      subscriptionChecked && 
+      !hasActiveSubscription && 
+      !isExcludedPath
+    ) {
+      console.log('User has no active subscription and is on a protected path, redirecting to pricing');
+      // We no longer redirect here - that's handled by the ClickTracker
+      // This allows us to track clicks before enforcing the paywall
+    }
+  }, [user, hasActiveSubscription, isExcludedPath, subscriptionChecked, navigate]);
 
   return {
     hasActiveSubscription,

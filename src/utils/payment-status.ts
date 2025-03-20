@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useStripe } from '@/hooks/use-stripe';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { safeTable } from '@/integrations/supabase/custom-types';
 
 export const usePaymentStatusCheck = () => {
   const { toast } = useToast();
@@ -31,12 +30,12 @@ export const usePaymentStatusCheck = () => {
           console.log('Refetching subscription after successful payment');
           await refetchSubscription();
           
-          // Try to reset click count after successful payment
+          // Reset click count after successful payment
           if (user) {
-            console.log('Attempting to reset click count after successful payment');
+            console.log('Resetting click count after successful payment');
             try {
               const { error } = await supabase
-                .from(safeTable('user_click_counts'))
+                .from('user_click_counts')
                 .upsert({
                   user_id: user.id,
                   click_count: 0,
@@ -44,9 +43,7 @@ export const usePaymentStatusCheck = () => {
                 });
               
               if (error) {
-                console.log('Could not reset click count - table might be missing:', error);
-              } else {
-                console.log('Successfully reset click count');
+                console.error('Error resetting click count:', error);
               }
             } catch (err) {
               console.error('Unexpected error resetting click count:', err);

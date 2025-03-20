@@ -132,16 +132,18 @@ export type Database = {
           id: string
           payment_method: string | null
           status: string
+          stripe_payment_intent_id: string | null
           user_id: string
         }
         Insert: {
           amount: number
           created_at?: string
-          currency?: string
+          currency: string
           description?: string | null
           id?: string
           payment_method?: string | null
           status: string
+          stripe_payment_intent_id?: string | null
           user_id: string
         }
         Update: {
@@ -152,6 +154,7 @@ export type Database = {
           id?: string
           payment_method?: string | null
           status?: string
+          stripe_payment_intent_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -195,6 +198,27 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_customers: {
+        Row: {
+          created_at: string
+          id: string
+          stripe_customer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          stripe_customer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          stripe_customer_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
@@ -203,7 +227,9 @@ export type Database = {
           id: string
           plan_id: string
           status: string
-          stripe_subscription_id: string | null
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -212,8 +238,10 @@ export type Database = {
           current_period_end?: string | null
           id?: string
           plan_id: string
-          status?: string
-          stripe_subscription_id?: string | null
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -223,7 +251,9 @@ export type Database = {
           id?: string
           plan_id?: string
           status?: string
-          stripe_subscription_id?: string | null
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -231,19 +261,19 @@ export type Database = {
       user_click_counts: {
         Row: {
           click_count: number
-          id: string
+          created_at: string
           updated_at: string
           user_id: string
         }
         Insert: {
           click_count?: number
-          id?: string
+          created_at?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           click_count?: number
-          id?: string
+          created_at?: string
           updated_at?: string
           user_id?: string
         }

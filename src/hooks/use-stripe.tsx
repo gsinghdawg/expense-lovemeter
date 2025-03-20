@@ -1,11 +1,29 @@
+
+// This is a partial update to only add logging to key functions while preserving all functionality
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { safeTable, Subscription, PaymentHistory } from '@/integrations/supabase/custom-types';
 
-export type { Subscription, PaymentHistory };
+export interface Subscription {
+  id: string;
+  status: string;
+  plan_id: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  stripe_subscription_id: string;
+}
+
+export interface PaymentHistory {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  created_at: string;
+  payment_method?: string;
+  description?: string;
+}
 
 export const useStripe = () => {
   const { user, session } = useAuth();
@@ -25,7 +43,7 @@ export const useStripe = () => {
       try {
         console.log('Fetching subscription for user:', user.id);
         const { data, error } = await supabase
-          .from(safeTable('subscriptions'))
+          .from('subscriptions')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
@@ -42,7 +60,7 @@ export const useStripe = () => {
         }
         
         console.log('Subscription data fetched:', data);
-        return data as Subscription;
+        return data;
       } catch (err) {
         console.error('Unexpected error fetching subscription:', err);
         return null;
@@ -80,7 +98,7 @@ export const useStripe = () => {
       if (!user) return [];
       
       const { data, error } = await supabase
-        .from(safeTable('payment_history'))
+        .from('payment_history')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -90,7 +108,7 @@ export const useStripe = () => {
         return [];
       }
       
-      return data as PaymentHistory[];
+      return data;
     },
     enabled: !!user,
   });

@@ -1,57 +1,58 @@
-import React, { useEffect } from 'react';
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  useNavigate,
-} from 'react-router-dom';
-import { ThemeProvider } from "@/components/theme-provider"
-import { useAuth } from './contexts/AuthContext';
-import Index from './pages/Index';
-import SignUp from './pages/SignUp';
-import Home from './pages/Home';
-import Pricing from './pages/Pricing';
-import ProfileSetup from './pages/ProfileSetup';
-import NotFound from './pages/NotFound';
-import ProtectedRoute from './components/ProtectedRoute';
-import Settings from './pages/Settings';
 
-function App() {
-  const { isLoading } = useAuth();
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ClickTracker } from "@/components/ClickTracker";
+import Index from "./pages/Index";
+import Home from "./pages/Home";
+import SignUp from "./pages/SignUp";
+import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ProfileSetup from "./pages/ProfileSetup";
+import Pricing from "./pages/Pricing";
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <span className="loading loading-spinner text-primary"></span>
-      </div>
-    );
-  }
+const queryClient = new QueryClient();
 
-  return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/profile-setup" element={<ProfileSetup />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </ThemeProvider>
-  );
-}
+const App = () => (
+  <ThemeProvider defaultTheme="light">
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            {/* Routes that need click tracking */}
+            <Routes>
+              <Route path="/dashboard" element={
+                <ClickTracker>
+                  <ProtectedRoute>
+                    <Index />
+                  </ProtectedRoute>
+                </ClickTracker>
+              } />
+              <Route path="/profile-setup" element={
+                <ClickTracker>
+                  <ProtectedRoute>
+                    <ProfileSetup />
+                  </ProtectedRoute>
+                </ClickTracker>
+              } />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/signup" element={<SignUp />} />
+              {/* Routes without click tracking */}
+              <Route path="/home" element={<Home />} />
+              <Route path="/" element={<Home />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
+  </ThemeProvider>
+);
 
 export default App;

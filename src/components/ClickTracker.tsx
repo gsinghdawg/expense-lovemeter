@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
-import { safeTable } from '@/integrations/supabase/custom-types';
 
 const CLICK_LIMIT = 40;
 
@@ -27,17 +26,13 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       try {
         // Get user's click count from database
         const { data, error } = await supabase
-          .from(safeTable('user_click_counts'))
+          .from('user_click_counts')
           .select('click_count')
           .eq('user_id', user.id)
           .single();
         
-        if (error) {
-          // Handle case where table might not exist or other errors
-          if (error.code !== 'PGRST116') { // PGRST116 = no rows returned
-            console.error('Error fetching click count:', error);
-          }
-          // Initialize local click count if we can't get it from database
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          console.error('Error fetching click count:', error);
           return;
         }
         
@@ -48,6 +43,15 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           // Show paywall if user is over limit and doesn't have a subscription
           if (data.click_count >= CLICK_LIMIT && !hasActiveSubscription) {
             setShowPaywall(true);
+          }
+        } else {
+          // Initialize click count record if it doesn't exist
+          const { error: insertError } = await supabase
+            .from('user_click_counts')
+            .insert({ user_id: user.id, click_count: 0 });
+          
+          if (insertError) {
+            console.error('Error initializing click count:', insertError);
           }
         }
       } catch (err) {
@@ -71,9 +75,9 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           const newCount = prevCount + 1;
           console.log(`Incrementing click count: ${prevCount} -> ${newCount}`);
           
-          // Try to update database with new count
+          // Update database with new count
           supabase
-            .from(safeTable('user_click_counts'))
+            .from('user_click_counts')
             .upsert({
               user_id: user.id, 
               click_count: newCount,
