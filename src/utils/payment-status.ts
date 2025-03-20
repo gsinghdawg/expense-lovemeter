@@ -27,7 +27,8 @@ export const usePaymentStatusCheck = () => {
           console.log('Refetching subscription after successful payment');
           await refetchSubscription();
           
-          // REMOVED: Reset click count section that was here previously
+          // ⚠️ IMPORTANT: We're no longer resetting click count here. 
+          // We want to preserve click count even after subscription
           
           // Show success message
           toast({

@@ -1,3 +1,5 @@
+
+// This is a partial update to only add logging to key functions while preserving all functionality
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,10 +71,10 @@ export const useStripe = () => {
 
   // Wrapper for refetch with better logging
   const refetchSubscription = async () => {
-    console.log('Manually refetching subscription data...');
+    console.log('⚠️ Manually refetching subscription data...');
     try {
       const result = await refetchSubscriptionInternal();
-      console.log('Subscription refetch result:', result.data);
+      console.log('⚠️ Subscription refetch result:', result.data);
       return result;
     } catch (err) {
       console.error('Error refetching subscription:', err);

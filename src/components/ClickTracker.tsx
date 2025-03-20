@@ -25,6 +25,11 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
   // Check if current path should be excluded from tracking
   const isExcludedPath = EXCLUDED_PATHS.includes(location.pathname);
 
+  // Debug state changes
+  useEffect(() => {
+    console.log('⚠️ ClickTracker: clickCount changed to', clickCount);
+  }, [clickCount]);
+
   // Check if user has an active subscription
   useEffect(() => {
     const checkSubscription = async () => {
@@ -41,7 +46,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
         console.log('User subscription status:', subscription.status, 'isActive:', isActive);
         setHasActiveSubscription(isActive);
         
-        // REMOVED: Reset click count section that was here previously
+        // ⚠️ IMPORTANT: DO NOT RESET CLICK COUNT HERE OR ANYWHERE ELSE
         setSubscriptionChecked(true);
       }
     };
@@ -55,6 +60,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       if (!user || !subscriptionChecked) return;
       
       try {
+        console.log('Loading click count from DB for user:', user.id);
         const { data, error } = await supabase
           .from('user_click_counts')
           .select('click_count')
@@ -81,6 +87,8 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
             console.log('User reached click limit and has no subscription, redirecting to pricing');
             navigate('/pricing');
           }
+        } else {
+          console.log('No click count record found for user');
         }
       } catch (error) {
         console.error('Error fetching click count:', error);
