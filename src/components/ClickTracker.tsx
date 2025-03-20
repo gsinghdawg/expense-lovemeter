@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
+import { safeTable } from '@/integrations/supabase/custom-types';
 
 const CLICK_LIMIT = 40;
 
@@ -26,7 +27,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
       try {
         // Get user's click count from database
         const { data, error } = await supabase
-          .from('user_click_counts')
+          .from(safeTable('user_click_counts'))
           .select('click_count')
           .eq('user_id', user.id)
           .single();
@@ -72,7 +73,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           
           // Try to update database with new count
           supabase
-            .from('user_click_counts')
+            .from(safeTable('user_click_counts'))
             .upsert({
               user_id: user.id, 
               click_count: newCount,

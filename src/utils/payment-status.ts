@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useStripe } from '@/hooks/use-stripe';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { safeTable } from '@/integrations/supabase/custom-types';
 
 export const usePaymentStatusCheck = () => {
   const { toast } = useToast();
@@ -35,7 +36,7 @@ export const usePaymentStatusCheck = () => {
             console.log('Attempting to reset click count after successful payment');
             try {
               const { error } = await supabase
-                .from('user_click_counts')
+                .from(safeTable('user_click_counts'))
                 .upsert({
                   user_id: user.id,
                   click_count: 0,
