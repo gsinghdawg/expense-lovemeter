@@ -30,10 +30,8 @@ function App() {
 
   return (
     <ThemeProvider
-      attribute="class"
       defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
+      storageKey="vite-ui-theme"
     >
       <Routes>
         <Route path="/" element={<Index />} />

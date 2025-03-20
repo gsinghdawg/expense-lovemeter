@@ -62,7 +62,7 @@ export function ApiKeyManager() {
         return;
       }
       
-      setApiKeys(data || []);
+      setApiKeys(data as PaymentApiKey[] || []);
     } catch (err) {
       console.error('Unexpected error fetching API keys:', err);
     } finally {
@@ -73,7 +73,7 @@ export function ApiKeyManager() {
   // Load API keys on component mount
   useEffect(() => {
     fetchApiKeys();
-  }, [user]); // Fixed: Added dependency array with user
+  }, [user]); 
 
   // Add new API key
   const onSubmit = async (values: ApiKeyFormValues) => {
