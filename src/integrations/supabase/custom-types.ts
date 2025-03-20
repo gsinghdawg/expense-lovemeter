@@ -33,6 +33,16 @@ export interface PaymentHistory {
   created_at: string;
 }
 
+// Define the actual structure of payment_api_keys table
+export interface PaymentApiKey {
+  id: string;
+  user_id: string;
+  provider: string;
+  api_key: string;
+  description?: string;
+  created_at: string;
+}
+
 // Custom extension of the Database type to include our custom tables
 export type CustomDatabase = Database & {
   public: {
@@ -51,6 +61,11 @@ export type CustomDatabase = Database & {
         Row: PaymentHistory;
         Insert: Partial<PaymentHistory>;
         Update: Partial<PaymentHistory>;
+      };
+      payment_api_keys: {
+        Row: PaymentApiKey;
+        Insert: Partial<PaymentApiKey>;
+        Update: Partial<PaymentApiKey>;
       };
     } & Database['public']['Tables'];
   };
