@@ -3,11 +3,14 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useStripe } from '@/hooks/use-stripe';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export const usePaymentStatusCheck = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { refetchSubscription } = useStripe();
+  const { user } = useAuth();
 
   useEffect(() => {
     const checkPaymentStatus = async () => {
@@ -27,8 +30,25 @@ export const usePaymentStatusCheck = () => {
           console.log('Refetching subscription after successful payment');
           await refetchSubscription();
           
-          // ⚠️ IMPORTANT: We're no longer resetting click count here. 
-          // We want to preserve click count even after subscription
+          // Reset click count after successful payment
+          if (user) {
+            console.log('Resetting click count after successful payment');
+            try {
+              const { error } = await supabase
+                .from('user_click_counts')
+                .upsert({
+                  user_id: user.id,
+                  click_count: 0,
+                  updated_at: new Date().toISOString()
+                });
+              
+              if (error) {
+                console.error('Error resetting click count:', error);
+              }
+            } catch (err) {
+              console.error('Unexpected error resetting click count:', err);
+            }
+          }
           
           // Show success message
           toast({
@@ -83,5 +103,5 @@ export const usePaymentStatusCheck = () => {
     };
     
     checkPaymentStatus();
-  }, [toast, navigate, refetchSubscription]);
+  }, [toast, navigate, refetchSubscription, user]);
 };

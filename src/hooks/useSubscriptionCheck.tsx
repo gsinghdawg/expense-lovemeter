@@ -40,7 +40,7 @@ export const useSubscriptionCheck = () => {
     checkSubscription();
   }, [user, subscription, isSubscriptionLoading]);
 
-  // Handle redirection if needed
+  // Handle redirection for subscription-required paths
   useEffect(() => {
     if (
       user && 
@@ -49,7 +49,8 @@ export const useSubscriptionCheck = () => {
       !isExcludedPath
     ) {
       console.log('User has no active subscription and is on a protected path, redirecting to pricing');
-      navigate('/pricing');
+      // We no longer redirect here - that's handled by the ClickTracker
+      // This allows us to track clicks before enforcing the paywall
     }
   }, [user, hasActiveSubscription, isExcludedPath, subscriptionChecked, navigate]);
 
