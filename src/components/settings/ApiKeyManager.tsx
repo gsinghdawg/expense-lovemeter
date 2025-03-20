@@ -15,11 +15,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Spinner } from '@/components/ui/spinner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const apiKeySchema = z.object({
   provider: z.string().min(1, 'Provider name is required'),
   api_key: z.string().min(1, 'API key is required'),
   description: z.string().optional(),
+  key_type: z.enum(['secret', 'publishable', 'webhook'], {
+    required_error: 'Please select a key type',
+  }),
 });
 
 type ApiKeyFormValues = z.infer<typeof apiKeySchema>;
@@ -38,6 +42,7 @@ export function ApiKeyManager() {
       provider: '',
       api_key: '',
       description: '',
+      key_type: 'secret',
     },
   });
 
@@ -88,6 +93,7 @@ export function ApiKeyManager() {
           provider: values.provider,
           api_key: values.api_key,
           description: values.description || null,
+          key_type: values.key_type,
         });
       
       if (error) {
@@ -181,6 +187,35 @@ export function ApiKeyManager() {
               
               <FormField
                 control={form.control}
+                name="key_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Key Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select key type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="secret">Secret Key</SelectItem>
+                        <SelectItem value="publishable">Publishable Key</SelectItem>
+                        <SelectItem value="webhook">Webhook Secret</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Type of API key you are adding
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
                 name="api_key"
                 render={({ field }) => (
                   <FormItem>
@@ -240,7 +275,12 @@ export function ApiKeyManager() {
               {apiKeys.map((key) => (
                 <div key={key.id} className="border rounded-md p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium">{key.provider}</h3>
+                    <div>
+                      <h3 className="font-medium">{key.provider}</h3>
+                      <span className="text-xs bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 mt-1 inline-block">
+                        {key.key_type || 'secret'}
+                      </span>
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
