@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import {
   BrowserRouter as Router,
@@ -5,7 +6,7 @@ import {
   Routes,
   useNavigate,
 } from 'react-router-dom';
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "./components/ThemeProvider"
 import { useAuth } from './contexts/AuthContext';
 import Index from './pages/Index';
 import SignUp from './pages/SignUp';

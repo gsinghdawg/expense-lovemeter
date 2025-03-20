@@ -1,8 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { safeTable } from '@/integrations/supabase/custom-types';
+import { safeTable, PaymentApiKey } from '@/integrations/supabase/custom-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,19 +24,10 @@ const apiKeySchema = z.object({
 
 type ApiKeyFormValues = z.infer<typeof apiKeySchema>;
 
-interface ApiKey {
-  id: string;
-  user_id: string;
-  provider: string;
-  api_key: string;
-  description?: string;
-  created_at: string;
-}
-
 export function ApiKeyManager() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [apiKeys, setApiKeys] = useState<PaymentApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showKey, setShowKey] = useState<string | null>(null);
@@ -80,9 +71,9 @@ export function ApiKeyManager() {
   };
 
   // Load API keys on component mount
-  useState(() => {
+  useEffect(() => {
     fetchApiKeys();
-  });
+  }, [user]); // Fixed: Added dependency array with user
 
   // Add new API key
   const onSubmit = async (values: ApiKeyFormValues) => {

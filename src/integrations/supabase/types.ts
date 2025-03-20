@@ -123,6 +123,33 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_api_keys: {
+        Row: {
+          api_key: string
+          created_at: string
+          description: string | null
+          id: string
+          provider: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          provider: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          provider?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_history: {
         Row: {
           amount: number
