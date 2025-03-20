@@ -30,9 +30,9 @@ export const usePaymentStatusCheck = () => {
           console.log('Refetching subscription after successful payment');
           await refetchSubscription();
           
-          // Reset click count after successful payment
+          // Try to reset click count after successful payment
           if (user) {
-            console.log('Resetting click count after successful payment');
+            console.log('Attempting to reset click count after successful payment');
             try {
               const { error } = await supabase
                 .from('user_click_counts')
@@ -43,7 +43,9 @@ export const usePaymentStatusCheck = () => {
                 });
               
               if (error) {
-                console.error('Error resetting click count:', error);
+                console.log('Could not reset click count - table might be missing:', error);
+              } else {
+                console.log('Successfully reset click count');
               }
             } catch (err) {
               console.error('Unexpected error resetting click count:', err);

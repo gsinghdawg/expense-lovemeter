@@ -31,8 +31,12 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           .eq('user_id', user.id)
           .single();
         
-        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-          console.error('Error fetching click count:', error);
+        if (error) {
+          // Handle case where table might not exist or other errors
+          if (error.code !== 'PGRST116') { // PGRST116 = no rows returned
+            console.error('Error fetching click count:', error);
+          }
+          // Initialize local click count if we can't get it from database
           return;
         }
         
@@ -43,15 +47,6 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           // Show paywall if user is over limit and doesn't have a subscription
           if (data.click_count >= CLICK_LIMIT && !hasActiveSubscription) {
             setShowPaywall(true);
-          }
-        } else {
-          // Initialize click count record if it doesn't exist
-          const { error: insertError } = await supabase
-            .from('user_click_counts')
-            .insert({ user_id: user.id, click_count: 0 });
-          
-          if (insertError) {
-            console.error('Error initializing click count:', insertError);
           }
         }
       } catch (err) {
@@ -75,7 +70,7 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           const newCount = prevCount + 1;
           console.log(`Incrementing click count: ${prevCount} -> ${newCount}`);
           
-          // Update database with new count
+          // Try to update database with new count
           supabase
             .from('user_click_counts')
             .upsert({
