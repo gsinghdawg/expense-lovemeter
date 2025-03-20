@@ -90,6 +90,14 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
           }
         } else {
           console.log('No click count record found for user');
+          // Initialize with 0 if no record exists
+          const { error: insertError } = await supabase
+            .from('user_click_counts')
+            .insert({ user_id: user.id, click_count: 0 });
+            
+          if (insertError) {
+            console.error('Error initializing click count:', insertError);
+          }
         }
         
         // Mark initial load as complete to prevent race conditions
@@ -138,45 +146,76 @@ export const ClickTracker = ({ children }: { children: React.ReactNode }) => {
 
   // Handle clicking anywhere in the app
   const handleClick = (e: MouseEvent) => {
+    console.log('🖱️ Click detected, checking conditions...');
+    
     // Only count clicks if the user is authenticated and not on excluded paths
-    if (!user || isExcludedPath || !initialLoadDone) return;
+    if (!user) {
+      console.log('No user, skipping click tracking');
+      return;
+    }
+    
+    if (isExcludedPath) {
+      console.log('On excluded path, skipping click tracking');
+      return;
+    }
+    
+    if (!initialLoadDone) {
+      console.log('Initial load not done, skipping click tracking');
+      return;
+    }
     
     // Check if user has an active subscription - if so, still count clicks but don't show paywall
     if (hasActiveSubscription) {
       console.log('User has active subscription, tracking click but not showing paywall');
-      const newCount = clickCount + 1;
-      setClickCount(newCount);
+      setClickCount(prevCount => {
+        const newCount = prevCount + 1;
+        console.log(`Incrementing click count: ${prevCount} -> ${newCount}`);
+        return newCount;
+      });
       return;
     }
     
     // Increment click count
-    const newCount = clickCount + 1;
-    console.log('Click detected, new count:', newCount);
-    setClickCount(newCount);
-    
-    // Check if user has reached the limit
-    if (newCount === MAX_FREE_CLICKS) {
-      toast({
-        title: "Free Usage Limit Reached",
-        description: "You've reached the maximum number of interactions for the free plan.",
-        variant: "destructive",
-      });
-      navigate('/pricing');
-    } else if (newCount > MAX_FREE_CLICKS) {
-      console.log('Redirecting to pricing page, clicks > MAX_FREE_CLICKS');
-      navigate('/pricing');
-    }
+    setClickCount(prevCount => {
+      const newCount = prevCount + 1;
+      console.log(`Incrementing click count: ${prevCount} -> ${newCount}`);
+      
+      // Check if user has reached the limit
+      if (newCount === MAX_FREE_CLICKS) {
+        toast({
+          title: "Free Usage Limit Reached",
+          description: "You've reached the maximum number of interactions for the free plan.",
+          variant: "destructive",
+        });
+        navigate('/pricing');
+      } else if (newCount > MAX_FREE_CLICKS) {
+        console.log('Redirecting to pricing page, clicks > MAX_FREE_CLICKS');
+        navigate('/pricing');
+      }
+      
+      return newCount;
+    });
   };
 
   // Add click event listener
   useEffect(() => {
     // Only attach the click handler after initial load is complete
-    if (!initialLoadDone) return;
+    if (!initialLoadDone) {
+      console.log('Initial load not done, not attaching click handler yet');
+      return;
+    }
     
     console.log('Adding click event listener, current count:', clickCount);
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
-  }, [clickCount, user, isExcludedPath, hasActiveSubscription, initialLoadDone]);
+    
+    // Use the document object instead of window for more reliable click detection
+    document.addEventListener('click', handleClick, { capture: true });
+    
+    // Cleanup function
+    return () => {
+      console.log('Removing click event listener');
+      document.removeEventListener('click', handleClick, { capture: true });
+    };
+  }, [clickCount, user, isExcludedPath, hasActiveSubscription, initialLoadDone, navigate]);
 
   return <>{children}</>;
 };
