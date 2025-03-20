@@ -40,7 +40,6 @@ export interface PaymentApiKey {
   provider: string;
   api_key: string;
   description?: string;
-  key_type?: 'secret' | 'publishable' | 'webhook';
   created_at: string;
 }
 

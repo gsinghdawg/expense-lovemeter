@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import {
   BrowserRouter as Router,
@@ -6,7 +5,7 @@ import {
   Routes,
   useNavigate,
 } from 'react-router-dom';
-import { ThemeProvider } from "./components/ThemeProvider"
+import { ThemeProvider } from "@/components/theme-provider"
 import { useAuth } from './contexts/AuthContext';
 import Index from './pages/Index';
 import SignUp from './pages/SignUp';
@@ -30,8 +29,10 @@ function App() {
 
   return (
     <ThemeProvider
+      attribute="class"
       defaultTheme="system"
-      storageKey="vite-ui-theme"
+      enableSystem
+      disableTransitionOnChange
     >
       <Routes>
         <Route path="/" element={<Index />} />
