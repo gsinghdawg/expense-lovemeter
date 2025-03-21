@@ -133,7 +133,7 @@ const SignUp = () => {
         
         toast({
           title: "Login successful",
-          description: "Welcome back to LadyLedger!",
+          description: "Welcome back to DatingLedger!",
         });
       }
     } catch (error: any) {
@@ -213,7 +213,7 @@ const SignUp = () => {
           <div className="flex flex-col items-center">
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-amber-500" />
-              LadyLedger
+              DatingLedger
               <Sparkles className="h-6 w-6 text-amber-500" />
             </h1>
             <h2 className="text-muted-foreground text-sm italic mb-6">Your Finance Companion</h2>

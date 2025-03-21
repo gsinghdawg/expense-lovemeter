@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,37 +26,37 @@ const Home = () => {
     {
       name: "Sarah Johnson",
       avatar: "/lovable-uploads/aee62957-15f2-456e-a356-50b3dab78200.png",
-      testimonial: "LadyLedger helped me track my dating expenses and stay on budget! The categories feature lets me see how much I spend on dining out vs. activities. I've saved over $200 a month while still enjoying quality time with my partner."
+      testimonial: "DatingLedger helped me track my dating expenses and stay on budget! The categories feature lets me see how much I spend on dining out vs. activities. I've saved over $200 a month while still enjoying quality time with my partner."
     },
     {
       name: "Michael Chen",
       avatar: "",
-      testimonial: "As someone who loves planning special dates, LadyLedger's budget goals feature has been a game-changer. I can save for anniversary gifts while keeping our regular date nights affordable. The expense tracking made me realize where we could cut costs without sacrificing romance!"
+      testimonial: "As someone who loves planning special dates, DatingLedger's budget goals feature has been a game-changer. I can save for anniversary gifts while keeping our regular date nights affordable. The expense tracking made me realize where we could cut costs without sacrificing romance!"
     },
     {
       name: "Jessica Taylor",
       avatar: "",
-      testimonial: "My partner and I use LadyLedger to manage our shared dating expenses. The visual charts help us see our spending patterns and have better conversations about money. We've cut our entertainment costs by 30% while actually enjoying more meaningful experiences together."
+      testimonial: "My partner and I use DatingLedger to manage our shared dating expenses. The visual charts help us see our spending patterns and have better conversations about money. We've cut our entertainment costs by 30% while actually enjoying more meaningful experiences together."
     },
     {
       name: "David Wilson",
       avatar: "",
-      testimonial: "LadyLedger transformed how my girlfriend and I handle our date nights. The monthly spending reports showed we were spending too much on expensive restaurants. Now we cook together at home twice a week and put that money toward weekend getaways instead!"
+      testimonial: "DatingLedger transformed how my girlfriend and I handle our date nights. The monthly spending reports showed we were spending too much on expensive restaurants. Now we cook together at home twice a week and put that money toward weekend getaways instead!"
     },
     {
       name: "Emily Rodriguez",
       avatar: "",
-      testimonial: "I was always the 'spender' in our relationship until I started using LadyLedger. The visual breakdown of my expenses made me realize how little moments add up. We've managed to pay off date-related debt and start saving for our engagement trip!"
+      testimonial: "I was always the 'spender' in our relationship until I started using DatingLedger. The visual breakdown of my expenses made me realize how little moments add up. We've managed to pay off date-related debt and start saving for our engagement trip!"
     },
     {
       name: "Ryan Park",
       avatar: "",
-      testimonial: "The custom categories feature is perfect! I created a 'Surprise Gifts' category that my partner can't see, and a 'Shared Activities' one we both contribute to. LadyLedger has made money conversations so much easier in our relationship."
+      testimonial: "The custom categories feature is perfect! I created a 'Surprise Gifts' category that my partner can't see, and a 'Shared Activities' one we both contribute to. DatingLedger has made money conversations so much easier in our relationship."
     },
     {
       name: "Alicia Washington",
       avatar: "",
-      testimonial: "After three years of dating and overspending, LadyLedger helped us create a realistic dating budget. Now we alternate between budget-friendly dates and occasional splurges. The monthly reports keep us accountable without feeling restricted."
+      testimonial: "After three years of dating and overspending, DatingLedger helped us create a realistic dating budget. Now we alternate between budget-friendly dates and occasional splurges. The monthly reports keep us accountable without feeling restricted."
     }
   ];
 
@@ -84,7 +83,7 @@ const Home = () => {
         <div className="text-center mb-12">
           <h1 className="text-5xl md:text-6xl font-bold mb-4 flex items-center justify-center gap-3">
             <Sparkles className="h-10 w-10 text-amber-500" />
-            LadyLedger
+            DatingLedger
             <Sparkles className="h-10 w-10 text-amber-500" />
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground italic">
@@ -145,7 +144,7 @@ const Home = () => {
                 <CardContent className="p-0">
                   <img 
                     src="/lovable-uploads/8e8e7db1-e8a5-4c71-bc2a-16e671f1d0f7.png" 
-                    alt="LadyLedger Expense Form" 
+                    alt="DatingLedger Expense Form" 
                     className="w-full h-auto"
                   />
                 </CardContent>
@@ -176,7 +175,7 @@ const Home = () => {
                 <CardContent className="p-0">
                   <img 
                     src="/lovable-uploads/3418c085-9be9-4c98-9b0f-e3cdfce82b34.png" 
-                    alt="LadyLedger Budget and Transactions" 
+                    alt="DatingLedger Budget and Transactions" 
                     className="w-full h-auto"
                   />
                 </CardContent>
@@ -209,7 +208,7 @@ const Home = () => {
                   <CardContent className="p-0">
                     <img 
                       src="/lovable-uploads/737fe8a2-bd29-4a7b-88f8-77d5b1f3f1c6.png" 
-                      alt="LadyLedger Transaction List" 
+                      alt="DatingLedger Transaction List" 
                       className="w-full h-auto"
                     />
                   </CardContent>
@@ -218,7 +217,7 @@ const Home = () => {
                   <CardContent className="p-0">
                     <img 
                       src="/lovable-uploads/000af59b-b7ac-4f59-88d3-b1fa9fecf010.png" 
-                      alt="LadyLedger Category Management" 
+                      alt="DatingLedger Category Management" 
                       className="w-full h-auto"
                     />
                   </CardContent>
@@ -252,7 +251,7 @@ const Home = () => {
                   <CardContent className="p-0">
                     <img 
                       src="/lovable-uploads/ef82ae7e-b4c0-43c2-8b60-2bbaec961f1c.png" 
-                      alt="LadyLedger Expense Summary and Category Breakdown" 
+                      alt="DatingLedger Expense Summary and Category Breakdown" 
                       className="w-full h-auto"
                     />
                   </CardContent>
@@ -261,7 +260,7 @@ const Home = () => {
                   <CardContent className="p-0">
                     <img 
                       src="/lovable-uploads/b271dcf0-1c77-4093-bd2a-3e88e1f7a618.png" 
-                      alt="LadyLedger Monthly Spending History" 
+                      alt="DatingLedger Monthly Spending History" 
                       className="w-full h-auto"
                     />
                   </CardContent>
@@ -273,7 +272,7 @@ const Home = () => {
 
         <div className="my-20">
           <h2 className="text-3xl font-bold text-center mb-2">What Our Users Say</h2>
-          <p className="text-muted-foreground text-center mb-10">Join thousands of happy users managing their dating finances with LadyLedger</p>
+          <p className="text-muted-foreground text-center mb-10">Join thousands of happy users managing their dating finances with DatingLedger</p>
           
           <Carousel className="mx-auto max-w-3xl">
             <CarouselContent>
@@ -310,7 +309,7 @@ const Home = () => {
             <CardContent className="p-0">
               <h3 className="text-2xl font-bold mb-4">Ready to Take Control of Your Dating Finances?</h3>
               <p className="text-lg mb-6 max-w-2xl mx-auto">
-                Join thousands of users who have transformed their dating habits with LadyLedger. 
+                Join thousands of users who have transformed their dating habits with DatingLedger. 
                 Start your journey to affordable and meaningful relationships today!
               </p>
               <Button asChild size="lg" className="px-8">
