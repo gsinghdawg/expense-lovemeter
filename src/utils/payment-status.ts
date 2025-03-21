@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useStripe } from '@/hooks/use-stripe';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 
 export const usePaymentStatusCheck = () => {
   const { toast } = useToast();
@@ -29,26 +28,6 @@ export const usePaymentStatusCheck = () => {
         try {
           console.log('Refetching subscription after successful payment');
           await refetchSubscription();
-          
-          // Reset click count after successful payment
-          if (user) {
-            console.log('Resetting click count after successful payment');
-            try {
-              const { error } = await supabase
-                .from('user_click_counts')
-                .upsert({
-                  user_id: user.id,
-                  click_count: 0,
-                  updated_at: new Date().toISOString()
-                });
-              
-              if (error) {
-                console.error('Error resetting click count:', error);
-              }
-            } catch (err) {
-              console.error('Unexpected error resetting click count:', err);
-            }
-          }
           
           // Show success message
           toast({

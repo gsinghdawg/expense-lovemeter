@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ClickTracker } from "@/components/ClickTracker";
+import { SubscriptionWrapper } from "@/components/SubscriptionWrapper";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
@@ -25,25 +25,25 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            {/* Routes that need click tracking */}
+            {/* Routes with subscription wrapper */}
             <Routes>
               <Route path="/dashboard" element={
-                <ClickTracker>
+                <SubscriptionWrapper>
                   <ProtectedRoute>
                     <Index />
                   </ProtectedRoute>
-                </ClickTracker>
+                </SubscriptionWrapper>
               } />
               <Route path="/profile-setup" element={
-                <ClickTracker>
+                <SubscriptionWrapper>
                   <ProtectedRoute>
                     <ProfileSetup />
                   </ProtectedRoute>
-                </ClickTracker>
+                </SubscriptionWrapper>
               } />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/signup" element={<SignUp />} />
-              {/* Routes without click tracking */}
+              {/* Routes without subscription wrapper */}
               <Route path="/home" element={<Home />} />
               <Route path="/" element={<Home />} />
               <Route path="*" element={<NotFound />} />
