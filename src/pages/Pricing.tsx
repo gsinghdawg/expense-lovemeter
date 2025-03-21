@@ -1,34 +1,17 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { PricingPlans } from "@/components/stripe/PricingPlans";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCw } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft } from "lucide-react";
 import { usePaymentStatusCheck } from "@/utils/payment-status";
-import { useStripe } from "@/hooks/use-stripe";
-import { Spinner } from "@/components/ui/spinner";
 
 const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const { subscription, isSubscriptionLoading, refetchSubscription } = useStripe();
   
   // Add payment status check to handle redirects after payment
   usePaymentStatusCheck();
-
-  // Force refresh subscription on mount to get the latest status
-  useEffect(() => {
-    if (user) {
-      console.log('Initial subscription check on Pricing page mount');
-      refetchSubscription().catch(err => {
-        console.error('Error during initial subscription check:', err);
-      });
-    }
-  }, [user, refetchSubscription]);
 
   // Redirect to signup if not logged in
   useEffect(() => {
@@ -37,93 +20,9 @@ const Pricing = () => {
     }
   }, [user, navigate]);
 
-  // Handle subscription check and automatic redirect
-  useEffect(() => {
-    if (!isSubscriptionLoading && subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
-      console.log('Active subscription detected, preparing to redirect');
-      
-      toast({
-        title: "Active Subscription Detected",
-        description: "You already have an active subscription. Redirecting to dashboard.",
-      });
-      
-      // Short delay before redirecting to ensure toast is visible
-      const timer = setTimeout(() => {
-        console.log('Redirecting to dashboard due to active subscription');
-        navigate('/dashboard', { replace: true });
-      }, 2500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [subscription, navigate, toast, isSubscriptionLoading]);
-
   const handleBackToHome = () => {
     navigate('/', { replace: true });
   };
-
-  const handleRefreshSubscription = async () => {
-    console.log('Manual subscription refresh requested');
-    setIsRefreshing(true);
-    
-    try {
-      await refetchSubscription();
-      
-      toast({
-        title: "Subscription Status Refreshed",
-        description: "Your subscription status has been updated."
-      });
-      
-      // If subscription is now active, redirect to dashboard
-      if (subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
-        console.log('Active subscription found after refresh, redirecting to dashboard');
-        
-        // Short delay to ensure the toast is visible
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 1500);
-      } else {
-        console.log('No active subscription found after refresh');
-      }
-    } catch (error) {
-      console.error('Error refreshing subscription:', error);
-      toast({
-        title: "Error",
-        description: "Failed to refresh subscription status. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  // Show loading state while checking subscription
-  if (isSubscriptionLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Spinner size="lg" className="mb-4" />
-          <p className="text-muted-foreground">Checking subscription status...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If user has an active subscription, show appropriate message
-  if (subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
-    return (
-      <div className="min-h-screen px-4 py-8 flex flex-col items-center justify-center">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">Subscription Active</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            You already have an active subscription. You have full access to all features.
-          </p>
-        </div>
-        <Button onClick={() => navigate('/dashboard')}>
-          Go to Dashboard
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen px-4 py-8">
@@ -140,35 +39,17 @@ const Pricing = () => {
         </div>
         
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold mb-4">Gain Full Access</h1>
+          <h1 className="text-4xl font-bold mb-4">Pricing Page</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Subscribe to remove usage limits and get full access to all features.
+            This is a simplified pricing page. Subscription functionality has been removed.
           </p>
         </div>
-        
-        <PricingPlans />
         
         <div className="text-center mt-8">
-          <p className="text-muted-foreground mb-4">
-            Already purchased a subscription? Try refreshing your subscription status.
-          </p>
-          <Button 
-            onClick={handleRefreshSubscription} 
-            disabled={isRefreshing}
-            className="flex items-center gap-2"
-          >
-            {isRefreshing ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
-            Refresh Subscription Status
+          <Button onClick={() => navigate('/dashboard')}>
+            Go to Dashboard
           </Button>
         </div>
-        
-        {subscription && subscription.status === 'canceled' && (
-          <div className="text-center mt-8">
-            <p className="text-muted-foreground mb-4">
-              Your previous subscription has been canceled. Subscribe again to regain access.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
