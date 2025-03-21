@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { CalendarIcon, Cake, User, Globe } from "lucide-react";
+import { CalendarIcon, Cake, User, Globe, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +48,7 @@ export const ProfileForm = () => {
       name: user?.user_metadata?.name || "",
       age: undefined,
       gender: undefined,
+      relationshipStatus: undefined,
       dateOfBirth: undefined,
       country: undefined,
     },
@@ -69,6 +70,7 @@ export const ProfileForm = () => {
           name: values.name,
           age: values.age,
           gender: values.gender,
+          relationship_status: values.relationshipStatus,
           date_of_birth: formattedDateOfBirth,
           country: values.country,
           onboarding_completed: true
@@ -193,6 +195,50 @@ export const ProfileForm = () => {
                     </FormControl>
                     <FormLabel className="font-normal">
                       Prefer not to say
+                    </FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="relationshipStatus"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Relationship Status</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-col space-y-1"
+                  disabled={isLoading}
+                >
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="single" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Single
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="dating" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Dating
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="relationship" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      In a Relationship
                     </FormLabel>
                   </FormItem>
                 </RadioGroup>

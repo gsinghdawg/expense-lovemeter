@@ -20,6 +20,9 @@ export const profileSchema = z.object({
   gender: z.enum(["male", "female", "other", "prefer_not_to_say"], {
     message: "Please select a gender.",
   }),
+  relationshipStatus: z.enum(["single", "dating", "relationship"], {
+    message: "Please select your relationship status.",
+  }),
   dateOfBirth: z.date({
     required_error: "Please select a date of birth.",
   }),
