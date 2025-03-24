@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -203,7 +202,6 @@ export function ExpenseSummary({
               <MonthlySavingsChart 
                 expenses={expenses} 
                 getBudgetForMonth={getBudgetForMonth}
-                onBarClick={handleBarClick}
                 savingsColor={SAVINGS_COLOR}
               />
               <ChartLegend 
@@ -235,17 +233,6 @@ export function ExpenseSummary({
                     subtext: averageMonthlySavings !== null && averageMonthlySavings < 0 ? "(Deficit)" : ""
                   }
                 ]}
-              />
-            </div>
-          )}
-          
-          {expenses.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Top 3 Spending Categories</h4>
-              <TopCategoriesChart 
-                expenses={expenses} 
-                getCategoryById={getCategoryById}
-                limit={3}
               />
             </div>
           )}

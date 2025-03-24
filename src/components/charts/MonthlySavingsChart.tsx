@@ -10,6 +10,7 @@ import {
   ResponsiveContainer 
 } from "recharts";
 import { Expense } from "@/types/expense";
+import { toast } from "@/hooks/use-toast";
 
 type MonthlySavingsChartProps = {
   expenses: Expense[];
@@ -62,6 +63,36 @@ export function MonthlySavingsChart({
     return monthlyData;
   }, [expenses, getBudgetForMonth]);
 
+  const handleBarClick = (data: any) => {
+    if (data && data.payload) {
+      const { fullMonth, year, budget, spending, savings } = data.payload;
+      const message = budget === null 
+        ? `${fullMonth} ${year}: No budget set. Spent $${spending.toFixed(2)}`
+        : `${fullMonth} ${year}: Budget $${budget.toFixed(2)}, Spent $${spending.toFixed(2)}, ${
+            savings >= 0 
+              ? `Saved $${savings.toFixed(2)}` 
+              : `Overspent $${Math.abs(savings).toFixed(2)}`
+          }`;
+          
+      console.log(message);
+      toast({
+        title: `${fullMonth} ${year}`,
+        description: budget === null 
+          ? `No budget set. Spent $${spending.toFixed(2)}`
+          : `Budget: $${budget.toFixed(2)}\nSpent: $${spending.toFixed(2)}\n${
+              savings >= 0 
+                ? `Saved: $${savings.toFixed(2)}` 
+                : `Overspent: $${Math.abs(savings).toFixed(2)}`
+            }`,
+        duration: 5000,
+      });
+    }
+    
+    if (onBarClick) {
+      onBarClick(data);
+    }
+  };
+
   if (monthlySavings.length === 0) {
     return null;
   }
@@ -100,14 +131,16 @@ export function MonthlySavingsChart({
             dataKey="savings"
             fill={savingsColor}
             name="Monthly Savings"
-            onClick={onBarClick}
+            onClick={handleBarClick}
             cursor="pointer"
             isAnimationActive={true}
             onMouseOver={(data) => {
-              if (data && data.tooltipPayload && data.tooltipPayload[0]) {
-                const value = data.tooltipPayload[0].value;
-                const color = value >= 0 ? "#4ade80" : "#ef4444";
-                data.element.style.fill = color;
+              if (data && data.payload) {
+                const value = data.payload.savings;
+                if (value !== null) {
+                  const color = value >= 0 ? "#4ade80" : "#ef4444";
+                  data.element.style.fill = color;
+                }
               }
             }}
             onMouseOut={(data) => {

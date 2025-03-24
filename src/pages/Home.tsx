@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3, Quote } from "lucide-react";
+import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3, Quote, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -91,7 +91,7 @@ const Home = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           <Card className="gradient-card">
             <CardContent className="p-6 text-center">
               <h3 className="text-xl font-semibold mb-2">Track Expenses</h3>
@@ -115,6 +115,15 @@ const Home = () => {
               <h3 className="text-xl font-semibold mb-2">View Insights</h3>
               <p className="text-muted-foreground">
                 Get visual summaries of your spending habits and financial progress.
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="gradient-card">
+            <CardContent className="p-6 text-center">
+              <h3 className="text-xl font-semibold mb-2">AI Integration</h3>
+              <p className="text-muted-foreground">
+                Ask AI for advice on your spending habits and how you can save money.
               </p>
             </CardContent>
           </Card>
