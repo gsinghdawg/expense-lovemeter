@@ -1,5 +1,5 @@
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryPieChart } from "@/components/charts/CategoryPieChart";
@@ -8,7 +8,9 @@ import { MonthlySpendingChart } from "@/components/charts/MonthlySpendingChart";
 import { ChartLegend } from "@/components/charts/ChartLegend";
 import { TopCategoriesChart } from "@/components/charts/TopCategoriesChart";
 import { BudgetProgress } from "@/components/summary/BudgetProgress";
-import { StatsGrid, Stat } from "@/components/summary/StatsGrid";
+import { StatsGrid } from "@/components/summary/StatsGrid";
+import { MonthSelector } from "@/components/charts/MonthSelector";
+import { isSameMonth, isSameYear } from "date-fns";
 
 type ExpenseSummaryProps = {
   expenses: Expense[];
@@ -31,6 +33,9 @@ export function ExpenseSummary({
   calculateAverageMonthlyExpense,
   totalSavings,
 }: ExpenseSummaryProps) {
+  // State to store the selected month for the pie chart
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [expenses]);
@@ -47,11 +52,20 @@ export function ExpenseSummary({
     });
   }, [expenses]);
 
+  // Get expenses for the selected month
+  const selectedMonthExpenses = useMemo(() => {
+    return expenses.filter(expense =>
+      isSameMonth(expense.date, selectedMonth) && 
+      isSameYear(expense.date, selectedMonth)
+    );
+  }, [expenses, selectedMonth]);
+
+  // Calculate expenses by category for the selected month
   const expensesByCategory = useMemo(() => {
     const result: Record<string, number> = {};
-    const total = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const total = selectedMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     
-    currentMonthExpenses.forEach((expense) => {
+    selectedMonthExpenses.forEach((expense) => {
       const categoryId = expense.categoryId;
       result[categoryId] = (result[categoryId] || 0) + expense.amount;
     });
@@ -66,7 +80,7 @@ export function ExpenseSummary({
         percentage: percentage
       };
     }).sort((a, b) => b.value - a.value);
-  }, [currentMonthExpenses, getCategoryById]);
+  }, [selectedMonthExpenses, getCategoryById]);
 
   const averageMonthlyExpense = calculateAverageMonthlyExpense();
   const currentMonthlyBudget = budgetGoal.amount;
@@ -75,6 +89,23 @@ export function ExpenseSummary({
     if (currentMonthlyBudget === null) return null;
     return currentMonthlyBudget - averageMonthlyExpense;
   }, [currentMonthlyBudget, averageMonthlyExpense]);
+
+  // Get the min and max dates from expenses for the calendar
+  const dateRange = useMemo(() => {
+    if (expenses.length === 0) {
+      return { minDate: undefined, maxDate: new Date() };
+    }
+    
+    let minDate = expenses[0].date;
+    let maxDate = expenses[0].date;
+    
+    expenses.forEach(expense => {
+      if (expense.date < minDate) minDate = expense.date;
+      if (expense.date > maxDate) maxDate = expense.date;
+    });
+    
+    return { minDate, maxDate: new Date() };
+  }, [expenses]);
 
   const handleBarClick = (data: any) => {
     if (data && data.payload) {
@@ -133,12 +164,21 @@ export function ExpenseSummary({
             budgetGoal={budgetGoal}
           />
 
-          <CategoryPieChart 
-            expenses={currentMonthExpenses} 
-            getCategoryById={getCategoryById} 
-          />
-
-          <CategoryLegend categories={expensesByCategory} />
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium">Monthly Category Breakdown</h4>
+            <MonthSelector 
+              value={selectedMonth} 
+              onChange={setSelectedMonth}
+              minDate={dateRange.minDate}
+              maxDate={dateRange.maxDate}
+            />
+            <CategoryPieChart 
+              expenses={expenses} 
+              getCategoryById={getCategoryById}
+              selectedDate={selectedMonth}
+            />
+            <CategoryLegend categories={expensesByCategory} />
+          </div>
           
           {expenses.length > 0 && (
             <div>

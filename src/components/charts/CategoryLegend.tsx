@@ -11,6 +11,10 @@ type CategoryLegendProps = {
 };
 
 export function CategoryLegend({ categories }: CategoryLegendProps) {
+  if (categories.length === 0) {
+    return null;
+  }
+  
   return (
     <div className="space-y-2">
       {categories.map((item, index) => (

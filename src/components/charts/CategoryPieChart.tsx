@@ -2,18 +2,27 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Expense, ExpenseCategory } from "@/types/expense";
+import { isSameMonth, isSameYear } from "date-fns";
 
 type CategoryPieChartProps = {
   expenses: Expense[];
   getCategoryById: (id: string) => ExpenseCategory;
+  selectedDate: Date;
 };
 
-export function CategoryPieChart({ expenses, getCategoryById }: CategoryPieChartProps) {
+export function CategoryPieChart({ expenses, getCategoryById, selectedDate }: CategoryPieChartProps) {
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => 
+      isSameMonth(expense.date, selectedDate) && 
+      isSameYear(expense.date, selectedDate)
+    );
+  }, [expenses, selectedDate]);
+
   const expensesByCategory = useMemo(() => {
     const result: Record<string, number> = {};
-    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const total = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     
-    expenses.forEach((expense) => {
+    filteredExpenses.forEach((expense) => {
       const categoryId = expense.categoryId;
       result[categoryId] = (result[categoryId] || 0) + expense.amount;
     });
@@ -28,12 +37,12 @@ export function CategoryPieChart({ expenses, getCategoryById }: CategoryPieChart
         percentage: percentage
       };
     }).sort((a, b) => b.value - a.value);
-  }, [expenses, getCategoryById]);
+  }, [filteredExpenses, getCategoryById]);
 
-  if (expenses.length === 0) {
+  if (filteredExpenses.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        Add expenses to see your spending breakdown
+        No expenses for {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
       </div>
     );
   }
