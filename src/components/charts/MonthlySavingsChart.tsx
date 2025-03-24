@@ -1,8 +1,8 @@
 
 import { useMemo } from "react";
 import { 
-  ComposedChart, 
-  Line, 
+  BarChart, 
+  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -11,28 +11,20 @@ import {
 } from "recharts";
 import { Expense } from "@/types/expense";
 
-type ChartColors = {
-  spending: string;
-  budget: string;
-};
-
-type MonthlySpendingChartProps = {
+type MonthlySavingsChartProps = {
   expenses: Expense[];
   getBudgetForMonth: (month: number, year: number) => number | null;
   onBarClick?: (data: any) => void;
-  chartColors?: ChartColors;
+  savingsColor?: string;
 };
 
-export function MonthlySpendingChart({ 
+export function MonthlySavingsChart({ 
   expenses, 
   getBudgetForMonth, 
   onBarClick,
-  chartColors = {
-    spending: "#2563eb",
-    budget: "#4ade80"
-  }
-}: MonthlySpendingChartProps) {
-  const monthlySpending = useMemo(() => {
+  savingsColor = "#4B5563" 
+}: MonthlySavingsChartProps) {
+  const monthlySavings = useMemo(() => {
     const spendingByMonth: Record<string, number> = {};
     const now = new Date();
     const sixMonthsAgo = new Date();
@@ -59,26 +51,26 @@ export function MonthlySpendingChart({
       
       monthlyData.unshift({
         month: monthName,
-        spending: monthSpending,
-        budget: monthBudget,
         savings: monthBudget !== null ? monthBudget - monthSpending : null,
         fullMonth: date.toLocaleString('default', { month: 'long' }),
-        year: year
+        year: year,
+        budget: monthBudget,
+        spending: monthSpending
       });
     }
 
     return monthlyData;
   }, [expenses, getBudgetForMonth]);
 
-  if (monthlySpending.length === 0) {
+  if (monthlySavings.length === 0) {
     return null;
   }
 
   return (
-    <div className="h-[200px] w-full">
+    <div className="h-[200px] w-full mt-4">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={monthlySpending}
+        <BarChart
+          data={monthlySavings}
           margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
         >
           <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
@@ -95,7 +87,7 @@ export function MonthlySpendingChart({
           />
           <Tooltip 
             formatter={(value: number | null, name: string, props: any) => {
-              if (value === null) return ["Not set", name];
+              if (value === null) return ["No budget set", name];
               return [`$${value.toFixed(2)}`, name];
             }}
             labelFormatter={(label: string, items: any[]) => {
@@ -104,26 +96,27 @@ export function MonthlySpendingChart({
             }}
             contentStyle={{ fontSize: 12 }}
           />
-          <Line 
-            type="monotone" 
-            dataKey="spending" 
-            stroke={chartColors.spending} 
-            strokeWidth={2}
-            dot={{ fill: chartColors.spending }}
-            name="Monthly Spending"
+          <Bar
+            dataKey="savings"
+            fill={savingsColor}
+            name="Monthly Savings"
+            onClick={onBarClick}
+            cursor="pointer"
+            isAnimationActive={true}
+            onMouseOver={(data) => {
+              if (data && data.tooltipPayload && data.tooltipPayload[0]) {
+                const value = data.tooltipPayload[0].value;
+                const color = value >= 0 ? "#4ade80" : "#ef4444";
+                data.element.style.fill = color;
+              }
+            }}
+            onMouseOut={(data) => {
+              if (data && data.element) {
+                data.element.style.fill = savingsColor;
+              }
+            }}
           />
-          <Line 
-            type="monotone" 
-            dataKey="budget" 
-            stroke={chartColors.budget}
-            strokeWidth={3}
-            strokeDasharray="5 5"
-            dot={{ fill: chartColors.budget, r: 4 }}
-            name="Budget Goal"
-            connectNulls={true}
-            activeDot={{ r: 6, fill: chartColors.budget }}
-          />
-        </ComposedChart>
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );

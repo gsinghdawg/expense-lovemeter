@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryPieChart } from "@/components/charts/CategoryPieChart";
 import { CategoryLegend } from "@/components/charts/CategoryLegend";
 import { MonthlySpendingChart } from "@/components/charts/MonthlySpendingChart";
+import { MonthlySavingsChart } from "@/components/charts/MonthlySavingsChart";
 import { ChartLegend } from "@/components/charts/ChartLegend";
 import { TopCategoriesChart } from "@/components/charts/TopCategoriesChart";
 import { BudgetProgress } from "@/components/summary/BudgetProgress";
@@ -135,9 +136,9 @@ export function ExpenseSummary({
   };
 
   // Define chart colors as constants for consistency
-  const SAVINGS_COLOR = "#4B5563";
   const SPENDING_COLOR = "#2563eb";
   const BUDGET_COLOR = "#4ade80";
+  const SAVINGS_COLOR = "#4B5563";
 
   return (
     <Card>
@@ -186,18 +187,28 @@ export function ExpenseSummary({
               <MonthlySpendingChart 
                 expenses={expenses} 
                 getBudgetForMonth={getBudgetForMonth}
-                onBarClick={handleBarClick}
                 chartColors={{
-                  savings: SAVINGS_COLOR,
                   spending: SPENDING_COLOR,
                   budget: BUDGET_COLOR
                 }}
               />
               <ChartLegend 
                 items={[
-                  { color: SAVINGS_COLOR, label: "Monthly Savings", type: "bar" },
                   { color: SPENDING_COLOR, label: "Monthly Spending", type: "line", height: 1 },
                   { color: BUDGET_COLOR, label: "Budget Goal", type: "dashed", height: 1 }
+                ]}
+              />
+              
+              <h4 className="text-sm font-medium mb-2 mt-4">Monthly Savings</h4>
+              <MonthlySavingsChart 
+                expenses={expenses} 
+                getBudgetForMonth={getBudgetForMonth}
+                onBarClick={handleBarClick}
+                savingsColor={SAVINGS_COLOR}
+              />
+              <ChartLegend 
+                items={[
+                  { color: SAVINGS_COLOR, label: "Monthly Savings", type: "bar" }
                 ]}
               />
               
