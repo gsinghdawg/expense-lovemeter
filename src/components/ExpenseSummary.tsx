@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { MonthlySpendingChart } from "@/components/charts/MonthlySpendingChart";
 import { MonthlySavingsChart } from "@/components/charts/MonthlySavingsChart";
 import { ChartLegend } from "@/components/charts/ChartLegend";
 import { TopCategoriesChart } from "@/components/charts/TopCategoriesChart";
+import { YearlyTopCategoriesChart } from "@/components/charts/YearlyTopCategoriesChart";
 import { BudgetProgress } from "@/components/summary/BudgetProgress";
 import { StatsGrid } from "@/components/summary/StatsGrid";
 import { MonthSelector } from "@/components/charts/MonthSelector";
@@ -234,6 +236,15 @@ export function ExpenseSummary({
                   }
                 ]}
               />
+              
+              {/* Add the Top Categories Bar Graph after the Stats Grid */}
+              <div className="mt-6 pt-4 border-t border-border">
+                <YearlyTopCategoriesChart 
+                  expenses={expenses} 
+                  getCategoryById={getCategoryById} 
+                  limit={3}
+                />
+              </div>
             </div>
           )}
         </div>
