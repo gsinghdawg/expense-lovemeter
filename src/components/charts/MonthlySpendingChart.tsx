@@ -56,6 +56,7 @@ export function MonthlySpendingChart({
     
     const monthlyData = [];
     for (let month = 0; month < 12; month++) {
+      // Only include budget if it's explicitly set (not derived from historical data)
       const monthBudget = getBudgetForMonth(month, currentYear);
       const monthSpending = spendingByMonth[`${month}`] || 0;
       
@@ -63,6 +64,7 @@ export function MonthlySpendingChart({
         month: monthNames[month],
         monthIndex: month,
         spending: monthSpending,
+        // Only include budget if it's not null (explicitly set)
         budget: monthBudget,
         savings: monthBudget !== null ? monthBudget - monthSpending : null,
         fullMonth: new Date(currentYear, month).toLocaleString('default', { month: 'long' }),

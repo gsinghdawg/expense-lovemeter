@@ -177,8 +177,10 @@ export function useBudgetGoals(userId: string | undefined) {
     updateBudgetGoalMutation.mutate(newBudget);
   };
 
+  // Modified getBudgetForMonth to only return explicitly set budgets
   const getBudgetForMonth = (month: number, year: number) => {
-    // First check if there's a direct budget set for this month/year
+    // Only check for direct budget set for this month/year
+    // We're not falling back to historical budget data anymore
     const directBudget = budgetGoalsData.find(
       budget => budget.month === month && budget.year === year
     );
@@ -187,21 +189,7 @@ export function useBudgetGoals(userId: string | undefined) {
       return directBudget.amount;
     }
     
-    // Fall back to the historical budget if no direct budget is set
-    const sortedHistory = [...budgetHistory].sort((a, b) => 
-      b.startDate.getTime() - a.startDate.getTime()
-    );
-    
-    const targetDate = new Date(year, month, 1);
-    
-    for (const budget of sortedHistory) {
-      const budgetDate = new Date(budget.year, budget.month, 1);
-      
-      if (budgetDate.getTime() <= targetDate.getTime()) {
-        return budget.amount;
-      }
-    }
-    
+    // Return null if no direct budget is set for this month/year
     return null;
   };
 

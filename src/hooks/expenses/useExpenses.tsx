@@ -52,6 +52,9 @@ export function useExpenses() {
     return calculateTotalSavings(getBudgetForMonth);
   };
 
+  // We're not modifying the getBudgetForMonth function directly as it's provided by useBudgetGoals
+  // and the functionality to only return explicitly set budgets is already implemented there
+
   return {
     // Expense data and methods
     expenses,

@@ -52,10 +52,13 @@ export function MonthlySavingsChart({
       const monthBudget = getBudgetForMonth(month, currentYear);
       const monthSpending = spendingByMonth[`${month}`] || 0;
       
+      // Only calculate savings if the budget is explicitly set
+      const savings = monthBudget !== null ? monthBudget - monthSpending : null;
+      
       monthlyData.push({
         month: monthNames[month],
         monthIndex: month,
-        savings: monthBudget !== null ? monthBudget - monthSpending : null,
+        savings: savings,
         spending: monthSpending,
         budget: monthBudget,
         fullMonth: new Date(currentYear, month).toLocaleString('default', { month: 'long' }),
