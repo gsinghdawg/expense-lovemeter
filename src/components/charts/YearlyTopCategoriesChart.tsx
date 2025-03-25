@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Expense, ExpenseCategory } from "@/types/expense";
 import { TopCategoriesChart } from "./TopCategoriesChart";
 import { YearSelector } from "./YearSelector";
@@ -44,13 +44,19 @@ export function YearlyTopCategoriesChart({
     );
   }, [expenses, selectedYear]);
 
+  // Handle year change
+  const handleYearChange = (year: number) => {
+    console.log("Year changed to:", year);
+    setSelectedYear(year);
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium">Top Categories ({selectedYear})</h4>
         <YearSelector 
           value={selectedYear} 
-          onChange={setSelectedYear} 
+          onChange={handleYearChange} 
           minYear={yearRange.minYear} 
           maxYear={yearRange.maxYear}
         />

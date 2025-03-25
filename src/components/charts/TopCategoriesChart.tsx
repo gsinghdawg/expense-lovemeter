@@ -31,8 +31,12 @@ export function TopCategoriesChart({ expenses, getCategoryById, limit = 3 }: Top
       .slice(0, limit);
   }, [expenses, getCategoryById, limit]);
 
-  if (topCategories.length === 0) {
-    return null;
+  if (expenses.length === 0 || topCategories.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+        No expense data available for this period
+      </div>
+    );
   }
 
   return (

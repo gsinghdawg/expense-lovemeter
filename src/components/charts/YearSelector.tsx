@@ -34,6 +34,7 @@ export function YearSelector({ value, onChange, minYear, maxYear }: YearSelector
         onClick={handlePrevious}
         disabled={value <= effectiveMinYear}
         className="h-8 w-8"
+        aria-label="Previous year"
       >
         <ChevronLeft className="h-4 w-4" />
         <span className="sr-only">Previous year</span>
@@ -45,6 +46,7 @@ export function YearSelector({ value, onChange, minYear, maxYear }: YearSelector
         onClick={handleNext}
         disabled={value >= effectiveMaxYear}
         className="h-8 w-8"
+        aria-label="Next year"
       >
         <ChevronRight className="h-4 w-4" />
         <span className="sr-only">Next year</span>

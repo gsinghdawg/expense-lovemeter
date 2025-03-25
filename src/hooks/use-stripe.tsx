@@ -23,6 +23,7 @@ export type PaymentHistory = {
   amount: number;
   currency: string;
   status: string;
+  description?: string;
   created_at: string;
 };
 
@@ -33,6 +34,51 @@ export const useStripe = () => {
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [isLoadingPaymentHistory, setIsLoadingPaymentHistory] = useState(true);
+
+  // Rename these to match the component expectations
+  const isSubscriptionLoading = isLoadingSubscription;
+  const isPaymentHistoryLoading = isLoadingPaymentHistory;
+
+  // Add missing functions needed by components
+  const refetchSubscription = async () => {
+    // Just rerun the same logic as in useEffect
+    if (!user) return;
+    
+    setIsLoadingSubscription(true);
+    try {
+      // For demo purposes, just simulate a subscription
+      const mockSubscription: Subscription = {
+        id: "sub_123456",
+        user_id: user.id,
+        status: "active",
+        plan_id: "price_123456",
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        cancel_at_period_end: false,
+        stripe_subscription_id: "sub_stripe_123456"
+      };
+      
+      setSubscription(mockSubscription);
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      toast({
+        title: "Error",
+        description: "Could not fetch subscription information",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingSubscription(false);
+    }
+  };
+
+  const redirectToCustomerPortal = async () => {
+    // Mock implementation
+    alert("Redirecting to customer portal (mock)");
+    console.log("Redirecting to customer portal");
+  };
+
+  const manageSubscription = async () => {
+    await redirectToCustomerPortal();
+  };
 
   // This function would be wired up to a real Stripe instance in production
   // For now, we'll simulate a subscription check
@@ -90,6 +136,7 @@ export const useStripe = () => {
             amount: 9.99,
             currency: "USD",
             status: "succeeded",
+            description: "Monthly subscription",
             created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
           },
           {
@@ -98,6 +145,7 @@ export const useStripe = () => {
             amount: 9.99,
             currency: "USD",
             status: "succeeded",
+            description: "Monthly subscription",
             created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
           }
         ];
@@ -117,7 +165,12 @@ export const useStripe = () => {
   return {
     subscription,
     isLoadingSubscription,
+    isSubscriptionLoading,
     paymentHistory,
     isLoadingPaymentHistory,
+    isPaymentHistoryLoading,
+    refetchSubscription,
+    redirectToCustomerPortal,
+    manageSubscription
   };
 };
