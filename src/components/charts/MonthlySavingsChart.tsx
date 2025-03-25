@@ -27,36 +27,39 @@ export function MonthlySavingsChart({
 }: MonthlySavingsChartProps) {
   const monthlySavings = useMemo(() => {
     const spendingByMonth: Record<string, number> = {};
-    const now = new Date();
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(now.getMonth() - 5); // Show last 6 months
-
-    expenses.forEach((expense) => {
-      if (expense.date >= sixMonthsAgo) {
-        const monthKey = `${expense.date.getFullYear()}-${expense.date.getMonth() + 1}`;
-        spendingByMonth[monthKey] = (spendingByMonth[monthKey] || 0) + expense.amount;
-      }
+    const currentYear = new Date().getFullYear();
+    
+    // Filter expenses for the current year
+    const currentYearExpenses = expenses.filter(expense => 
+      expense.date.getFullYear() === currentYear
+    );
+    
+    // Organize expenses by month
+    currentYearExpenses.forEach((expense) => {
+      const month = expense.date.getMonth();
+      const monthKey = `${month}`;
+      spendingByMonth[monthKey] = (spendingByMonth[monthKey] || 0) + expense.amount;
     });
 
+    // Create data for all 12 months of the current year
+    const monthNames = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    
     const monthlyData = [];
-    for (let i = 0; i < 6; i++) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const month = date.getMonth();
-      const year = date.getFullYear();
-      const monthKey = `${year}-${month + 1}`;
-      const monthName = date.toLocaleString('default', { month: 'short' });
+    for (let month = 0; month < 12; month++) {
+      const monthBudget = getBudgetForMonth(month, currentYear);
+      const monthSpending = spendingByMonth[`${month}`] || 0;
       
-      const monthBudget = getBudgetForMonth(month, year);
-      const monthSpending = spendingByMonth[monthKey] || 0;
-      
-      monthlyData.unshift({
-        month: monthName,
+      monthlyData.push({
+        month: monthNames[month],
+        monthIndex: month,
         savings: monthBudget !== null ? monthBudget - monthSpending : null,
-        fullMonth: date.toLocaleString('default', { month: 'long' }),
-        year: year,
+        spending: monthSpending,
         budget: monthBudget,
-        spending: monthSpending
+        fullMonth: new Date(currentYear, month).toLocaleString('default', { month: 'long' }),
+        year: currentYear
       });
     }
 
