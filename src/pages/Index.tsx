@@ -21,6 +21,7 @@ const Index = () => {
     expenses,
     categories,
     budgetGoal,
+    budgetGoalsData,
     isLoading,
     addExpense,
     updateExpense,
@@ -89,6 +90,7 @@ const Index = () => {
                 />
                 <BudgetForm 
                   currentBudget={budgetGoal}
+                  budgetGoalsData={budgetGoalsData}
                   onUpdateBudget={updateBudgetGoal}
                 />
                 <RecentTransactions

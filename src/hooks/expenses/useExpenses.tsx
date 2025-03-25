@@ -32,6 +32,7 @@ export function useExpenses() {
 
   const {
     budgetGoal,
+    budgetGoalsData,
     budgetHistory,
     isLoadingBudgetGoal,
     isLoadingBudgetHistory,
@@ -71,6 +72,7 @@ export function useExpenses() {
     
     // Budget data and methods
     budgetGoal,
+    budgetGoalsData,
     budgetHistory,
     updateBudgetGoal,
     getBudgetForMonth,

@@ -7,52 +7,56 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 export function useBudgetGoals(userId: string | undefined) {
   const queryClient = useQueryClient();
 
-  // Fetch budget goal from Supabase
+  // Fetch all budget goals from Supabase
   const { 
-    data: budgetGoalData,
-    isLoading: isLoadingBudgetGoal 
+    data: budgetGoalsData = [],
+    isLoading: isLoadingBudgetGoals 
   } = useQuery({
-    queryKey: ['budget-goal', userId],
+    queryKey: ['budget-goals', userId],
     queryFn: async () => {
-      if (!userId) return null;
-      
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
+      if (!userId) return [];
       
       const { data, error } = await supabase
         .from('budget_goals')
         .select('*')
         .eq('user_id', userId)
-        .eq('month', currentMonth)
-        .eq('year', currentYear)
-        .maybeSingle();
+        .order('year', { ascending: true })
+        .order('month', { ascending: true });
       
       if (error) {
-        console.error("Error fetching budget goal:", error);
+        console.error("Error fetching budget goals:", error);
         toast({
-          title: "Error loading budget goal",
+          title: "Error loading budget goals",
           description: error.message,
           variant: "destructive",
         });
-        return null;
+        return [];
       }
       
-      return data;
+      return data || [];
     },
     enabled: !!userId,
   });
   
-  const budgetGoal: BudgetGoal = budgetGoalData 
+  // Get current month budget goal
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  const currentBudgetGoal = budgetGoalsData.find(
+    goal => goal.month === currentMonth && goal.year === currentYear
+  );
+  
+  const budgetGoal: BudgetGoal = currentBudgetGoal 
     ? { 
-        amount: budgetGoalData.amount, 
-        month: budgetGoalData.month, 
-        year: budgetGoalData.year 
+        amount: currentBudgetGoal.amount, 
+        month: currentBudgetGoal.month, 
+        year: currentBudgetGoal.year 
       } 
     : { 
         amount: null, 
-        month: new Date().getMonth(), 
-        year: new Date().getFullYear() 
+        month: currentMonth, 
+        year: currentYear 
       };
 
   // Fetch budget history from Supabase
@@ -157,7 +161,7 @@ export function useBudgetGoals(userId: string | undefined) {
       };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget-goal', userId] });
+      queryClient.invalidateQueries({ queryKey: ['budget-goals', userId] });
       queryClient.invalidateQueries({ queryKey: ['budget-history', userId] });
     },
     onError: (error: any) => {
@@ -174,6 +178,16 @@ export function useBudgetGoals(userId: string | undefined) {
   };
 
   const getBudgetForMonth = (month: number, year: number) => {
+    // First check if there's a direct budget set for this month/year
+    const directBudget = budgetGoalsData.find(
+      budget => budget.month === month && budget.year === year
+    );
+    
+    if (directBudget) {
+      return directBudget.amount;
+    }
+    
+    // Fall back to the historical budget if no direct budget is set
     const sortedHistory = [...budgetHistory].sort((a, b) => 
       b.startDate.getTime() - a.startDate.getTime()
     );
@@ -193,8 +207,9 @@ export function useBudgetGoals(userId: string | undefined) {
 
   return {
     budgetGoal,
+    budgetGoalsData,
     budgetHistory,
-    isLoadingBudgetGoal,
+    isLoadingBudgetGoal: isLoadingBudgetGoals,
     isLoadingBudgetHistory,
     updateBudgetGoal,
     getBudgetForMonth

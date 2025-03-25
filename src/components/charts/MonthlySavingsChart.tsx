@@ -142,7 +142,9 @@ export function MonthlySavingsChart({
                 const value = data.payload.savings;
                 if (value !== null) {
                   const color = value >= 0 ? "#4ade80" : "#ef4444";
-                  data.element.style.fill = color;
+                  if (data.element) {
+                    data.element.style.fill = color;
+                  }
                 }
               }
             }}
