@@ -92,11 +92,11 @@ export function DailySpendingChart({ expenses }: DailySpendingChartProps) {
         />
       </div>
       
-      <div className="h-[300px] w-full">
+      <div className="h-[350px] w-full"> {/* Increased height to accommodate labels */}
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              margin={{ top: 20, right: 30, left: 15, bottom: 30 }} // Increased margins to give space for labels
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
@@ -105,14 +105,27 @@ export function DailySpendingChart({ expenses }: DailySpendingChartProps) {
                 name="Day" 
                 domain={[0, daysInMonth + 1]}
                 tickCount={Math.min(daysInMonth, 15)}
-                label={{ value: 'Day of Month', position: 'insideBottomRight', offset: -5 }}
+                label={{ 
+                  value: 'Day of Month', 
+                  position: 'insideBottom', 
+                  offset: -5,
+                  style: { textAnchor: 'middle' }
+                }}
+                padding={{ left: 10, right: 10 }}
               />
               <YAxis 
                 type="number"
                 dataKey="amount" 
                 name="Amount" 
                 unit="$"
-                label={{ value: 'Amount ($)', angle: -90, position: 'insideLeft' }}
+                label={{ 
+                  value: 'Amount ($)', 
+                  angle: -90, 
+                  position: 'insideLeft',
+                  style: { textAnchor: 'middle' },
+                  offset: 0
+                }}
+                tickFormatter={(value) => `${value}$`}
               />
               <Tooltip 
                 formatter={formatTooltip}
