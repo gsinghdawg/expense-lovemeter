@@ -162,6 +162,33 @@ export type Database = {
         }
         Relationships: []
       }
+      saving_goals: {
+        Row: {
+          achieved: boolean
+          amount: number
+          created: string
+          id: string
+          purpose: string
+          user_id: string
+        }
+        Insert: {
+          achieved?: boolean
+          amount: number
+          created?: string
+          id?: string
+          purpose: string
+          user_id: string
+        }
+        Update: {
+          achieved?: boolean
+          amount?: number
+          created?: string
+          id?: string
+          purpose?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
