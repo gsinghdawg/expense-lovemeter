@@ -12,6 +12,7 @@ import { YearlyTopCategoriesChart } from "@/components/charts/YearlyTopCategorie
 import { BudgetProgress } from "@/components/summary/BudgetProgress";
 import { StatsGrid } from "@/components/summary/StatsGrid";
 import { MonthSelector } from "@/components/charts/MonthSelector";
+import { DailySpendingChart } from "@/components/charts/DailySpendingChart";
 import { isSameMonth, isSameYear } from "date-fns";
 
 type ExpenseSummaryProps = {
@@ -237,13 +238,18 @@ export function ExpenseSummary({
                 ]}
               />
               
-              {/* Add the Top Categories Bar Graph after the Stats Grid */}
+              {/* Top Categories Bar Graph */}
               <div className="mt-6 pt-4 border-t border-border">
                 <YearlyTopCategoriesChart 
                   expenses={expenses} 
                   getCategoryById={getCategoryById} 
                   limit={3}
                 />
+              </div>
+
+              {/* Daily Spending Scatter Plot */}
+              <div className="mt-6 pt-4 border-t border-border">
+                <DailySpendingChart expenses={expenses} />
               </div>
             </div>
           )}

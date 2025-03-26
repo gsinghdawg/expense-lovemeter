@@ -1,192 +1,181 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCustomerPortal } from "@/hooks/stripe/useCustomerPortal";
+import { useSubscription } from "@/hooks/stripe/useSubscription";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { Spinner } from "@/components/ui/spinner";
 
-import { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { useStripe, Subscription } from '@/hooks/use-stripe';
-import { formatCurrency } from '@/lib/utils';
+export function SubscriptionManager() {
+  const { user } = useAuth();
+  const { customerPortalUrl, fetchCustomerPortalUrl } = useCustomerPortal();
+  
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
+  const { 
+    subscriptionDetails, 
+    fetchSubscriptionDetails,
+    cancelSubscription,
+    reactivateSubscription,
+    isLoading: isSubscriptionLoading,
+    error: subscriptionError
+  } = useSubscription(user?.id);
 
-interface SubscriptionManagerProps {
-  className?: string;
-}
-
-export const SubscriptionManager = ({ className }: SubscriptionManagerProps) => {
-  const { subscription, isSubscriptionLoading, manageSubscription, redirectToCustomerPortal } = useStripe();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const formattedDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-  
-  const handleCustomerPortal = async () => {
-    setIsLoading(true);
-    await redirectToCustomerPortal(`${window.location.origin}/dashboard`);
-    setIsLoading(false);
-  };
-  
-  const handleCancelSubscription = async () => {
-    setIsLoading(true);
-    const success = await manageSubscription('cancel');
-    if (success) {
-      setDialogOpen(false);
+  useEffect(() => {
+    if (user?.id && !subscriptionDetails) {
+      fetchSubscriptionDetails();
     }
-    setIsLoading(false);
+  }, [user?.id, subscriptionDetails, fetchSubscriptionDetails]);
+
+  const subscriptionId = subscriptionDetails?.id;
+  const subscriptionStatus = subscriptionDetails?.status;
+  const isSubscribed = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+
+  const handleCancelSubscription = async () => {
+    if (!subscriptionId) return;
+    
+    try {
+      setIsCancelling(true);
+      await cancelSubscription(); // Remove the parameter here
+      
+      if (fetchSubscriptionDetails) { // Change this to if statement instead of testing the return value
+        fetchSubscriptionDetails();
+      }
+      
+      toast({
+        title: "Subscription cancelled",
+        description: "Your subscription has been cancelled.",
+      });
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel subscription. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCancelling(false);
+    }
   };
-  
+
   const handleReactivateSubscription = async () => {
-    setIsLoading(true);
-    await manageSubscription('reactivate');
-    setIsLoading(false);
+    if (!subscriptionId) return;
+    
+    try {
+      setIsReactivating(true);
+      await reactivateSubscription(); // Remove the parameter here
+      
+      toast({
+        title: "Subscription reactivated",
+        description: "Your subscription has been reactivated.",
+      });
+      
+      if (fetchSubscriptionDetails) {
+        fetchSubscriptionDetails();
+      }
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reactivate subscription. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsReactivating(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const portalUrl = await fetchCustomerPortalUrl();
+      if (portalUrl) {
+        window.location.href = portalUrl;
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to open customer portal. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching customer portal URL:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open customer portal. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isSubscriptionLoading) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle>Subscription</CardTitle>
-          <CardDescription>Loading subscription information...</CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
     );
   }
 
-  if (!subscription) {
+  if (subscriptionError) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle>Subscription</CardTitle>
-          <CardDescription>You don't have an active subscription.</CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="text-red-500">
+        Error loading subscription details. Please try again later.
+      </div>
     );
   }
-
-  const isActive = subscription.status === 'active' || subscription.status === 'trialing';
-  const isCancelled = subscription.status === 'canceled';
-  const willCancel = isActive && subscription.cancel_at_period_end;
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>Your Subscription</CardTitle>
-        <CardDescription>
-          Manage your subscription plan and payment details
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Status</p>
-            <p className="text-lg font-semibold">
-              {willCancel
-                ? 'Cancels at period end'
-                : isCancelled
-                ? 'Canceled'
-                : isActive
-                ? 'Active'
-                : subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-            </p>
-          </div>
-          
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Plan</p>
-            <p className="text-lg font-semibold">
-              {subscription.plan_id.charAt(0).toUpperCase() + subscription.plan_id.slice(1).replace('_', ' ')}
-            </p>
-          </div>
-          
-          {isActive && (
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                {willCancel ? 'Access Until' : 'Renews On'}
-              </p>
-              <p className="text-lg font-semibold">
-                {formattedDate(subscription.current_period_end)}
-              </p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-2 sm:flex-row sm:justify-between sm:space-x-2 sm:space-y-0">
-        <Button
-          variant="outline"
-          onClick={handleCustomerPortal}
-          disabled={isLoading}
-          className="w-full sm:w-auto"
-        >
-          Manage Payment Method
-        </Button>
-
-        {isActive && (
-          <>
-            {willCancel ? (
-              <Button
-                onClick={handleReactivateSubscription}
-                disabled={isLoading}
-                className="w-full sm:w-auto"
+    <div className="space-y-4">
+      {isSubscribed ? (
+        <>
+          <p>Your subscription is currently active.</p>
+          <div className="flex gap-2">
+            <Button onClick={handleManageSubscription}>
+              Manage Subscription
+            </Button>
+            {subscriptionStatus !== 'canceled' && (
+              <Button 
+                variant="destructive" 
+                onClick={handleCancelSubscription} 
+                disabled={isCancelling}
               >
-                Resume Subscription
+                {isCancelling ? (
+                  <>
+                    Cancelling <Spinner size="sm" className="ml-2" />
+                  </>
+                ) : (
+                  "Cancel Subscription"
+                )}
               </Button>
-            ) : (
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    className="w-full sm:w-auto"
-                  >
-                    Cancel Subscription
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Cancel Subscription</DialogTitle>
-                    <DialogDescription>
-                      Are you sure you want to cancel your subscription? You'll continue to have access until{' '}
-                      {formattedDate(subscription.current_period_end)}.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setDialogOpen(false)}
-                      disabled={isLoading}
-                    >
-                      Keep Subscription
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={handleCancelSubscription}
-                      disabled={isLoading}
-                    >
-                      Cancel Subscription
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             )}
-          </>
-        )}
-      </CardFooter>
-    </Card>
+            {subscriptionStatus === 'canceled' && (
+              <Button 
+                variant="secondary"
+                onClick={handleReactivateSubscription}
+                disabled={isReactivating}
+              >
+                {isReactivating ? (
+                  <>
+                    Reactivating <Spinner size="sm" className="ml-2" />
+                  </>
+                ) : (
+                  "Reactivate Subscription"
+                )}
+              </Button>
+            )}
+          </div>
+        </>
+      ) : (
+        <p>You do not have an active subscription.</p>
+      )}
+    </div>
   );
-};
+}

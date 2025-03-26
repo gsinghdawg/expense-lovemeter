@@ -7,9 +7,16 @@ type YearSelectorProps = {
   onChange: (year: number) => void;
   minYear?: number;
   maxYear?: number;
+  className?: string;
 };
 
-export function YearSelector({ value, onChange, minYear, maxYear }: YearSelectorProps) {
+export function YearSelector({ 
+  value, 
+  onChange, 
+  minYear, 
+  maxYear,
+  className
+}: YearSelectorProps) {
   const currentYear = new Date().getFullYear();
   const effectiveMinYear = minYear || currentYear - 5;
   const effectiveMaxYear = maxYear || currentYear;
@@ -27,7 +34,7 @@ export function YearSelector({ value, onChange, minYear, maxYear }: YearSelector
   };
 
   return (
-    <div className="flex items-center justify-between">
+    <div className={`flex items-center justify-between ${className || ''}`}>
       <Button
         variant="outline"
         size="icon"
