@@ -22,6 +22,7 @@ const Index = () => {
     categories,
     budgetGoal,
     budgetGoalsData,
+    savingGoals,
     isLoading,
     addExpense,
     updateExpense,
@@ -31,6 +32,9 @@ const Index = () => {
     deleteCategory,
     getCategoryById,
     updateBudgetGoal,
+    addSavingGoal,
+    toggleSavingGoal,
+    deleteSavingGoal,
     getCurrentMonthTotal,
     getBudgetForMonth,
     calculateAverageMonthlyExpense,
@@ -95,10 +99,14 @@ const Index = () => {
                 />
                 <RecentTransactions
                   expenses={expenses}
+                  savingGoals={savingGoals}
                   categories={categories}
                   getCategoryById={getCategoryById}
                   onEditExpense={updateExpense}
                   onDeleteExpense={deleteExpense}
+                  onAddSavingGoal={addSavingGoal}
+                  onToggleSavingGoal={toggleSavingGoal}
+                  onDeleteSavingGoal={deleteSavingGoal}
                   limit={3}
                 />
               </div>

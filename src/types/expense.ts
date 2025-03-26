@@ -19,6 +19,15 @@ export type BudgetGoal = {
   year: number;
 };
 
+// New type for saving goals
+export type SavingGoal = {
+  id: string;
+  amount: number;
+  purpose: string;
+  created: Date;
+  achieved?: boolean;
+};
+
 // History of budget goals
 export type BudgetGoalHistory = {
   amount: number | null;
@@ -44,6 +53,14 @@ export interface DatabaseCategory extends Omit<ExpenseCategory, 'id'> {
 export interface DatabaseBudgetGoal extends BudgetGoal {
   id?: string;
   user_id: string;
+}
+
+// New database type for saving goals
+export interface DatabaseSavingGoal extends Omit<SavingGoal, 'created'> {
+  id?: string;
+  user_id: string;
+  created: string; // Supabase stores dates as ISO strings
+  achieved: boolean;
 }
 
 // Extending DatabaseBudgetGoalHistory interface for database interaction
