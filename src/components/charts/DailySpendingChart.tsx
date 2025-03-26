@@ -80,6 +80,22 @@ export function DailySpendingChart({ expenses }: DailySpendingChartProps) {
     return [value, name];
   };
 
+  // Generate appropriate tick values based on the number of days in the month
+  const generateXAxisTicks = () => {
+    // For shorter months, show more frequent ticks
+    if (daysInMonth <= 29) {
+      // Show every 3rd day for months with 28-29 days
+      return Array.from({ length: Math.ceil(daysInMonth / 3) }, (_, i) => (i * 3) + 1)
+        .filter(day => day <= daysInMonth);
+    } else if (daysInMonth === 30) {
+      // Show every 5th day for 30-day months, plus the last day
+      return [1, 5, 10, 15, 20, 25, 30];
+    } else {
+      // Show every 5th day for 31-day months, plus the last day
+      return [1, 5, 10, 15, 20, 25, 31];
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -104,7 +120,7 @@ export function DailySpendingChart({ expenses }: DailySpendingChartProps) {
                 dataKey="day" 
                 name="Day" 
                 domain={[0, daysInMonth + 1]}
-                tickCount={Math.min(daysInMonth, 15)}
+                ticks={generateXAxisTicks()}
                 label={{ 
                   value: 'Day of Month', 
                   position: 'insideBottom', 
