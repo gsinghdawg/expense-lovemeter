@@ -3,7 +3,7 @@ import { useState } from "react";
 import { SavingGoal } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon } from "lucide-react";
+import { CheckCircle, Circle, Trash2, Wallet, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, eachMonthOfInterval, isSameMonth } from "date-fns";
 import { SavingGoalProgress } from "@/components/SavingGoalProgress";
@@ -12,12 +12,6 @@ import {
   PopoverContent,
   PopoverTrigger 
 } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface SavingGoalListProps {
   goals: SavingGoal[];
@@ -70,32 +64,13 @@ export function SavingGoalList({
       </CardHeader>
       <CardContent className="space-y-4">
         {showDistributeButton && (
-          <div className="space-y-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center text-xs text-muted-foreground mb-1">
-                    <InfoIcon className="h-3 w-3 mr-1" />
-                    <span>Distribute savings only at the end of the month or after it has passed</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-sm max-w-xs">
-                    For accurate budgeting, only distribute savings after the month 
-                    has ended and all expenses are accounted for.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <Button 
-              className="w-full"
-              onClick={() => onDistributeSavings && onDistributeSavings(monthEndSavings)}
-              variant="outline"
-            >
-              Distribute ${monthEndSavings.toFixed(2)} in Savings
-            </Button>
-          </div>
+          <Button 
+            className="w-full mb-2"
+            onClick={() => onDistributeSavings && onDistributeSavings(monthEndSavings)}
+            variant="outline"
+          >
+            Distribute ${monthEndSavings.toFixed(2)} in Savings
+          </Button>
         )}
         
         {activeGoals.length > 0 && (
@@ -198,10 +173,6 @@ function GoalItem({ goal, onToggle, onDelete, onDistributeSavings }: GoalItemPro
               </PopoverTrigger>
               <PopoverContent className="w-56 p-2">
                 <div className="text-sm font-medium mb-2">Distribute previous savings</div>
-                <div className="text-xs text-muted-foreground mb-2">
-                  <InfoIcon className="h-3 w-3 inline mr-1" />
-                  Only distribute after the month has passed
-                </div>
                 <div className="space-y-1">
                   {monthsSinceCreation.map((month, index) => {
                     // Skip the current month as it's handled by the main distribute button
