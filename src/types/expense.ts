@@ -1,3 +1,4 @@
+
 export type ExpenseCategory = {
   id: string;
   name: string;
@@ -56,11 +57,9 @@ export interface DatabaseBudgetGoal extends BudgetGoal {
 }
 
 // New database type for saving goals
-export interface DatabaseSavingGoal {
-  id: string; // Changed from optional to required to match SavingGoal
+export interface DatabaseSavingGoal extends Omit<SavingGoal, 'created'> {
+  id?: string;
   user_id: string;
-  amount: number;
-  purpose: string;
   created: string; // Supabase stores dates as ISO strings
   achieved: boolean;
   progress: number; // Added progress field
