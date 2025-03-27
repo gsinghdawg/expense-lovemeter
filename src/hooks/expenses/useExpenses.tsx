@@ -46,7 +46,8 @@ export function useExpenses() {
     isLoadingSavingGoals,
     addSavingGoal,
     toggleSavingGoal,
-    deleteSavingGoal
+    deleteSavingGoal,
+    distributeSavings
   } = useSavingGoals(userId);
 
   // Always ensure we have categories available
@@ -61,8 +62,20 @@ export function useExpenses() {
     return calculateTotalSavings(getBudgetForMonth);
   };
 
-  // We're not modifying the getBudgetForMonth function directly as it's provided by useBudgetGoals
-  // and the functionality to only return explicitly set budgets is already implemented there
+  // Calculate the current month's savings (budget - expenses)
+  const getCurrentMonthSavings = () => {
+    const currentMonthTotal = getCurrentMonthTotal();
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const budget = getBudgetForMonth(currentMonth, currentYear);
+    
+    // Only calculate savings if budget is explicitly set
+    if (budget === null) return 0;
+    
+    const savings = budget - currentMonthTotal;
+    return Math.max(0, savings); // Only return positive savings
+  };
 
   return {
     // Expense data and methods
@@ -74,6 +87,7 @@ export function useExpenses() {
     getCurrentMonthTotal,
     calculateAverageMonthlyExpense,
     getTotalSavings,
+    getCurrentMonthSavings,
     
     // Category data and methods
     categories,
@@ -94,6 +108,7 @@ export function useExpenses() {
     addSavingGoal,
     toggleSavingGoal,
     deleteSavingGoal,
+    distributeSavings,
     
     // Loading state
     isLoading,

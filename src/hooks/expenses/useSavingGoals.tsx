@@ -45,7 +45,7 @@ export function useSavingGoals(userId: string | undefined) {
 
   // Add saving goal mutation
   const addSavingGoalMutation = useMutation({
-    mutationFn: async (newGoal: Omit<SavingGoal, 'id' | 'created' | 'achieved'>) => {
+    mutationFn: async (newGoal: Omit<SavingGoal, 'id' | 'created' | 'achieved' | 'progress'>) => {
       if (!userId) throw new Error("User not authenticated");
       
       const goalId = uuidv4();
@@ -59,6 +59,7 @@ export function useSavingGoals(userId: string | undefined) {
           purpose: newGoal.purpose,
           created: now.toISOString(),
           achieved: false,
+          progress: 0, // Initialize progress to 0
           user_id: userId
         })
         .select()
@@ -158,8 +159,87 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
+  // Distribute savings mutation
+  const distributeSavingsMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      // Get active goals
+      const activeGoals = savingGoals.filter(goal => !goal.achieved);
+      if (activeGoals.length === 0) return [];
+      
+      // Strategy: Distribute proportionally based on remaining amount needed
+      const totalRemaining = activeGoals.reduce(
+        (sum, goal) => sum + (goal.amount - goal.progress), 
+        0
+      );
+      
+      const updates = activeGoals.map(goal => {
+        const remaining = goal.amount - goal.progress;
+        const proportion = remaining / totalRemaining;
+        
+        // Calculate how much to add to this goal
+        let amountToAdd = Math.min(amount * proportion, remaining);
+        
+        // Round to 2 decimal places
+        amountToAdd = Math.round(amountToAdd * 100) / 100;
+        
+        const newProgress = goal.progress + amountToAdd;
+        const achieved = newProgress >= goal.amount;
+        
+        return {
+          id: goal.id,
+          progress: newProgress,
+          achieved: achieved,
+          amountAdded: amountToAdd
+        };
+      });
+      
+      // Update each goal in the database
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('saving_goals')
+          .update({ 
+            progress: update.progress,
+            achieved: update.achieved
+          })
+          .eq('id', update.id)
+          .eq('user_id', userId);
+          
+        if (error) throw error;
+      }
+      
+      return updates;
+    },
+    onSuccess: (updates) => {
+      queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
+      
+      // Find goals that were achieved
+      const achievedGoals = updates.filter(update => update.progress >= savingGoals.find(g => g.id === update.id)?.amount);
+      
+      if (achievedGoals.length > 0) {
+        toast({
+          title: "Goals achieved!",
+          description: `${achievedGoals.length} saving goal${achievedGoals.length > 1 ? 's' : ''} completed.`,
+        });
+      } else {
+        toast({
+          title: "Savings distributed",
+          description: `Savings have been added to your active goals.`,
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error distributing savings",
+        description: error.message || "Failed to distribute savings to goals",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Wrapper functions
-  const addSavingGoal = (goal: Omit<SavingGoal, 'id' | 'created' | 'achieved'>) => {
+  const addSavingGoal = (goal: Omit<SavingGoal, 'id' | 'created' | 'achieved' | 'progress'>) => {
     addSavingGoalMutation.mutate(goal);
   };
 
@@ -171,11 +251,16 @@ export function useSavingGoals(userId: string | undefined) {
     deleteSavingGoalMutation.mutate(id);
   };
 
+  const distributeSavings = (amount: number) => {
+    distributeSavingsMutation.mutate(amount);
+  };
+
   return {
     savingGoals,
     isLoadingSavingGoals,
     addSavingGoal,
     toggleSavingGoal,
     deleteSavingGoal,
+    distributeSavings,
   };
 }

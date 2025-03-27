@@ -18,6 +18,8 @@ interface RecentTransactionsProps {
   onAddSavingGoal: (goal: { amount: number; purpose: string }) => void;
   onToggleSavingGoal: (id: string, achieved: boolean) => void;
   onDeleteSavingGoal: (id: string) => void;
+  onDistributeSavings: (amount: number) => void;
+  monthEndSavings: number;
   limit?: number;
 }
 
@@ -31,6 +33,8 @@ export function RecentTransactions({
   onAddSavingGoal,
   onToggleSavingGoal,
   onDeleteSavingGoal,
+  onDistributeSavings,
+  monthEndSavings,
   limit = 3
 }: RecentTransactionsProps) {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -105,6 +109,8 @@ export function RecentTransactions({
           onAddGoal={onAddSavingGoal}
           onToggleGoal={onToggleSavingGoal}
           onDeleteGoal={onDeleteSavingGoal}
+          onDistributeSavings={onDistributeSavings}
+          monthEndSavings={monthEndSavings}
         />
       </div>
 

@@ -35,14 +35,19 @@ const Index = () => {
     addSavingGoal,
     toggleSavingGoal,
     deleteSavingGoal,
+    distributeSavings,
     getCurrentMonthTotal,
     getBudgetForMonth,
     calculateAverageMonthlyExpense,
     getTotalSavings,
+    getCurrentMonthSavings,
   } = useExpenses();
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const { signOut, user } = useAuth();
+
+  // Get the current month's available savings
+  const monthEndSavings = getCurrentMonthSavings();
 
   if (isLoading) {
     return (
@@ -107,6 +112,8 @@ const Index = () => {
                   onAddSavingGoal={addSavingGoal}
                   onToggleSavingGoal={toggleSavingGoal}
                   onDeleteSavingGoal={deleteSavingGoal}
+                  onDistributeSavings={distributeSavings}
+                  monthEndSavings={monthEndSavings}
                   limit={3}
                 />
               </div>

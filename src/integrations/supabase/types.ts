@@ -168,6 +168,7 @@ export type Database = {
           amount: number
           created: string
           id: string
+          progress: number | null
           purpose: string
           user_id: string
         }
@@ -176,6 +177,7 @@ export type Database = {
           amount: number
           created?: string
           id?: string
+          progress?: number | null
           purpose: string
           user_id: string
         }
@@ -184,6 +186,7 @@ export type Database = {
           amount?: number
           created?: string
           id?: string
+          progress?: number | null
           purpose?: string
           user_id?: string
         }
