@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useExpenses } from "@/hooks/useExpenses";
@@ -34,12 +35,10 @@ const Index = () => {
     addSavingGoal,
     toggleSavingGoal,
     deleteSavingGoal,
-    updateGoalProgress,
     getCurrentMonthTotal,
     getBudgetForMonth,
     calculateAverageMonthlyExpense,
     getTotalSavings,
-    distributeMonthlyBudgetSavings,
   } = useExpenses();
 
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -120,7 +119,6 @@ const Index = () => {
                 getBudgetForMonth={getBudgetForMonth}
                 calculateAverageMonthlyExpense={calculateAverageMonthlyExpense}
                 totalSavings={getTotalSavings()}
-                distributeMonthlyBudgetSavings={distributeMonthlyBudgetSavings}
               />
             </div>
           </TabsContent>

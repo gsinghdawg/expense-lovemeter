@@ -46,9 +46,7 @@ export function useExpenses() {
     isLoadingSavingGoals,
     addSavingGoal,
     toggleSavingGoal,
-    deleteSavingGoal,
-    updateGoalProgress,
-    contributeMonthlySavings
+    deleteSavingGoal
   } = useSavingGoals(userId);
 
   // Always ensure we have categories available
@@ -62,16 +60,9 @@ export function useExpenses() {
   const getTotalSavings = () => {
     return calculateTotalSavings(getBudgetForMonth);
   };
-  
-  // Function to distribute monthly savings to active goals
-  const distributeMonthlyBudgetSavings = () => {
-    const currentMonthlySavings = getTotalSavings();
-    if (currentMonthlySavings > 0) {
-      contributeMonthlySavings(currentMonthlySavings);
-      return true;
-    }
-    return false;
-  };
+
+  // We're not modifying the getBudgetForMonth function directly as it's provided by useBudgetGoals
+  // and the functionality to only return explicitly set budgets is already implemented there
 
   return {
     // Expense data and methods
@@ -103,8 +94,6 @@ export function useExpenses() {
     addSavingGoal,
     toggleSavingGoal,
     deleteSavingGoal,
-    updateGoalProgress,
-    distributeMonthlyBudgetSavings,
     
     // Loading state
     isLoading,
