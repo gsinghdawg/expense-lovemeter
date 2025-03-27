@@ -1,4 +1,3 @@
-
 import { Expense } from "@/types/expense";
 
 // Get just the current month's expenses
@@ -40,40 +39,35 @@ export function calculateAverageMonthlyExpense(expenses: Expense[]): number {
   return total / numMonths;
 }
 
-// Calculate total savings (budget - expenses) across all months
-export function calculateTotalSavings(
-  expenses: Expense[], 
+// Calculate total savings based on budget and expenses
+export const calculateTotalSavings = (
+  expenses: any[], 
   getBudgetForMonth: (month: number, year: number) => number | null
-): number {
-  if (expenses.length === 0) return 0;
+) => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
   
-  // Get unique month-year combinations in the data
-  const monthlyData: Record<string, { total: number, budget: number | null }> = {};
+  // Get budget for the current month
+  const budget = getBudgetForMonth(currentMonth, currentYear);
   
-  // Populate monthly expenses
-  expenses.forEach(expense => {
-    const date = expense.date;
-    const month = date.getMonth();
-    const year = date.getFullYear();
-    const key = `${year}-${month}`;
-    
-    if (!monthlyData[key]) {
-      monthlyData[key] = { 
-        total: 0, 
-        budget: getBudgetForMonth(month, year)
-      };
-    }
-    
-    monthlyData[key].total += expense.amount;
+  // If no budget is set, assume no savings
+  if (budget === null || budget === 0) {
+    return 0;
+  }
+  
+  // Calculate total expenses for the current month
+  const currentMonthExpenses = expenses.filter(expense => {
+    const expenseDate = expense.date instanceof Date ? expense.date : new Date(expense.date);
+    return expenseDate.getMonth() === currentMonth && 
+           expenseDate.getFullYear() === currentYear;
   });
   
-  // Calculate total savings
-  let totalSavings = 0;
-  Object.values(monthlyData).forEach(({ total, budget }) => {
-    if (budget !== null) {
-      totalSavings += (budget - total);
-    }
-  });
+  const total = currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   
-  return totalSavings;
-}
+  // Calculate savings (budget - expenses)
+  const savings = budget - total;
+  
+  // Return positive savings or zero if negative
+  return Math.max(0, savings);
+};
