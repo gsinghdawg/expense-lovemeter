@@ -1,4 +1,6 @@
+
 import { Expense } from "@/types/expense";
+import { isSameMonth, isSameYear } from "date-fns";
 
 // Get just the current month's expenses
 export function getCurrentMonthExpenses(expenses: Expense[]): Expense[] {
@@ -71,3 +73,6 @@ export const calculateTotalSavings = (
   // Return positive savings or zero if negative
   return Math.max(0, savings);
 };
+
+// Export these date-fns functions so they can be reused
+export { isSameMonth, isSameYear };
