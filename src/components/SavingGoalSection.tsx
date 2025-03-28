@@ -8,7 +8,7 @@ interface SavingGoalSectionProps {
   onAddGoal: (goal: { amount: number; purpose: string }) => void;
   onToggleGoal: (id: string, achieved: boolean) => void;
   onDeleteGoal: (id: string) => void;
-  onDistributeSavings: (goalIds: string[], amount: number) => void;
+  onDistributeSavings: (amount: number) => void;
   monthEndSavings: number;
 }
 

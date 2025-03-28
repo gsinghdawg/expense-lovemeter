@@ -189,24 +189,22 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
-  // Distribute savings mutation - modified to accept selected goal IDs
+  // Distribute savings mutation
   const distributeSavingsMutation = useMutation({
-    mutationFn: async ({ goalIds, amount }: { goalIds: string[], amount: number }) => {
+    mutationFn: async (amount: number) => {
       if (!userId) throw new Error("User not authenticated");
       
-      // Filter goals to only include selected active goals
-      const selectedGoals = savingGoals
-        .filter(goal => !goal.achieved && goalIds.includes(goal.id));
-      
-      if (selectedGoals.length === 0) return [];
+      // Get active goals
+      const activeGoals = savingGoals.filter(goal => !goal.achieved);
+      if (activeGoals.length === 0) return [];
       
       // Strategy: Distribute proportionally based on remaining amount needed
-      const totalRemaining = selectedGoals.reduce(
+      const totalRemaining = activeGoals.reduce(
         (sum, goal) => sum + (goal.amount - goal.progress), 
         0
       );
       
-      const updates = selectedGoals.map(goal => {
+      const updates = activeGoals.map(goal => {
         const remaining = goal.amount - goal.progress;
         const proportion = remaining / totalRemaining;
         
@@ -292,9 +290,8 @@ export function useSavingGoals(userId: string | undefined) {
     deleteSavingGoalMutation.mutate(id);
   };
 
-  // Updated to accept specific goal IDs
-  const distributeSavings = (goalIds: string[], amount: number) => {
-    distributeSavingsMutation.mutate({ goalIds, amount });
+  const distributeSavings = (amount: number) => {
+    distributeSavingsMutation.mutate(amount);
   };
 
   return {
