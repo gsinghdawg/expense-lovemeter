@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Expense, ExpenseCategory, SavingGoal } from "@/types/expense";
 import { ExpenseItem } from "@/components/ExpenseItem";
@@ -41,6 +42,8 @@ export function RecentTransactions({
   
   // For debugging
   console.log("RecentTransactions isMobile:", isMobile);
+  console.log("RecentTransactions monthEndSavings:", monthEndSavings);
+  console.log("RecentTransactions savingGoals:", savingGoals);
   
   // Get the most recent expenses
   const recentExpenses = [...expenses]
@@ -70,6 +73,11 @@ export function RecentTransactions({
 
   const handleCloseDialog = () => {
     setEditingExpense(null);
+  };
+
+  const handleDistributeSavings = (goalIds: string[], amount: number) => {
+    console.log('RecentTransactions handleDistributeSavings:', { goalIds, amount });
+    onDistributeSavings(goalIds, amount);
   };
 
   return (
@@ -108,7 +116,7 @@ export function RecentTransactions({
           onAddGoal={onAddSavingGoal}
           onToggleGoal={onToggleSavingGoal}
           onDeleteGoal={onDeleteSavingGoal}
-          onDistributeSavings={onDistributeSavings}
+          onDistributeSavings={handleDistributeSavings}
           monthEndSavings={monthEndSavings}
         />
       </div>

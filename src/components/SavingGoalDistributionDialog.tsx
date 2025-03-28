@@ -19,7 +19,7 @@ import {
   FormControl 
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { cn } from "@/lib/utils";
 
 interface SavingGoalDistributionDialogProps {
@@ -77,7 +77,11 @@ export function SavingGoalDistributionDialog({
       return; // Don't distribute if no goals selected
     }
     
-    onDistribute(selectedGoalIds, availableSavings);
+    const amountToDistribute = distributionMethod === "custom" 
+      ? totalCustomAmount 
+      : availableSavings;
+    
+    onDistribute(selectedGoalIds, amountToDistribute);
     onOpenChange(false);
   };
   
@@ -92,7 +96,7 @@ export function SavingGoalDistributionDialog({
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          <Form {...form}>
+          <FormProvider {...form}>
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Button
@@ -208,7 +212,7 @@ export function SavingGoalDistributionDialog({
                 </div>
               )}
             </div>
-          </Form>
+          </FormProvider>
         </div>
         
         <DialogFooter>

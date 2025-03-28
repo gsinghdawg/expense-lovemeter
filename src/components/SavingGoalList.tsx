@@ -3,16 +3,11 @@ import { useState } from "react";
 import { SavingGoal } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon } from "lucide-react";
+import { CheckCircle, Circle, Trash2, Wallet, InfoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, eachMonthOfInterval, isSameMonth } from "date-fns";
+import { format } from "date-fns";
 import { SavingGoalProgress } from "@/components/SavingGoalProgress";
 import { SavingGoalDistributionDialog } from "@/components/SavingGoalDistributionDialog";
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger 
-} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -36,7 +31,6 @@ export function SavingGoalList({
   monthEndSavings = 0
 }: SavingGoalListProps) {
   const [showDistributionDialog, setShowDistributionDialog] = useState(false);
-  const [showMonthsPopover, setShowMonthsPopover] = useState(false);
   
   if (goals.length === 0) {
     return (
@@ -65,6 +59,7 @@ export function SavingGoalList({
   const showDistributeButton = activeGoals.length > 0 && monthEndSavings > 0;
   
   const handleDistribute = (goalIds: string[], amount: number) => {
+    console.log('SavingGoalList handleDistribute:', { goalIds, amount });
     if (onDistributeSavings) {
       onDistributeSavings(goalIds, amount);
     }
@@ -159,6 +154,11 @@ interface GoalItemProps {
 }
 
 function GoalItem({ goal, onToggle, onDelete }: GoalItemProps) {
+  const formatDate = (dateValue: string | Date) => {
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    return format(date, "MMM d, yyyy");
+  };
+
   return (
     <div 
       className={cn(
@@ -183,7 +183,7 @@ function GoalItem({ goal, onToggle, onDelete }: GoalItemProps) {
           <div className={cn(goal.achieved && "text-muted-foreground line-through")}>
             <div className="font-medium">{goal.purpose}</div>
             <div className="text-sm text-muted-foreground">
-              ${goal.amount.toFixed(2)} · Added {format(goal.created, "MMM d, yyyy")}
+              ${goal.amount.toFixed(2)} · Added {formatDate(goal.created)}
             </div>
           </div>
         </div>

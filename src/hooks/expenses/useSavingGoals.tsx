@@ -166,8 +166,10 @@ export function useSavingGoals() {
 
   async function distributeSavings(goalIds: string[], amount: number) {
     if (!user || goalIds.length === 0 || amount <= 0) return;
-
+    
     try {
+      console.log('Distributing savings:', { goalIds, amount });
+      
       // Filter goals that should receive savings
       const selectedGoals = savingGoals.filter(g => goalIds.includes(g.id) && !g.achieved);
       
@@ -212,6 +214,7 @@ export function useSavingGoals() {
           .eq('user_id', user.id);
         
         if (error) {
+          console.error('Error updating goal:', error);
           throw error;
         }
       }

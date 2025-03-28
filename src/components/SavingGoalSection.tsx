@@ -20,6 +20,11 @@ export function SavingGoalSection({
   onDistributeSavings,
   monthEndSavings
 }: SavingGoalSectionProps) {
+  const handleDistributeSavings = (goalIds: string[], amount: number) => {
+    console.log('SavingGoalSection handleDistributeSavings:', { goalIds, amount });
+    onDistributeSavings(goalIds, amount);
+  };
+
   return (
     <div className="space-y-6">
       <SavingGoalForm onSubmit={onAddGoal} />
@@ -27,7 +32,7 @@ export function SavingGoalSection({
         goals={goals} 
         onToggleGoal={onToggleGoal} 
         onDeleteGoal={onDeleteGoal}
-        onDistributeSavings={onDistributeSavings}
+        onDistributeSavings={handleDistributeSavings}
         monthEndSavings={monthEndSavings}
       />
     </div>
