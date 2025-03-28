@@ -61,6 +61,7 @@ export function SavingGoalList({
   const handleDistribute = (goalIds: string[], amount: number) => {
     console.log('SavingGoalList handleDistribute:', { goalIds, amount });
     if (onDistributeSavings) {
+      console.log("Calling onDistributeSavings with:", { goalIds, amount });
       onDistributeSavings(goalIds, amount);
     }
   };
@@ -95,7 +96,10 @@ export function SavingGoalList({
             
             <Button 
               className="w-full"
-              onClick={() => setShowDistributionDialog(true)}
+              onClick={() => {
+                console.log("Opening distribution dialog with monthEndSavings:", monthEndSavings);
+                setShowDistributionDialog(true);
+              }}
               variant="outline"
             >
               Distribute ${monthEndSavings.toFixed(2)} in Savings

@@ -173,10 +173,14 @@ export function useSavingGoals() {
       // Filter goals that should receive savings
       const selectedGoals = savingGoals.filter(g => goalIds.includes(g.id) && !g.achieved);
       
-      if (selectedGoals.length === 0) return;
+      if (selectedGoals.length === 0) {
+        console.log('No active goals to distribute to');
+        return;
+      }
       
       // Calculate how much each goal should receive (evenly distribute)
       const amountPerGoal = amount / selectedGoals.length;
+      console.log('Amount per goal:', amountPerGoal);
       
       // Update each goal's progress
       const updatedGoals = selectedGoals.map(goal => {
@@ -193,6 +197,8 @@ export function useSavingGoals() {
         };
       });
       
+      console.log('Updated goals:', updatedGoals);
+      
       // Prepare updates for Supabase
       const updates = updatedGoals.map(goal => ({
         id: goal.id,
@@ -203,6 +209,7 @@ export function useSavingGoals() {
       
       // Update all goals in a transaction (or as close as we can get)
       for (const update of updates) {
+        console.log('Updating goal in database:', update);
         const { error } = await supabase
           .from('saving_goals')
           .update({

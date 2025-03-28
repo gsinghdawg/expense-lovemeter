@@ -19,7 +19,7 @@ import {
   FormControl 
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { cn } from "@/lib/utils";
 
 interface SavingGoalDistributionDialogProps {
@@ -69,18 +69,37 @@ export function SavingGoalDistributionDialog({
   
   // Handle submission
   const handleSubmit = () => {
+    console.log("Distribution dialog handleSubmit called");
     const selectedGoalIds = Object.entries(form.getValues().goalSelections || {})
       .filter(([_, isSelected]) => isSelected)
       .map(([id]) => id);
     
+    console.log("Selected goal IDs:", selectedGoalIds);
+    
     if (selectedGoalIds.length === 0) {
+      console.log("No goals selected, not distributing");
       return; // Don't distribute if no goals selected
     }
     
-    const amountToDistribute = distributionMethod === "custom" 
-      ? totalCustomAmount 
-      : availableSavings;
+    let amountToDistribute = availableSavings;
     
+    if (distributionMethod === "custom") {
+      // For custom distribution, calculate the total of all custom amounts
+      const customAmountValues = form.getValues().customAmounts;
+      const customTotal = selectedGoalIds.reduce((sum, goalId) => {
+        const amountStr = customAmountValues[goalId] || "0";
+        const amount = parseFloat(amountStr);
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
+      
+      amountToDistribute = customTotal;
+      console.log("Custom distribution amount:", amountToDistribute);
+    } else {
+      console.log("Auto distribution amount:", amountToDistribute);
+    }
+    
+    // Call the onDistribute callback with selected goals and amount
+    console.log("Calling onDistribute with:", { selectedGoalIds, amountToDistribute });
     onDistribute(selectedGoalIds, amountToDistribute);
     onOpenChange(false);
   };
@@ -96,8 +115,8 @@ export function SavingGoalDistributionDialog({
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          <FormProvider {...form}>
-            <div className="space-y-4">
+          <Form {...form}>
+            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Button
                   type="button"
@@ -211,8 +230,8 @@ export function SavingGoalDistributionDialog({
                   </span>
                 </div>
               )}
-            </div>
-          </FormProvider>
+            </form>
+          </Form>
         </div>
         
         <DialogFooter>
