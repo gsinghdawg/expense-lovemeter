@@ -34,12 +34,20 @@ export function useSavingGoals(userId: string | undefined) {
         return [];
       }
       
-      return data.map(goal => ({
-        ...goal,
-        id: goal.id,
-        created: new Date(goal.created),
-        previousProgress: goal.previous_progress
-      })) as SavingGoal[];
+      // Process the data and handle the previous_progress field
+      return data.map(goal => {
+        // Convert the database record to a SavingGoal object
+        const savingGoal: SavingGoal = {
+          id: goal.id,
+          amount: goal.amount,
+          purpose: goal.purpose,
+          created: new Date(goal.created),
+          achieved: goal.achieved,
+          progress: goal.progress || 0, // Default to 0 if null/undefined
+          previousProgress: goal.previous_progress // Map DB field to camel case
+        };
+        return savingGoal;
+      });
     },
     enabled: !!userId,
   });
@@ -68,11 +76,18 @@ export function useSavingGoals(userId: string | undefined) {
         
       if (error) throw error;
       
-      return {
-        ...data,
+      // Convert the database record to a SavingGoal object
+      const savingGoal: SavingGoal = {
         id: data.id,
-        created: new Date(data.created)
-      } as SavingGoal;
+        amount: data.amount,
+        purpose: data.purpose,
+        created: new Date(data.created),
+        achieved: data.achieved,
+        progress: data.progress || 0,
+        previousProgress: data.previous_progress 
+      };
+      
+      return savingGoal;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
@@ -127,12 +142,18 @@ export function useSavingGoals(userId: string | undefined) {
         
       if (error) throw error;
       
-      return {
-        ...data,
+      // Convert the database record to a SavingGoal object
+      const savingGoal: SavingGoal = {
         id: data.id,
+        amount: data.amount,
+        purpose: data.purpose,
         created: new Date(data.created),
-        previousProgress: data.previous_progress
-      } as SavingGoal;
+        achieved: data.achieved,
+        progress: data.progress || 0,
+        previousProgress: data.previous_progress 
+      };
+      
+      return savingGoal;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
@@ -194,18 +215,37 @@ export function useSavingGoals(userId: string | undefined) {
     mutationFn: async (amount: number) => {
       if (!userId) throw new Error("User not authenticated");
       
+      console.log(`Starting distribution of ${amount} in savings`);
+      
       // Get active goals
       const activeGoals = savingGoals.filter(goal => !goal.achieved);
-      if (activeGoals.length === 0) return [];
+      if (activeGoals.length === 0) {
+        console.log("No active goals found");
+        return [];
+      }
+      
+      console.log(`Found ${activeGoals.length} active goals`);
       
       // Strategy: Distribute proportionally based on remaining amount needed
       const totalRemaining = activeGoals.reduce(
-        (sum, goal) => sum + (goal.amount - goal.progress), 
+        (sum, goal) => {
+          const remaining = goal.amount - (goal.progress || 0);
+          console.log(`Goal ${goal.purpose}: Amount ${goal.amount}, Progress ${goal.progress}, Remaining ${remaining}`);
+          return sum + remaining;
+        }, 
         0
       );
       
+      console.log(`Total remaining amount across all goals: ${totalRemaining}`);
+      
+      if (totalRemaining <= 0) {
+        console.log("No remaining amount to distribute");
+        return [];
+      }
+      
       const updates = activeGoals.map(goal => {
-        const remaining = goal.amount - goal.progress;
+        const progress = goal.progress || 0;
+        const remaining = goal.amount - progress;
         const proportion = remaining / totalRemaining;
         
         // Calculate how much to add to this goal
@@ -214,10 +254,12 @@ export function useSavingGoals(userId: string | undefined) {
         // Round to 2 decimal places
         amountToAdd = Math.round(amountToAdd * 100) / 100;
         
-        const newProgress = goal.progress + amountToAdd;
+        const newProgress = progress + amountToAdd;
         const achieved = newProgress >= goal.amount;
         
-        // If goal will be achieved, store current progress as previous_progress
+        console.log(`Goal ${goal.purpose}: Adding ${amountToAdd}, New progress ${newProgress}, Achieved ${achieved}`);
+        
+        // Prepare update data for this goal
         const updateData: any = {
           progress: newProgress,
           achieved: achieved
@@ -225,7 +267,7 @@ export function useSavingGoals(userId: string | undefined) {
         
         // If goal is being achieved, store current progress for potential restoration
         if (achieved) {
-          updateData.previous_progress = goal.progress;
+          updateData.previous_progress = progress;
         }
         
         return {
@@ -237,20 +279,34 @@ export function useSavingGoals(userId: string | undefined) {
         };
       });
       
+      console.log(`Prepared ${updates.length} updates to saving goals`);
+      
       // Update each goal in the database
+      const results = [];
       for (const update of updates) {
-        const { error } = await supabase
+        console.log(`Updating goal ${update.id} with data:`, update.updateData);
+        
+        const { data, error } = await supabase
           .from('saving_goals')
           .update(update.updateData)
           .eq('id', update.id)
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .select();
           
-        if (error) throw error;
+        if (error) {
+          console.error(`Error updating goal ${update.id}:`, error);
+          throw error;
+        }
+        
+        console.log(`Updated goal ${update.id} successfully:`, data);
+        results.push(update);
       }
       
-      return updates;
+      console.log(`Successfully completed ${results.length} goal updates`);
+      return results;
     },
     onSuccess: (updates) => {
+      console.log("Distribution successful, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
       // Find goals that were achieved
@@ -269,6 +325,7 @@ export function useSavingGoals(userId: string | undefined) {
       }
     },
     onError: (error: any) => {
+      console.error("Error distributing savings:", error);
       toast({
         title: "Error distributing savings",
         description: error.message || "Failed to distribute savings to goals",
@@ -291,6 +348,7 @@ export function useSavingGoals(userId: string | undefined) {
   };
 
   const distributeSavings = (amount: number) => {
+    console.log(`Distributing ${amount} in savings`);
     distributeSavingsMutation.mutate(amount);
   };
 
