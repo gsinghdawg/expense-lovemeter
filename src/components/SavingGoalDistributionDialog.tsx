@@ -92,121 +92,123 @@ export function SavingGoalDistributionDialog({
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Button
-                type="button"
-                size="sm"
-                variant={distributionMethod === "auto" ? "default" : "outline"}
-                onClick={() => setDistributionMethod("auto")}
-              >
-                Auto-distribute
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={distributionMethod === "custom" ? "default" : "outline"}
-                onClick={() => setDistributionMethod("custom")}
-              >
-                Custom distribution
-              </Button>
-            </div>
-            
-            {activeGoals.length > 0 ? (
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                {activeGoals.map((goal) => (
-                  <div 
-                    key={goal.id}
-                    className={cn(
-                      "flex flex-col p-3 rounded-md border",
-                      "bg-background"
-                    )}
-                  >
-                    <div className="flex items-start">
-                      <FormField
-                        control={form.control}
-                        name={`goalSelections.${goal.id}`}
-                        render={({ field }) => (
-                          <FormItem className="flex items-start space-x-3 space-y-0 mt-1">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 flex-1">
-                              <FormLabel className="font-medium">{goal.purpose}</FormLabel>
-                              <div className="text-sm text-muted-foreground">
-                                <div>
-                                  Target: ${goal.amount.toFixed(2)}
-                                </div>
-                                <div>
-                                  Current progress: ${goal.progress.toFixed(2)} ({Math.round((goal.progress / goal.amount) * 100)}%)
-                                </div>
-                                <div>
-                                  Remaining: ${(goal.amount - goal.progress).toFixed(2)}
-                                </div>
-                              </div>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    {distributionMethod === "custom" && form.watch(`goalSelections.${goal.id}`) && (
-                      <div className="ml-7 mt-2">
+          <Form {...form}>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={distributionMethod === "auto" ? "default" : "outline"}
+                  onClick={() => setDistributionMethod("auto")}
+                >
+                  Auto-distribute
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={distributionMethod === "custom" ? "default" : "outline"}
+                  onClick={() => setDistributionMethod("custom")}
+                >
+                  Custom distribution
+                </Button>
+              </div>
+              
+              {activeGoals.length > 0 ? (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                  {activeGoals.map((goal) => (
+                    <div 
+                      key={goal.id}
+                      className={cn(
+                        "flex flex-col p-3 rounded-md border",
+                        "bg-background"
+                      )}
+                    >
+                      <div className="flex items-start">
                         <FormField
                           control={form.control}
-                          name={`customAmounts.${goal.id}`}
+                          name={`goalSelections.${goal.id}`}
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="flex items-start space-x-3 space-y-0 mt-1">
                               <FormControl>
-                                <div className="flex items-center">
-                                  <span className="mr-2">$</span>
-                                  <Input
-                                    {...field}
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    max={availableSavings.toString()}
-                                    className="w-24"
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      const numVal = parseFloat(val);
-                                      if (isNaN(numVal) || numVal < 0) {
-                                        field.onChange("0");
-                                      } else if (numVal > availableSavings) {
-                                        field.onChange(availableSavings.toString());
-                                      } else {
-                                        field.onChange(val);
-                                      }
-                                    }}
-                                  />
-                                </div>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
                               </FormControl>
+                              <div className="space-y-1 flex-1">
+                                <FormLabel className="font-medium">{goal.purpose}</FormLabel>
+                                <div className="text-sm text-muted-foreground">
+                                  <div>
+                                    Target: ${goal.amount.toFixed(2)}
+                                  </div>
+                                  <div>
+                                    Current progress: ${goal.progress.toFixed(2)} ({Math.round((goal.progress / goal.amount) * 100)}%)
+                                  </div>
+                                  <div>
+                                    Remaining: ${(goal.amount - goal.progress).toFixed(2)}
+                                  </div>
+                                </div>
+                              </div>
                             </FormItem>
                           )}
                         />
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                No active goals to distribute savings to.
-              </div>
-            )}
-            
-            {distributionMethod === "custom" && (
-              <div className="text-sm flex justify-between border-t pt-2">
-                <span>Remaining:</span>
-                <span className={remainingAmount === "0.00" || parseFloat(remainingAmount) > 0 ? "" : "text-red-500"}>
-                  ${remainingAmount}
-                </span>
-              </div>
-            )}
-          </div>
+                      
+                      {distributionMethod === "custom" && form.watch(`goalSelections.${goal.id}`) && (
+                        <div className="ml-7 mt-2">
+                          <FormField
+                            control={form.control}
+                            name={`customAmounts.${goal.id}`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <div className="flex items-center">
+                                    <span className="mr-2">$</span>
+                                    <Input
+                                      {...field}
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      max={availableSavings.toString()}
+                                      className="w-24"
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        const numVal = parseFloat(val);
+                                        if (isNaN(numVal) || numVal < 0) {
+                                          field.onChange("0");
+                                        } else if (numVal > availableSavings) {
+                                          field.onChange(availableSavings.toString());
+                                        } else {
+                                          field.onChange(val);
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  No active goals to distribute savings to.
+                </div>
+              )}
+              
+              {distributionMethod === "custom" && (
+                <div className="text-sm flex justify-between border-t pt-2">
+                  <span>Remaining:</span>
+                  <span className={remainingAmount === "0.00" || parseFloat(remainingAmount) > 0 ? "" : "text-red-500"}>
+                    ${remainingAmount}
+                  </span>
+                </div>
+              )}
+            </div>
+          </Form>
         </div>
         
         <DialogFooter>

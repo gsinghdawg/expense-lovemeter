@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Expense, ExpenseCategory, SavingGoal } from "@/types/expense";
 import { ExpenseItem } from "@/components/ExpenseItem";
@@ -18,7 +17,7 @@ interface RecentTransactionsProps {
   onAddSavingGoal: (goal: { amount: number; purpose: string }) => void;
   onToggleSavingGoal: (id: string, achieved: boolean) => void;
   onDeleteSavingGoal: (id: string) => void;
-  onDistributeSavings: (amount: number) => void;
+  onDistributeSavings: (goalIds: string[], amount: number) => void;
   monthEndSavings: number;
   limit?: number;
 }
