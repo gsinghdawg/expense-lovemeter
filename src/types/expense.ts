@@ -1,3 +1,4 @@
+
 export type ExpenseCategory = {
   id: string;
   name: string;
@@ -26,6 +27,7 @@ export type SavingGoal = {
   created: Date;
   achieved?: boolean;
   progress: number; // Added progress field
+  previousProgress?: number; // Store previous progress when marked as achieved
 };
 
 // History of budget goals
@@ -64,6 +66,7 @@ export interface DatabaseSavingGoal {
   created: string; // Supabase stores dates as ISO strings
   achieved: boolean;
   progress: number; // Added progress field
+  previous_progress?: number; // Added to store previous progress
 }
 
 // Extending DatabaseBudgetGoalHistory interface for database interaction

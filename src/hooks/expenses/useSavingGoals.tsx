@@ -37,7 +37,8 @@ export function useSavingGoals(userId: string | undefined) {
       return data.map(goal => ({
         ...goal,
         id: goal.id,
-        created: new Date(goal.created)
+        created: new Date(goal.created),
+        previousProgress: goal.previous_progress
       })) as SavingGoal[];
     },
     enabled: !!userId,
@@ -94,9 +95,31 @@ export function useSavingGoals(userId: string | undefined) {
     mutationFn: async ({ id, achieved }: { id: string, achieved: boolean }) => {
       if (!userId) throw new Error("User not authenticated");
       
+      // Find the current goal to get its progress
+      const currentGoal = savingGoals.find(goal => goal.id === id);
+      if (!currentGoal) throw new Error("Goal not found");
+      
+      let updateData: any = {};
+      
+      if (achieved) {
+        // When marking as achieved, store the current progress as previous_progress
+        updateData = { 
+          achieved: true,
+          // Store current progress for potential restoration later
+          previous_progress: currentGoal.progress
+        };
+      } else {
+        // When unmarking as achieved, restore the previous progress if available
+        updateData = { 
+          achieved: false,
+          // Restore the previous progress value before it was marked as achieved
+          progress: currentGoal.previousProgress || 0
+        };
+      }
+      
       const { data, error } = await supabase
         .from('saving_goals')
-        .update({ achieved })
+        .update(updateData)
         .eq('id', id)
         .eq('user_id', userId)
         .select()
@@ -107,17 +130,24 @@ export function useSavingGoals(userId: string | undefined) {
       return {
         ...data,
         id: data.id,
-        created: new Date(data.created)
+        created: new Date(data.created),
+        previousProgress: data.previous_progress
       } as SavingGoal;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
-      toast({
-        title: data.achieved ? "Goal achieved!" : "Goal reactivated",
-        description: data.achieved 
-          ? `Congratulations on achieving your goal: ${data.purpose}` 
-          : `You've reactivated your goal: ${data.purpose}`,
-      });
+      
+      if (data.achieved) {
+        toast({
+          title: "Goal achieved!",
+          description: `Congratulations on achieving your goal: ${data.purpose}`
+        });
+      } else {
+        toast({
+          title: "Goal reactivated",
+          description: `You've reactivated your goal: ${data.purpose} and restored your previous progress.`,
+        });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -187,11 +217,23 @@ export function useSavingGoals(userId: string | undefined) {
         const newProgress = goal.progress + amountToAdd;
         const achieved = newProgress >= goal.amount;
         
+        // If goal will be achieved, store current progress as previous_progress
+        const updateData: any = {
+          progress: newProgress,
+          achieved: achieved
+        };
+        
+        // If goal is being achieved, store current progress for potential restoration
+        if (achieved) {
+          updateData.previous_progress = goal.progress;
+        }
+        
         return {
           id: goal.id,
           progress: newProgress,
           achieved: achieved,
-          amountAdded: amountToAdd
+          amountAdded: amountToAdd,
+          updateData
         };
       });
       
@@ -199,10 +241,7 @@ export function useSavingGoals(userId: string | undefined) {
       for (const update of updates) {
         const { error } = await supabase
           .from('saving_goals')
-          .update({ 
-            progress: update.progress,
-            achieved: update.achieved
-          })
+          .update(update.updateData)
           .eq('id', update.id)
           .eq('user_id', userId);
           
@@ -215,7 +254,7 @@ export function useSavingGoals(userId: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
       // Find goals that were achieved
-      const achievedGoals = updates.filter(update => update.progress >= savingGoals.find(g => g.id === update.id)?.amount);
+      const achievedGoals = updates.filter(update => update.achieved);
       
       if (achievedGoals.length > 0) {
         toast({
