@@ -1,257 +1,302 @@
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { SavingGoal } from "@/types/expense";
-import { v4 as uuidv4 } from "uuid";
+import { useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { SavingGoal } from '@/types/expense';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-export function useSavingGoals() {
-  const [savingGoals, setSavingGoals] = useState<SavingGoal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
-  const { toast } = useToast();
+export function useSavingGoals(userId: string | undefined) {
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (user) {
-      fetchSavingGoals();
-    }
-  }, [user]);
-
-  async function fetchSavingGoals() {
-    setIsLoading(true);
-    try {
+  // Fetch all saving goals from storage
+  const { 
+    data: savingGoals = [],
+    isLoading: isLoadingSavingGoals 
+  } = useQuery({
+    queryKey: ['saving-goals', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      
       const { data, error } = await supabase
         .from('saving_goals')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', userId)
         .order('created', { ascending: false });
-
+      
       if (error) {
-        throw error;
+        console.error("Error fetching saving goals:", error);
+        toast({
+          title: "Error loading saving goals",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
       }
-
-      // Map the data to include previous_progress property
-      const goalsWithPreviousProgress = data.map(goal => ({
+      
+      return data.map(goal => ({
         ...goal,
-        previous_progress: goal.progress // Store the current progress as previous_progress
-      }));
+        id: goal.id,
+        created: new Date(goal.created),
+        previousProgress: goal.previous_progress
+      })) as SavingGoal[];
+    },
+    enabled: !!userId,
+  });
 
-      setSavingGoals(goalsWithPreviousProgress);
-    } catch (error) {
-      console.error('Error fetching saving goals:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function addSavingGoal(goalData: { amount: number; purpose: string }) {
-    if (!user) return null;
-
-    try {
-      const newGoal = {
-        id: uuidv4(),
-        user_id: user.id,
-        amount: goalData.amount,
-        purpose: goalData.purpose,
-        progress: 0,
-        previous_progress: 0,
-        achieved: false,
-        created: new Date().toISOString(),
-      };
-
-      const { error } = await supabase.from('saving_goals').insert(newGoal);
-
-      if (error) {
-        throw error;
-      }
-
-      setSavingGoals(prev => [newGoal, ...prev]);
+  // Add saving goal mutation
+  const addSavingGoalMutation = useMutation({
+    mutationFn: async (newGoal: Omit<SavingGoal, 'id' | 'created' | 'achieved' | 'progress'>) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      const goalId = uuidv4();
+      const now = new Date();
+      
+      const { data, error } = await supabase
+        .from('saving_goals')
+        .insert({
+          id: goalId,
+          amount: newGoal.amount,
+          purpose: newGoal.purpose,
+          created: now.toISOString(),
+          achieved: false,
+          progress: 0, // Initialize progress to 0
+          user_id: userId
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return {
+        ...data,
+        id: data.id,
+        created: new Date(data.created)
+      } as SavingGoal;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       toast({
-        title: "Success",
-        description: "Saving goal created successfully",
+        title: "Saving goal added",
+        description: "Your new saving goal has been created",
       });
-
-      return newGoal;
-    } catch (error) {
-      console.error('Error adding saving goal:', error);
+    },
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Failed to create saving goal",
+        title: "Error adding saving goal",
+        description: error.message || "Failed to add saving goal",
         variant: "destructive",
       });
-      return null;
-    }
-  }
+    },
+  });
 
-  async function toggleSavingGoal(id: string, achieved: boolean) {
-    if (!user) return;
-
-    try {
-      // Find the goal in the current state
-      const goal = savingGoals.find(g => g.id === id);
-      if (!goal) return;
-
-      let updates = {};
+  // Toggle saving goal achievement mutation
+  const toggleSavingGoalMutation = useMutation({
+    mutationFn: async ({ id, achieved }: { id: string, achieved: boolean }) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      // Find the current goal to get its progress
+      const currentGoal = savingGoals.find(goal => goal.id === id);
+      if (!currentGoal) throw new Error("Goal not found");
+      
+      let updateData: any = {};
       
       if (achieved) {
-        // When marking as achieved, store current progress as previous_progress
-        updates = {
+        // When marking as achieved, store the current progress as previous_progress
+        updateData = { 
           achieved: true,
-          previous_progress: goal.progress
+          // Store current progress for potential restoration later
+          previous_progress: currentGoal.progress
         };
       } else {
-        // When unmarking, restore previous progress
-        updates = {
+        // When unmarking as achieved, restore the previous progress if available
+        updateData = { 
           achieved: false,
-          progress: goal.previous_progress || 0
+          // Restore the previous progress value before it was marked as achieved
+          progress: currentGoal.previousProgress || 0
         };
       }
-
-      const { error } = await supabase
+      
+      const { data, error } = await supabase
         .from('saving_goals')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) {
-        throw error;
+        .eq('user_id', userId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return {
+        ...data,
+        id: data.id,
+        created: new Date(data.created),
+        previousProgress: data.previous_progress
+      } as SavingGoal;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
+      
+      if (data.achieved) {
+        toast({
+          title: "Goal achieved!",
+          description: `Congratulations on achieving your goal: ${data.purpose}`
+        });
+      } else {
+        toast({
+          title: "Goal reactivated",
+          description: `You've reactivated your goal: ${data.purpose} and restored your previous progress.`,
+        });
       }
-
-      setSavingGoals(prev =>
-        prev.map(g =>
-          g.id === id
-            ? { ...g, ...updates }
-            : g
-        )
-      );
-    } catch (error) {
-      console.error('Error toggling saving goal:', error);
+    },
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Failed to update saving goal",
+        title: "Error updating goal",
+        description: error.message || "Failed to update goal status",
         variant: "destructive",
       });
-    }
-  }
+    },
+  });
 
-  async function deleteSavingGoal(id: string) {
-    if (!user) return;
-
-    try {
+  // Delete saving goal mutation
+  const deleteSavingGoalMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!userId) throw new Error("User not authenticated");
+      
       const { error } = await supabase
         .from('saving_goals')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      setSavingGoals(prev => prev.filter(g => g.id !== id));
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      return id;
+    },
+    onSuccess: (id) => {
+      queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       toast({
-        title: "Success",
-        description: "Saving goal deleted successfully",
+        title: "Saving goal deleted",
+        description: "Your saving goal has been removed",
       });
-    } catch (error) {
-      console.error('Error deleting saving goal:', error);
+    },
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Failed to delete saving goal",
+        title: "Error deleting goal",
+        description: error.message || "Failed to delete saving goal",
         variant: "destructive",
       });
-    }
-  }
+    },
+  });
 
-  async function distributeSavings(goalIds: string[], amount: number) {
-    if (!user || goalIds.length === 0 || amount <= 0) return;
-    
-    try {
-      console.log('Distributing savings:', { goalIds, amount });
+  // Distribute savings mutation
+  const distributeSavingsMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      if (!userId) throw new Error("User not authenticated");
       
-      // Filter goals that should receive savings
-      const selectedGoals = savingGoals.filter(g => goalIds.includes(g.id) && !g.achieved);
+      // Get active goals
+      const activeGoals = savingGoals.filter(goal => !goal.achieved);
+      if (activeGoals.length === 0) return [];
       
-      if (selectedGoals.length === 0) {
-        console.log('No active goals to distribute to');
-        return;
-      }
+      // Strategy: Distribute proportionally based on remaining amount needed
+      const totalRemaining = activeGoals.reduce(
+        (sum, goal) => sum + (goal.amount - goal.progress), 
+        0
+      );
       
-      // Calculate how much each goal should receive (evenly distribute)
-      const amountPerGoal = amount / selectedGoals.length;
-      console.log('Amount per goal:', amountPerGoal);
-      
-      // Update each goal's progress
-      const updatedGoals = selectedGoals.map(goal => {
-        const newProgress = goal.progress + amountPerGoal;
+      const updates = activeGoals.map(goal => {
+        const remaining = goal.amount - goal.progress;
+        const proportion = remaining / totalRemaining;
         
-        // Check if goal is now achieved
-        const isAchieved = newProgress >= goal.amount;
+        // Calculate how much to add to this goal
+        let amountToAdd = Math.min(amount * proportion, remaining);
+        
+        // Round to 2 decimal places
+        amountToAdd = Math.round(amountToAdd * 100) / 100;
+        
+        const newProgress = goal.progress + amountToAdd;
+        const achieved = newProgress >= goal.amount;
+        
+        // If goal will be achieved, store current progress as previous_progress
+        const updateData: any = {
+          progress: newProgress,
+          achieved: achieved
+        };
+        
+        // If goal is being achieved, store current progress for potential restoration
+        if (achieved) {
+          updateData.previous_progress = goal.progress;
+        }
         
         return {
-          ...goal,
-          progress: isAchieved ? goal.amount : newProgress,
-          previous_progress: goal.progress, // Store previous progress
-          achieved: isAchieved,
+          id: goal.id,
+          progress: newProgress,
+          achieved: achieved,
+          amountAdded: amountToAdd,
+          updateData
         };
       });
       
-      console.log('Updated goals:', updatedGoals);
-      
-      // Prepare updates for Supabase
-      const updates = updatedGoals.map(goal => ({
-        id: goal.id,
-        progress: goal.progress,
-        previous_progress: goal.previous_progress,
-        achieved: goal.achieved,
-      }));
-      
-      // Update all goals in a transaction (or as close as we can get)
+      // Update each goal in the database
       for (const update of updates) {
-        console.log('Updating goal in database:', update);
         const { error } = await supabase
           .from('saving_goals')
-          .update({
-            progress: update.progress,
-            previous_progress: update.previous_progress,
-            achieved: update.achieved
-          })
+          .update(update.updateData)
           .eq('id', update.id)
-          .eq('user_id', user.id);
-        
-        if (error) {
-          console.error('Error updating goal:', error);
-          throw error;
-        }
+          .eq('user_id', userId);
+          
+        if (error) throw error;
       }
       
-      // Update state
-      setSavingGoals(prev => 
-        prev.map(g => {
-          const updated = updatedGoals.find(u => u.id === g.id);
-          return updated ? updated : g;
-        })
-      );
+      return updates;
+    },
+    onSuccess: (updates) => {
+      queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
-      toast({
-        title: "Success",
-        description: `Distributed $${amount.toFixed(2)} across ${updatedGoals.length} saving goals`,
-      });
+      // Find goals that were achieved
+      const achievedGoals = updates.filter(update => update.achieved);
       
-    } catch (error) {
-      console.error('Error distributing savings:', error);
+      if (achievedGoals.length > 0) {
+        toast({
+          title: "Goals achieved!",
+          description: `${achievedGoals.length} saving goal${achievedGoals.length > 1 ? 's' : ''} completed.`,
+        });
+      } else {
+        toast({
+          title: "Savings distributed",
+          description: `Savings have been added to your active goals.`,
+        });
+      }
+    },
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Failed to distribute savings",
+        title: "Error distributing savings",
+        description: error.message || "Failed to distribute savings to goals",
         variant: "destructive",
       });
-    }
-  }
+    },
+  });
+
+  // Wrapper functions
+  const addSavingGoal = (goal: Omit<SavingGoal, 'id' | 'created' | 'achieved' | 'progress'>) => {
+    addSavingGoalMutation.mutate(goal);
+  };
+
+  const toggleSavingGoal = (id: string, achieved: boolean) => {
+    toggleSavingGoalMutation.mutate({ id, achieved });
+  };
+
+  const deleteSavingGoal = (id: string) => {
+    deleteSavingGoalMutation.mutate(id);
+  };
+
+  const distributeSavings = (amount: number) => {
+    distributeSavingsMutation.mutate(amount);
+  };
 
   return {
     savingGoals,
-    isLoading,
+    isLoadingSavingGoals,
     addSavingGoal,
     toggleSavingGoal,
     deleteSavingGoal,

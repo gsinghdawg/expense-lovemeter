@@ -8,7 +8,7 @@ interface SavingGoalSectionProps {
   onAddGoal: (goal: { amount: number; purpose: string }) => void;
   onToggleGoal: (id: string, achieved: boolean) => void;
   onDeleteGoal: (id: string) => void;
-  onDistributeSavings: (goalIds: string[], amount: number) => void;
+  onDistributeSavings: (amount: number) => void;
   monthEndSavings: number;
 }
 
@@ -20,11 +20,6 @@ export function SavingGoalSection({
   onDistributeSavings,
   monthEndSavings
 }: SavingGoalSectionProps) {
-  const handleDistributeSavings = (goalIds: string[], amount: number) => {
-    console.log('SavingGoalSection handleDistributeSavings:', { goalIds, amount });
-    onDistributeSavings(goalIds, amount);
-  };
-
   return (
     <div className="space-y-6">
       <SavingGoalForm onSubmit={onAddGoal} />
@@ -32,7 +27,7 @@ export function SavingGoalSection({
         goals={goals} 
         onToggleGoal={onToggleGoal} 
         onDeleteGoal={onDeleteGoal}
-        onDistributeSavings={handleDistributeSavings}
+        onDistributeSavings={onDistributeSavings}
         monthEndSavings={monthEndSavings}
       />
     </div>

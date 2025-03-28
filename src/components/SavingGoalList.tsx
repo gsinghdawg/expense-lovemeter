@@ -3,11 +3,15 @@ import { useState } from "react";
 import { SavingGoal } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Circle, Trash2, Wallet, InfoIcon } from "lucide-react";
+import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, eachMonthOfInterval, isSameMonth } from "date-fns";
 import { SavingGoalProgress } from "@/components/SavingGoalProgress";
-import { SavingGoalDistributionDialog } from "@/components/SavingGoalDistributionDialog";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger 
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -19,7 +23,7 @@ interface SavingGoalListProps {
   goals: SavingGoal[];
   onToggleGoal: (id: string, achieved: boolean) => void;
   onDeleteGoal: (id: string) => void;
-  onDistributeSavings?: (goalIds: string[], availableSavings: number) => void;
+  onDistributeSavings?: (availableSavings: number) => void;
   monthEndSavings?: number;
 }
 
@@ -30,8 +34,6 @@ export function SavingGoalList({
   onDistributeSavings,
   monthEndSavings = 0
 }: SavingGoalListProps) {
-  const [showDistributionDialog, setShowDistributionDialog] = useState(false);
-  
   if (goals.length === 0) {
     return (
       <Card>
@@ -57,14 +59,6 @@ export function SavingGoalList({
   // Only show Distribute Savings button if there are active goals
   // and there are month-end savings available
   const showDistributeButton = activeGoals.length > 0 && monthEndSavings > 0;
-  
-  const handleDistribute = (goalIds: string[], amount: number) => {
-    console.log('SavingGoalList handleDistribute:', { goalIds, amount });
-    if (onDistributeSavings) {
-      console.log("Calling onDistributeSavings with:", { goalIds, amount });
-      onDistributeSavings(goalIds, amount);
-    }
-  };
 
   return (
     <Card>
@@ -96,22 +90,11 @@ export function SavingGoalList({
             
             <Button 
               className="w-full"
-              onClick={() => {
-                console.log("Opening distribution dialog with monthEndSavings:", monthEndSavings);
-                setShowDistributionDialog(true);
-              }}
+              onClick={() => onDistributeSavings && onDistributeSavings(monthEndSavings)}
               variant="outline"
             >
               Distribute ${monthEndSavings.toFixed(2)} in Savings
             </Button>
-            
-            <SavingGoalDistributionDialog
-              goals={goals}
-              availableSavings={monthEndSavings}
-              open={showDistributionDialog}
-              onOpenChange={setShowDistributionDialog}
-              onDistribute={handleDistribute}
-            />
           </div>
         )}
         
@@ -125,6 +108,7 @@ export function SavingGoalList({
                   goal={goal}
                   onToggle={onToggleGoal}
                   onDelete={onDeleteGoal}
+                  onDistributeSavings={onDistributeSavings}
                 />
               ))}
             </div>
@@ -141,6 +125,7 @@ export function SavingGoalList({
                   goal={goal}
                   onToggle={onToggleGoal}
                   onDelete={onDeleteGoal}
+                  onDistributeSavings={onDistributeSavings}
                 />
               ))}
             </div>
@@ -155,13 +140,21 @@ interface GoalItemProps {
   goal: SavingGoal;
   onToggle: (id: string, achieved: boolean) => void;
   onDelete: (id: string) => void;
+  onDistributeSavings?: (availableSavings: number) => void;
 }
 
-function GoalItem({ goal, onToggle, onDelete }: GoalItemProps) {
-  const formatDate = (dateValue: string | Date) => {
-    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
-    return format(date, "MMM d, yyyy");
-  };
+function GoalItem({ goal, onToggle, onDelete, onDistributeSavings }: GoalItemProps) {
+  const [showMonthsPopover, setShowMonthsPopover] = useState(false);
+  
+  // Generate list of months since goal creation until today
+  const now = new Date();
+  const monthsSinceCreation = eachMonthOfInterval({
+    start: goal.created,
+    end: now
+  });
+  
+  // Show a dummy savings amount for each month (in a real app, this would be actual data)
+  const mockAvailableSavings = 25; // Just for demonstration
 
   return (
     <div 
@@ -187,11 +180,61 @@ function GoalItem({ goal, onToggle, onDelete }: GoalItemProps) {
           <div className={cn(goal.achieved && "text-muted-foreground line-through")}>
             <div className="font-medium">{goal.purpose}</div>
             <div className="text-sm text-muted-foreground">
-              ${goal.amount.toFixed(2)} · Added {formatDate(goal.created)}
+              ${goal.amount.toFixed(2)} · Added {format(goal.created, "MMM d, yyyy")}
             </div>
           </div>
         </div>
         <div className="flex">
+          {!goal.achieved && monthsSinceCreation.length > 1 && (
+            <Popover open={showMonthsPopover} onOpenChange={setShowMonthsPopover}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 mr-1"
+                >
+                  <Calendar className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2">
+                <div className="text-sm font-medium mb-2">Distribute previous savings</div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  <InfoIcon className="h-3 w-3 inline mr-1" />
+                  Only distribute after the month has passed
+                </div>
+                <div className="space-y-1">
+                  {monthsSinceCreation.map((month, index) => {
+                    // Skip the current month as it's handled by the main distribute button
+                    if (isSameMonth(month, now)) return null;
+                    
+                    return (
+                      <Button 
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          if (onDistributeSavings) {
+                            onDistributeSavings(mockAvailableSavings);
+                            setShowMonthsPopover(false);
+                          }
+                        }}
+                      >
+                        <Calendar className="h-3.5 w-3.5 mr-2" />
+                        {format(month, "MMMM yyyy")}
+                        <span className="ml-auto font-medium">${mockAvailableSavings}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+                {monthsSinceCreation.length <= 1 && (
+                  <div className="text-xs text-muted-foreground text-center mt-2">
+                    No previous months available
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          )}
           <Button
             variant="ghost"
             size="icon"

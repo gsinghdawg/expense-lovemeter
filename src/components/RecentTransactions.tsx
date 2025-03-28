@@ -18,7 +18,7 @@ interface RecentTransactionsProps {
   onAddSavingGoal: (goal: { amount: number; purpose: string }) => void;
   onToggleSavingGoal: (id: string, achieved: boolean) => void;
   onDeleteSavingGoal: (id: string) => void;
-  onDistributeSavings: (goalIds: string[], amount: number) => void;
+  onDistributeSavings: (amount: number) => void;
   monthEndSavings: number;
   limit?: number;
 }
@@ -42,8 +42,6 @@ export function RecentTransactions({
   
   // For debugging
   console.log("RecentTransactions isMobile:", isMobile);
-  console.log("RecentTransactions monthEndSavings:", monthEndSavings);
-  console.log("RecentTransactions savingGoals:", savingGoals);
   
   // Get the most recent expenses
   const recentExpenses = [...expenses]
@@ -73,11 +71,6 @@ export function RecentTransactions({
 
   const handleCloseDialog = () => {
     setEditingExpense(null);
-  };
-
-  const handleDistributeSavings = (goalIds: string[], amount: number) => {
-    console.log('RecentTransactions handleDistributeSavings:', { goalIds, amount });
-    onDistributeSavings(goalIds, amount);
   };
 
   return (
@@ -116,7 +109,7 @@ export function RecentTransactions({
           onAddGoal={onAddSavingGoal}
           onToggleGoal={onToggleSavingGoal}
           onDeleteGoal={onDeleteSavingGoal}
-          onDistributeSavings={handleDistributeSavings}
+          onDistributeSavings={onDistributeSavings}
           monthEndSavings={monthEndSavings}
         />
       </div>
