@@ -23,7 +23,7 @@ interface SavingGoalListProps {
   goals: SavingGoal[];
   onToggleGoal: (id: string, achieved: boolean) => void;
   onDeleteGoal: (id: string) => void;
-  onDistributeSavings?: (availableSavings: number) => void;
+  onDistributeSavings?: (availableSavings: number, goalId: string) => void;
   monthEndSavings?: number;
   recoveredSavings?: number;
 }
@@ -61,10 +61,6 @@ export function SavingGoalList({
   // Calculate total available savings by combining month-end and recovered savings
   const totalAvailableSavings = monthEndSavings + recoveredSavings;
 
-  // Only show Distribute Savings button if there are active goals
-  // and there are savings available
-  const showDistributeButton = activeGoals.length > 0 && totalAvailableSavings > 0;
-
   return (
     <Card>
       <CardHeader>
@@ -74,33 +70,23 @@ export function SavingGoalList({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {showDistributeButton && (
-          <div className="space-y-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center text-xs text-muted-foreground mb-1">
-                    <InfoIcon className="h-3 w-3 mr-1" />
-                    <span>Distribute savings only at the end of the month or after it has passed</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-sm max-w-xs">
-                    For accurate budgeting, only distribute savings after the month 
-                    has ended and all expenses are accounted for.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <Button 
-              className="w-full"
-              onClick={() => onDistributeSavings && onDistributeSavings(totalAvailableSavings)}
-              variant="outline"
-            >
-              Distribute ${totalAvailableSavings.toFixed(2)} in Savings
-            </Button>
-          </div>
+        {totalAvailableSavings > 0 && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center text-xs text-muted-foreground mb-1">
+                  <InfoIcon className="h-3 w-3 mr-1" />
+                  <span>Distribute savings only at the end of the month or after it has passed</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-sm max-w-xs">
+                  For accurate budgeting, only distribute savings after the month 
+                  has ended and all expenses are accounted for.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
         
         {activeGoals.length > 0 && (
@@ -114,6 +100,7 @@ export function SavingGoalList({
                   onToggle={onToggleGoal}
                   onDelete={onDeleteGoal}
                   onDistributeSavings={onDistributeSavings}
+                  availableSavings={totalAvailableSavings}
                 />
               ))}
             </div>
@@ -130,7 +117,6 @@ export function SavingGoalList({
                   goal={goal}
                   onToggle={onToggleGoal}
                   onDelete={onDeleteGoal}
-                  onDistributeSavings={onDistributeSavings}
                 />
               ))}
             </div>
@@ -145,10 +131,11 @@ interface GoalItemProps {
   goal: SavingGoal;
   onToggle: (id: string, achieved: boolean) => void;
   onDelete: (id: string) => void;
-  onDistributeSavings?: (availableSavings: number) => void;
+  onDistributeSavings?: (availableSavings: number, goalId: string) => void;
+  availableSavings?: number;
 }
 
-function GoalItem({ goal, onToggle, onDelete, onDistributeSavings }: GoalItemProps) {
+function GoalItem({ goal, onToggle, onDelete, onDistributeSavings, availableSavings = 0 }: GoalItemProps) {
   const [showMonthsPopover, setShowMonthsPopover] = useState(false);
   
   // Generate list of months since goal creation until today
@@ -160,6 +147,11 @@ function GoalItem({ goal, onToggle, onDelete, onDistributeSavings }: GoalItemPro
   
   // Show a dummy savings amount for each month (in a real app, this would be actual data)
   const mockAvailableSavings = 25; // Just for demonstration
+
+  // Calculate remaining amount needed to complete the goal
+  const progress = typeof goal.progress === 'number' ? goal.progress : 0;
+  const remaining = goal.amount - progress;
+  const showDistributeButton = !goal.achieved && availableSavings > 0;
 
   return (
     <div 
@@ -220,7 +212,7 @@ function GoalItem({ goal, onToggle, onDelete, onDistributeSavings }: GoalItemPro
                         className="w-full justify-start"
                         onClick={() => {
                           if (onDistributeSavings) {
-                            onDistributeSavings(mockAvailableSavings);
+                            onDistributeSavings(mockAvailableSavings, goal.id);
                             setShowMonthsPopover(false);
                           }
                         }}
@@ -252,8 +244,19 @@ function GoalItem({ goal, onToggle, onDelete, onDistributeSavings }: GoalItemPro
       </div>
       
       {!goal.achieved && (
-        <div className="mt-3 pl-11">
+        <div className="mt-3 pl-11 space-y-3">
           <SavingGoalProgress goal={goal} />
+          
+          {showDistributeButton && (
+            <Button 
+              className="w-full"
+              onClick={() => onDistributeSavings && onDistributeSavings(availableSavings, goal.id)}
+              variant="outline"
+              size="sm"
+            >
+              Distribute ${availableSavings.toFixed(2)} to this goal
+            </Button>
+          )}
         </div>
       )}
     </div>

@@ -13,7 +13,7 @@ export function useSavingGoals(userId: string | undefined) {
   // Fetch all saving goals from storage
   const { 
     data: savingGoals = [],
-    isLoadingSavingGoals 
+    isLoading: isLoadingSavingGoals 
   } = useQuery({
     queryKey: ['saving-goals', userId],
     queryFn: async () => {
@@ -208,89 +208,76 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
-  // Distribute savings mutation
+  // Distribute savings mutation - modified to target a specific goal
   const distributeSavingsMutation = useMutation({
-    mutationFn: async (amount: number) => {
+    mutationFn: async ({ amount, goalId }: { amount: number; goalId: string }) => {
       if (!userId) throw new Error("User not authenticated");
       
-      // Get active goals
-      const activeGoals = savingGoals.filter(goal => !goal.achieved);
-      if (activeGoals.length === 0) return [];
+      // Get the specific goal
+      const goal = savingGoals.find(g => g.id === goalId);
+      if (!goal) throw new Error("Goal not found");
+      if (goal.achieved) throw new Error("Cannot distribute to an achieved goal");
       
-      // Strategy: Distribute proportionally based on remaining amount needed
-      const totalRemaining = activeGoals.reduce(
-        (sum, goal) => sum + (goal.amount - goal.progress), 
-        0
-      );
+      // Calculate how much to add
+      const remaining = goal.amount - goal.progress;
+      const amountToAdd = Math.min(amount, remaining);
       
-      const updates = activeGoals.map(goal => {
-        const remaining = goal.amount - goal.progress;
-        const proportion = remaining / totalRemaining;
-        
-        // Calculate how much to add to this goal
-        let amountToAdd = Math.min(amount * proportion, remaining);
-        
-        // Round to 2 decimal places
-        amountToAdd = Math.round(amountToAdd * 100) / 100;
-        
-        const newProgress = goal.progress + amountToAdd;
-        const achieved = newProgress >= goal.amount;
-        
-        // If goal will be achieved, store current progress as previous_progress
-        const updateData: any = {
-          progress: newProgress,
-          achieved: achieved
-        };
-        
-        // If goal is being achieved, store current progress for potential restoration
-        if (achieved) {
-          updateData.previous_progress = goal.progress;
-        }
-        
-        return {
-          id: goal.id,
-          progress: newProgress,
-          achieved: achieved,
-          amountAdded: amountToAdd,
-          updateData
-        };
-      });
+      // Round to 2 decimal places
+      const roundedAmount = Math.round(amountToAdd * 100) / 100;
       
-      // Update each goal in the database
-      for (const update of updates) {
-        const { error } = await supabase
-          .from('saving_goals')
-          .update(update.updateData)
-          .eq('id', update.id)
-          .eq('user_id', userId);
-          
-        if (error) throw error;
+      const newProgress = goal.progress + roundedAmount;
+      const achieved = newProgress >= goal.amount;
+      
+      // If goal will be achieved, store current progress as previous_progress
+      const updateData: any = {
+        progress: newProgress,
+        achieved: achieved
+      };
+      
+      // If goal is being achieved, store current progress for potential restoration
+      if (achieved) {
+        updateData.previous_progress = goal.progress;
       }
       
-      return updates;
+      // Update the goal in the database
+      const { data, error } = await supabase
+        .from('saving_goals')
+        .update(updateData)
+        .eq('id', goalId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return {
+        ...data,
+        id: data.id,
+        created: new Date(data.created),
+        previousProgress: data.previous_progress,
+        amountAdded: roundedAmount,
+        achieved
+      } as SavingGoal & { amountAdded: number };
     },
-    onSuccess: (updates) => {
+    onSuccess: (updatedGoal) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
-      // Find goals that were achieved
-      const achievedGoals = updates.filter(update => update.achieved);
-      
-      if (achievedGoals.length > 0) {
+      if (updatedGoal.achieved) {
         toast({
-          title: "Goals achieved!",
-          description: `${achievedGoals.length} saving goal${achievedGoals.length > 1 ? 's' : ''} completed.`,
+          title: "Goal achieved!",
+          description: `Congratulations! You've completed your saving goal: ${updatedGoal.purpose}`
         });
       } else {
         toast({
-          title: "Savings distributed",
-          description: `Savings have been added to your active goals.`,
+          title: "Savings contributed",
+          description: `$${updatedGoal.amountAdded.toFixed(2)} has been added to your "${updatedGoal.purpose}" goal.`,
         });
       }
     },
     onError: (error: any) => {
       toast({
         title: "Error distributing savings",
-        description: error.message || "Failed to distribute savings to goals",
+        description: error.message || "Failed to distribute savings to goal",
         variant: "destructive",
       });
     },
@@ -309,8 +296,8 @@ export function useSavingGoals(userId: string | undefined) {
     deleteSavingGoalMutation.mutate(id);
   };
 
-  const distributeSavings = (amount: number) => {
-    distributeSavingsMutation.mutate(amount);
+  const distributeSavings = (amount: number, goalId: string) => {
+    distributeSavingsMutation.mutate({ amount, goalId });
   };
 
   // Getter for recovered savings amount
