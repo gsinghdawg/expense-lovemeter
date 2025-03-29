@@ -8,11 +8,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useSavingGoals(userId: string | undefined) {
   const queryClient = useQueryClient();
+  const [recoveredSavings, setRecoveredSavings] = useState<number>(0);
 
   // Fetch all saving goals from storage
   const { 
     data: savingGoals = [],
-    isLoading: isLoadingSavingGoals 
+    isLoadingSavingGoals 
   } = useQuery({
     queryKey: ['saving-goals', userId],
     queryFn: async () => {
@@ -71,7 +72,8 @@ export function useSavingGoals(userId: string | undefined) {
       return {
         ...data,
         id: data.id,
-        created: new Date(data.created)
+        created: new Date(data.created),
+        previousProgress: data.previous_progress
       } as SavingGoal;
     },
     onSuccess: () => {
@@ -163,6 +165,13 @@ export function useSavingGoals(userId: string | undefined) {
     mutationFn: async (id: string) => {
       if (!userId) throw new Error("User not authenticated");
       
+      // First, get the goal to recover its progress amount
+      const goalToDelete = savingGoals.find(goal => goal.id === id);
+      if (!goalToDelete) throw new Error("Goal not found");
+      
+      // Store the progress amount to return to available savings
+      const progressAmount = goalToDelete.progress || 0;
+      
       const { error } = await supabase
         .from('saving_goals')
         .delete()
@@ -171,13 +180,23 @@ export function useSavingGoals(userId: string | undefined) {
         
       if (error) throw error;
       
-      return id;
+      // Return both the deleted ID and the amount to recover
+      return { 
+        id, 
+        recoveredAmount: progressAmount 
+      };
     },
-    onSuccess: (id) => {
+    onSuccess: ({ id, recoveredAmount }) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
+      
+      // Save the recovered amount to state for other components to use
+      setRecoveredSavings(prev => prev + recoveredAmount);
+      
       toast({
         title: "Saving goal deleted",
-        description: "Your saving goal has been removed",
+        description: recoveredAmount > 0 
+          ? `Your saving goal has been removed and $${recoveredAmount.toFixed(2)} has been returned to your available savings`
+          : "Your saving goal has been removed",
       });
     },
     onError: (error: any) => {
@@ -294,6 +313,17 @@ export function useSavingGoals(userId: string | undefined) {
     distributeSavingsMutation.mutate(amount);
   };
 
+  // Getter for recovered savings amount
+  const getRecoveredSavings = () => {
+    const amount = recoveredSavings;
+    
+    // Reset the recoveredSavings after it's been read
+    // This prevents double-counting
+    setRecoveredSavings(0);
+    
+    return amount;
+  };
+
   return {
     savingGoals,
     isLoadingSavingGoals,
@@ -301,5 +331,6 @@ export function useSavingGoals(userId: string | undefined) {
     toggleSavingGoal,
     deleteSavingGoal,
     distributeSavings,
+    getRecoveredSavings, // New method to get the amount recovered from deleted goals
   };
 }

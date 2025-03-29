@@ -10,6 +10,7 @@ interface SavingGoalSectionProps {
   onDeleteGoal: (id: string) => void;
   onDistributeSavings: (amount: number) => void;
   monthEndSavings: number;
+  recoveredSavings?: number;
 }
 
 export function SavingGoalSection({
@@ -18,7 +19,8 @@ export function SavingGoalSection({
   onToggleGoal,
   onDeleteGoal,
   onDistributeSavings,
-  monthEndSavings
+  monthEndSavings,
+  recoveredSavings = 0
 }: SavingGoalSectionProps) {
   return (
     <div className="space-y-6">
@@ -29,6 +31,7 @@ export function SavingGoalSection({
         onDeleteGoal={onDeleteGoal}
         onDistributeSavings={onDistributeSavings}
         monthEndSavings={monthEndSavings}
+        recoveredSavings={recoveredSavings}
       />
     </div>
   );

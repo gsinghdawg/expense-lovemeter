@@ -7,9 +7,12 @@ interface SavingGoalProgressProps {
 }
 
 export function SavingGoalProgress({ goal }: SavingGoalProgressProps) {
+  // Handle null/undefined progress values
+  const progress = typeof goal.progress === 'number' ? goal.progress : 0;
+  
   // Calculate percentage of progress
   const progressPercentage = goal.amount > 0 
-    ? Math.min(Math.round((goal.progress / goal.amount) * 100), 100) 
+    ? Math.min(Math.round((progress / goal.amount) * 100), 100) 
     : 0;
   
   return (
@@ -20,7 +23,7 @@ export function SavingGoalProgress({ goal }: SavingGoalProgressProps) {
         indicatorClassName={progressPercentage === 100 ? "bg-green-500" : undefined}
       />
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>${goal.progress.toFixed(2)} saved</span>
+        <span>${progress.toFixed(2)} saved</span>
         <span>{progressPercentage}%</span>
       </div>
     </div>

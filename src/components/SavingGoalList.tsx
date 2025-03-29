@@ -25,6 +25,7 @@ interface SavingGoalListProps {
   onDeleteGoal: (id: string) => void;
   onDistributeSavings?: (availableSavings: number) => void;
   monthEndSavings?: number;
+  recoveredSavings?: number;
 }
 
 export function SavingGoalList({
@@ -32,7 +33,8 @@ export function SavingGoalList({
   onToggleGoal,
   onDeleteGoal,
   onDistributeSavings,
-  monthEndSavings = 0
+  monthEndSavings = 0,
+  recoveredSavings = 0
 }: SavingGoalListProps) {
   if (goals.length === 0) {
     return (
@@ -56,9 +58,12 @@ export function SavingGoalList({
   const activeGoals = goals.filter(goal => !goal.achieved);
   const achievedGoals = goals.filter(goal => goal.achieved);
 
+  // Calculate total available savings by combining month-end and recovered savings
+  const totalAvailableSavings = monthEndSavings + recoveredSavings;
+
   // Only show Distribute Savings button if there are active goals
-  // and there are month-end savings available
-  const showDistributeButton = activeGoals.length > 0 && monthEndSavings > 0;
+  // and there are savings available
+  const showDistributeButton = activeGoals.length > 0 && totalAvailableSavings > 0;
 
   return (
     <Card>
@@ -90,10 +95,10 @@ export function SavingGoalList({
             
             <Button 
               className="w-full"
-              onClick={() => onDistributeSavings && onDistributeSavings(monthEndSavings)}
+              onClick={() => onDistributeSavings && onDistributeSavings(totalAvailableSavings)}
               variant="outline"
             >
-              Distribute ${monthEndSavings.toFixed(2)} in Savings
+              Distribute ${totalAvailableSavings.toFixed(2)} in Savings
             </Button>
           </div>
         )}
