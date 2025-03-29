@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, eachMonthOfInterval, isSameMonth } from "date-fns";
+import { format, eachMonthOfInterval, isSameMonth, subMonths } from "date-fns";
 import { SavingGoalProgress } from "@/components/SavingGoalProgress";
 import { 
   Popover,
@@ -140,13 +140,30 @@ function GoalItem({ goal, onToggle, onDelete, onDistributeSavings, availableSavi
   
   // Generate list of months since goal creation until today
   const now = new Date();
+  const past6Months = subMonths(now, 6); // Show at most 6 months back
+  const startDate = goal.created > past6Months ? goal.created : past6Months;
+  
   const monthsSinceCreation = eachMonthOfInterval({
-    start: goal.created,
+    start: startDate,
     end: now
   });
   
-  // Show a dummy savings amount for each month (in a real app, this would be actual data)
-  const mockAvailableSavings = 25; // Just for demonstration
+  // For mock savings data per month (in a real app, this would be actual data)
+  const mockMonthlySavings = new Map<string, number>();
+  
+  // Generate mock savings for demonstration
+  monthsSinceCreation.forEach((month, index) => {
+    // Generate random savings between $5 and $30 for each month except current
+    if (!isSameMonth(month, now)) {
+      const randomSaving = Math.floor(Math.random() * 26) + 5;
+      mockMonthlySavings.set(format(month, 'yyyy-MM'), randomSaving);
+    }
+  });
+  
+  // For current month, use the actual available savings
+  if (availableSavings > 0) {
+    mockMonthlySavings.set(format(now, 'yyyy-MM'), availableSavings);
+  }
 
   // Calculate remaining amount needed to complete the goal
   const progress = typeof goal.progress === 'number' ? goal.progress : 0;
@@ -193,42 +210,46 @@ function GoalItem({ goal, onToggle, onDelete, onDistributeSavings, availableSavi
                   <Calendar className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-56 p-2">
+              <PopoverContent className="w-64 p-2">
                 <div className="text-sm font-medium mb-2">Distribute previous savings</div>
                 <div className="text-xs text-muted-foreground mb-2">
                   <InfoIcon className="h-3 w-3 inline mr-1" />
                   Only distribute after the month has passed
                 </div>
-                <div className="space-y-1">
-                  {monthsSinceCreation.map((month, index) => {
-                    // Skip the current month as it's handled by the main distribute button
-                    if (isSameMonth(month, now)) return null;
+                <div className="space-y-1 max-h-60 overflow-y-auto">
+                  {Array.from(mockMonthlySavings.entries()).map(([monthKey, availableSaving]) => {
+                    const monthDate = new Date(monthKey + '-01');
+                    const isCurrentMonth = isSameMonth(monthDate, now);
+                    
+                    // If it's the current month, we'll handle it with the main distribute button
+                    if (isCurrentMonth && showDistributeButton) return null;
                     
                     return (
                       <Button 
-                        key={index}
+                        key={monthKey}
                         variant="outline"
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => {
                           if (onDistributeSavings) {
-                            onDistributeSavings(mockAvailableSavings, goal.id);
+                            onDistributeSavings(availableSaving, goal.id);
                             setShowMonthsPopover(false);
                           }
                         }}
                       >
                         <Calendar className="h-3.5 w-3.5 mr-2" />
-                        {format(month, "MMMM yyyy")}
-                        <span className="ml-auto font-medium">${mockAvailableSavings}</span>
+                        {format(monthDate, "MMMM yyyy")} distribution
+                        <span className="ml-auto font-medium">${availableSaving}</span>
                       </Button>
                     );
                   })}
+                  
+                  {mockMonthlySavings.size === 0 && (
+                    <div className="text-xs text-muted-foreground text-center mt-2">
+                      No previous months available
+                    </div>
+                  )}
                 </div>
-                {monthsSinceCreation.length <= 1 && (
-                  <div className="text-xs text-muted-foreground text-center mt-2">
-                    No previous months available
-                  </div>
-                )}
               </PopoverContent>
             </Popover>
           )}
@@ -254,7 +275,7 @@ function GoalItem({ goal, onToggle, onDelete, onDistributeSavings, availableSavi
               variant="outline"
               size="sm"
             >
-              Distribute ${availableSavings.toFixed(2)} to this goal
+              Distribute ${availableSavings.toFixed(2)} from {format(now, "MMMM")} to this goal
             </Button>
           )}
         </div>

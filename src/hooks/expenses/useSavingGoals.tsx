@@ -39,7 +39,7 @@ export function useSavingGoals(userId: string | undefined) {
         ...goal,
         id: goal.id,
         created: new Date(goal.created),
-        previousProgress: goal.previous_progress
+        previousProgress: goal.previous_progress || 0
       })) as SavingGoal[];
     },
     enabled: !!userId,
@@ -62,6 +62,7 @@ export function useSavingGoals(userId: string | undefined) {
           created: now.toISOString(),
           achieved: false,
           progress: 0, // Initialize progress to 0
+          previous_progress: 0, // Initialize previous_progress to 0
           user_id: userId
         })
         .select()
@@ -73,7 +74,7 @@ export function useSavingGoals(userId: string | undefined) {
         ...data,
         id: data.id,
         created: new Date(data.created),
-        previousProgress: data.previous_progress
+        previousProgress: data.previous_progress || 0
       } as SavingGoal;
     },
     onSuccess: () => {
@@ -133,7 +134,7 @@ export function useSavingGoals(userId: string | undefined) {
         ...data,
         id: data.id,
         created: new Date(data.created),
-        previousProgress: data.previous_progress
+        previousProgress: data.previous_progress || 0
       } as SavingGoal;
     },
     onSuccess: (data) => {
@@ -254,7 +255,7 @@ export function useSavingGoals(userId: string | undefined) {
         ...data,
         id: data.id,
         created: new Date(data.created),
-        previousProgress: data.previous_progress,
+        previousProgress: data.previous_progress || 0,
         amountAdded: roundedAmount,
         achieved
       } as SavingGoal & { amountAdded: number };
