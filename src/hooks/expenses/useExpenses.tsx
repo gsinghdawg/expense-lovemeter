@@ -48,7 +48,8 @@ export function useExpenses() {
     toggleSavingGoal,
     deleteSavingGoal,
     distributeSavings,
-    getRecoveredSavings
+    getRecoveredSavings,
+    getRemainingMonthSavings
   } = useSavingGoals(userId);
 
   // Always ensure we have categories available
@@ -111,6 +112,7 @@ export function useExpenses() {
     deleteSavingGoal,
     distributeSavings,
     getRecoveredSavings,
+    getRemainingMonthSavings,
     
     // Loading state
     isLoading,

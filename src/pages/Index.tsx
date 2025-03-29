@@ -36,6 +36,7 @@ const Index = () => {
     toggleSavingGoal,
     deleteSavingGoal,
     distributeSavings,
+    getRemainingMonthSavings,
     getCurrentMonthTotal,
     getBudgetForMonth,
     calculateAverageMonthlyExpense,
@@ -50,8 +51,8 @@ const Index = () => {
   const monthEndSavings = getCurrentMonthSavings();
 
   // Create a wrapper for the distributeSavings function to match expected signature
-  const handleDistributeSavings = (amount: number, goalId: string) => {
-    distributeSavings(amount, goalId);
+  const handleDistributeSavings = (amount: number, goalId: string, monthKey: string) => {
+    distributeSavings(amount, goalId, monthKey);
   };
 
   if (isLoading) {
@@ -118,6 +119,7 @@ const Index = () => {
                   onToggleSavingGoal={toggleSavingGoal}
                   onDeleteSavingGoal={deleteSavingGoal}
                   onDistributeSavings={handleDistributeSavings}
+                  getRemainingMonthSavings={getRemainingMonthSavings}
                   monthEndSavings={monthEndSavings}
                   limit={3}
                 />

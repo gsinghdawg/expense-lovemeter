@@ -9,6 +9,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 export function useSavingGoals(userId: string | undefined) {
   const queryClient = useQueryClient();
   const [recoveredSavings, setRecoveredSavings] = useState<number>(0);
+  // Track distributed savings per month
+  const [distributedSavings, setDistributedSavings] = useState<Record<string, number>>({});
 
   // Fetch all saving goals from storage
   const { 
@@ -206,9 +208,9 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
-  // Distribute savings mutation - modified to target a specific goal
+  // Distribute savings mutation - modified to track remaining savings
   const distributeSavingsMutation = useMutation({
-    mutationFn: async ({ amount, goalId }: { amount: number; goalId: string }) => {
+    mutationFn: async ({ amount, goalId, monthKey }: { amount: number; goalId: string; monthKey: string }) => {
       if (!userId) throw new Error("User not authenticated");
       
       // Get the specific goal
@@ -243,17 +245,31 @@ export function useSavingGoals(userId: string | undefined) {
         
       if (error) throw error;
       
+      // Calculate leftover savings (amount - amountToAdd)
+      const leftoverSavings = Math.max(0, amount - amountToAdd);
+      
       return {
         ...data,
         id: data.id,
         created: new Date(data.created),
         previousProgress: goal.progress || 0,
         amountAdded: roundedAmount,
-        achieved
-      } as SavingGoal & { amountAdded: number };
+        achieved,
+        monthKey,
+        leftoverSavings
+      } as SavingGoal & { amountAdded: number; monthKey: string; leftoverSavings: number };
     },
     onSuccess: (updatedGoal) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
+      
+      // Update distributed savings for this month
+      setDistributedSavings(prev => {
+        const currentDistributed = prev[updatedGoal.monthKey] || 0;
+        return {
+          ...prev,
+          [updatedGoal.monthKey]: currentDistributed + updatedGoal.amountAdded
+        };
+      });
       
       if (updatedGoal.achieved) {
         toast({
@@ -264,6 +280,14 @@ export function useSavingGoals(userId: string | undefined) {
         toast({
           title: "Savings contributed",
           description: `$${updatedGoal.amountAdded.toFixed(2)} has been added to your "${updatedGoal.purpose}" goal.`,
+        });
+      }
+      
+      // If there's leftover savings, show a toast notification
+      if (updatedGoal.leftoverSavings > 0) {
+        toast({
+          title: "Savings remaining",
+          description: `$${updatedGoal.leftoverSavings.toFixed(2)} is still available to distribute to other goals.`,
         });
       }
     },
@@ -289,8 +313,14 @@ export function useSavingGoals(userId: string | undefined) {
     deleteSavingGoalMutation.mutate(id);
   };
 
-  const distributeSavings = (amount: number, goalId: string) => {
-    distributeSavingsMutation.mutate({ amount, goalId });
+  const distributeSavings = (amount: number, goalId: string, monthKey: string) => {
+    distributeSavingsMutation.mutate({ amount, goalId, monthKey });
+  };
+
+  // Get the remaining savings for a specific month (total - distributed)
+  const getRemainingMonthSavings = (monthKey: string, totalSavings: number) => {
+    const distributed = distributedSavings[monthKey] || 0;
+    return Math.max(0, totalSavings - distributed);
   };
 
   // Getter for recovered savings amount
@@ -311,6 +341,7 @@ export function useSavingGoals(userId: string | undefined) {
     toggleSavingGoal,
     deleteSavingGoal,
     distributeSavings,
-    getRecoveredSavings, // New method to get the amount recovered from deleted goals
+    getRecoveredSavings,
+    getRemainingMonthSavings, // New method to get remaining savings
   };
 }
