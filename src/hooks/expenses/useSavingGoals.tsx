@@ -39,7 +39,7 @@ export function useSavingGoals(userId: string | undefined) {
         ...goal,
         id: goal.id,
         created: new Date(goal.created),
-        previousProgress: goal.previous_progress || 0
+        previousProgress: 0 // Default value since the column doesn't exist
       })) as SavingGoal[];
     },
     enabled: !!userId,
@@ -62,7 +62,6 @@ export function useSavingGoals(userId: string | undefined) {
           created: now.toISOString(),
           achieved: false,
           progress: 0, // Initialize progress to 0
-          previous_progress: 0, // Initialize previous_progress to 0
           user_id: userId
         })
         .select()
@@ -74,7 +73,7 @@ export function useSavingGoals(userId: string | undefined) {
         ...data,
         id: data.id,
         created: new Date(data.created),
-        previousProgress: data.previous_progress || 0
+        previousProgress: 0 // Default value
       } as SavingGoal;
     },
     onSuccess: () => {
@@ -105,17 +104,15 @@ export function useSavingGoals(userId: string | undefined) {
       let updateData: any = {};
       
       if (achieved) {
-        // When marking as achieved, store the current progress as previous_progress
+        // When marking as achieved, just set achieved flag
         updateData = { 
           achieved: true,
-          // Store current progress for potential restoration later
-          previous_progress: currentGoal.progress
         };
       } else {
-        // When unmarking as achieved, restore the previous progress if available
+        // When unmarking as achieved, restore progress
         updateData = { 
           achieved: false,
-          // Restore the previous progress value before it was marked as achieved
+          // Use the progress if available
           progress: currentGoal.previousProgress || 0
         };
       }
@@ -134,7 +131,7 @@ export function useSavingGoals(userId: string | undefined) {
         ...data,
         id: data.id,
         created: new Date(data.created),
-        previousProgress: data.previous_progress || 0
+        previousProgress: currentGoal.progress || 0 // Store current progress
       } as SavingGoal;
     },
     onSuccess: (data) => {
@@ -229,16 +226,11 @@ export function useSavingGoals(userId: string | undefined) {
       const newProgress = goal.progress + roundedAmount;
       const achieved = newProgress >= goal.amount;
       
-      // If goal will be achieved, store current progress as previous_progress
+      // Update data object
       const updateData: any = {
         progress: newProgress,
         achieved: achieved
       };
-      
-      // If goal is being achieved, store current progress for potential restoration
-      if (achieved) {
-        updateData.previous_progress = goal.progress;
-      }
       
       // Update the goal in the database
       const { data, error } = await supabase
@@ -255,7 +247,7 @@ export function useSavingGoals(userId: string | undefined) {
         ...data,
         id: data.id,
         created: new Date(data.created),
-        previousProgress: data.previous_progress || 0,
+        previousProgress: goal.progress || 0,
         amountAdded: roundedAmount,
         achieved
       } as SavingGoal & { amountAdded: number };

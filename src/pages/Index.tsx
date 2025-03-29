@@ -49,6 +49,11 @@ const Index = () => {
   // Get the current month's available savings
   const monthEndSavings = getCurrentMonthSavings();
 
+  // Create a wrapper for the distributeSavings function to match expected signature
+  const handleDistributeSavings = (amount: number, goalId: string) => {
+    distributeSavings(amount, goalId);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
@@ -112,7 +117,7 @@ const Index = () => {
                   onAddSavingGoal={addSavingGoal}
                   onToggleSavingGoal={toggleSavingGoal}
                   onDeleteSavingGoal={deleteSavingGoal}
-                  onDistributeSavings={distributeSavings}
+                  onDistributeSavings={handleDistributeSavings}
                   monthEndSavings={monthEndSavings}
                   limit={3}
                 />

@@ -66,7 +66,8 @@ export interface DatabaseSavingGoal {
   created: string; // Supabase stores dates as ISO strings
   achieved: boolean;
   progress: number;
-  previous_progress?: number; // Added to store previous progress
+  // Note: previous_progress doesn't exist in the database
+  // We'll handle it in-memory instead
 }
 
 // Extending DatabaseBudgetGoalHistory interface for database interaction

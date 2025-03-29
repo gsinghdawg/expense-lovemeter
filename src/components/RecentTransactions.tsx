@@ -18,7 +18,7 @@ interface RecentTransactionsProps {
   onAddSavingGoal: (goal: { amount: number; purpose: string }) => void;
   onToggleSavingGoal: (id: string, achieved: boolean) => void;
   onDeleteSavingGoal: (id: string) => void;
-  onDistributeSavings: (amount: number) => void;
+  onDistributeSavings: (amount: number, goalId: string) => void;
   monthEndSavings: number;
   limit?: number;
 }
@@ -111,6 +111,7 @@ export function RecentTransactions({
           onDeleteGoal={onDeleteSavingGoal}
           onDistributeSavings={onDistributeSavings}
           monthEndSavings={monthEndSavings}
+          recoveredSavings={0}
         />
       </div>
 
