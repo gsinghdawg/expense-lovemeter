@@ -48,7 +48,6 @@ export function useExpenses() {
     toggleSavingGoal,
     deleteSavingGoal,
     distributeSavings,
-    reverseDistribution,
     getRecoveredSavings,
     getRemainingMonthSavings
   } = useSavingGoals(userId);
@@ -112,7 +111,6 @@ export function useExpenses() {
     toggleSavingGoal,
     deleteSavingGoal,
     distributeSavings,
-    reverseDistribution,
     getRecoveredSavings,
     getRemainingMonthSavings,
     

@@ -36,7 +36,6 @@ const Index = () => {
     toggleSavingGoal,
     deleteSavingGoal,
     distributeSavings,
-    reverseDistribution,
     getRemainingMonthSavings,
     getCurrentMonthTotal,
     getBudgetForMonth,
@@ -54,11 +53,6 @@ const Index = () => {
   // Create a wrapper for the distributeSavings function to match expected signature
   const handleDistributeSavings = (amount: number, goalId: string, monthKey: string) => {
     distributeSavings(amount, goalId, monthKey);
-  };
-
-  // Create a wrapper for the reverseDistribution function
-  const handleReverseDistribution = (goalId: string, monthKey: string) => {
-    reverseDistribution(goalId, monthKey);
   };
 
   if (isLoading) {
@@ -125,7 +119,6 @@ const Index = () => {
                   onToggleSavingGoal={toggleSavingGoal}
                   onDeleteSavingGoal={deleteSavingGoal}
                   onDistributeSavings={handleDistributeSavings}
-                  onReverseDistribution={handleReverseDistribution}
                   getRemainingMonthSavings={getRemainingMonthSavings}
                   monthEndSavings={monthEndSavings}
                   limit={3}

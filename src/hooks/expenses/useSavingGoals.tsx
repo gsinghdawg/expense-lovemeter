@@ -94,7 +94,7 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
-  // Toggle saving goal achievement mutation - updated to reverse distributions
+  // Toggle saving goal achievement mutation
   const toggleSavingGoalMutation = useMutation({
     mutationFn: async ({ id, achieved }: { id: string, achieved: boolean }) => {
       if (!userId) throw new Error("User not authenticated");
@@ -104,7 +104,6 @@ export function useSavingGoals(userId: string | undefined) {
       if (!currentGoal) throw new Error("Goal not found");
       
       let updateData: any = {};
-      let recoveredAmount = 0;
       
       if (achieved) {
         // When marking as achieved, just set achieved flag
@@ -118,9 +117,6 @@ export function useSavingGoals(userId: string | undefined) {
           // Use the progress if available
           progress: currentGoal.previousProgress || 0
         };
-        
-        // Calculate the amount to recover (current progress - previous progress)
-        recoveredAmount = currentGoal.progress - (currentGoal.previousProgress || 0);
       }
       
       const { data, error } = await supabase
@@ -137,23 +133,13 @@ export function useSavingGoals(userId: string | undefined) {
         ...data,
         id: data.id,
         created: new Date(data.created),
-        previousProgress: currentGoal.progress || 0, // Store current progress
-        recoveredAmount // Add recovered amount to the return object
-      } as SavingGoal & { recoveredAmount: number };
+        previousProgress: currentGoal.progress || 0 // Store current progress
+      } as SavingGoal;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
-      // If we recovered any savings when toggling from achieved to not achieved
-      if (data.recoveredAmount > 0) {
-        // Update recovered savings amount
-        setRecoveredSavings(prev => prev + data.recoveredAmount);
-        
-        toast({
-          title: "Goal reactivated",
-          description: `You've reactivated your goal: ${data.purpose} and recovered $${data.recoveredAmount.toFixed(2)} in savings.`,
-        });
-      } else if (data.achieved) {
+      if (data.achieved) {
         toast({
           title: "Goal achieved!",
           description: `Congratulations on achieving your goal: ${data.purpose}`
@@ -161,7 +147,7 @@ export function useSavingGoals(userId: string | undefined) {
       } else {
         toast({
           title: "Goal reactivated",
-          description: `You've reactivated your goal: ${data.purpose}.`,
+          description: `You've reactivated your goal: ${data.purpose} and restored your previous progress.`,
         });
       }
     },
@@ -174,7 +160,7 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
-  // Delete saving goal mutation - updated to recover all progress
+  // Delete saving goal mutation
   const deleteSavingGoalMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!userId) throw new Error("User not authenticated");
@@ -197,27 +183,21 @@ export function useSavingGoals(userId: string | undefined) {
       // Return both the deleted ID and the amount to recover
       return { 
         id, 
-        recoveredAmount: progressAmount,
-        purpose: goalToDelete.purpose
+        recoveredAmount: progressAmount 
       };
     },
-    onSuccess: ({ id, recoveredAmount, purpose }) => {
+    onSuccess: ({ id, recoveredAmount }) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
       // Save the recovered amount to state for other components to use
-      if (recoveredAmount > 0) {
-        setRecoveredSavings(prev => prev + recoveredAmount);
-        
-        toast({
-          title: "Saving goal deleted",
-          description: `Your saving goal "${purpose}" has been removed and $${recoveredAmount.toFixed(2)} has been returned to your available savings`,
-        });
-      } else {
-        toast({
-          title: "Saving goal deleted",
-          description: `Your saving goal "${purpose}" has been removed`,
-        });
-      }
+      setRecoveredSavings(prev => prev + recoveredAmount);
+      
+      toast({
+        title: "Saving goal deleted",
+        description: recoveredAmount > 0 
+          ? `Your saving goal has been removed and $${recoveredAmount.toFixed(2)} has been returned to your available savings`
+          : "Your saving goal has been removed",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -320,84 +300,6 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
-  // New mutation to undo/reverse a savings distribution
-  const reverseDistributionMutation = useMutation({
-    mutationFn: async ({ goalId, monthKey, amountToReverse }: { goalId: string; monthKey: string; amountToReverse?: number }) => {
-      if (!userId) throw new Error("User not authenticated");
-      
-      // Get the specific goal
-      const goal = savingGoals.find(g => g.id === goalId);
-      if (!goal) throw new Error("Goal not found");
-      
-      // If amount is provided, use it, otherwise reverse full progress
-      const reverseAmount = amountToReverse !== undefined ? amountToReverse : goal.progress;
-      
-      if (reverseAmount <= 0) {
-        return { 
-          goal, 
-          amountReversed: 0,
-          monthKey 
-        };
-      }
-      
-      // Calculate new progress
-      const newProgress = Math.max(0, goal.progress - reverseAmount);
-      
-      // Update the goal in the database
-      const { data, error } = await supabase
-        .from('saving_goals')
-        .update({
-          progress: newProgress,
-          achieved: false // Reset achieved status if it was true
-        })
-        .eq('id', goalId)
-        .eq('user_id', userId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      return {
-        goal: {
-          ...data,
-          id: data.id,
-          created: new Date(data.created),
-        },
-        amountReversed: reverseAmount,
-        monthKey
-      };
-    },
-    onSuccess: ({ goal, amountReversed, monthKey }) => {
-      queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
-      
-      if (amountReversed > 0) {
-        // Update distributed savings for this month (decrease the amount)
-        setDistributedSavings(prev => {
-          const currentDistributed = prev[monthKey] || 0;
-          return {
-            ...prev,
-            [monthKey]: Math.max(0, currentDistributed - amountReversed)
-          };
-        });
-        
-        // Add the reversed amount to recovered savings
-        setRecoveredSavings(prev => prev + amountReversed);
-        
-        toast({
-          title: "Distribution reversed",
-          description: `$${amountReversed.toFixed(2)} has been recovered from "${goal.purpose}" goal.`,
-        });
-      }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error reversing distribution",
-        description: error.message || "Failed to reverse distribution",
-        variant: "destructive",
-      });
-    },
-  });
-
   // Wrapper functions
   const addSavingGoal = (goal: Omit<SavingGoal, 'id' | 'created' | 'achieved' | 'progress'>) => {
     addSavingGoalMutation.mutate(goal);
@@ -413,11 +315,6 @@ export function useSavingGoals(userId: string | undefined) {
 
   const distributeSavings = (amount: number, goalId: string, monthKey: string) => {
     distributeSavingsMutation.mutate({ amount, goalId, monthKey });
-  };
-
-  // New function to reverse a distribution
-  const reverseDistribution = (goalId: string, monthKey: string, amountToReverse?: number) => {
-    reverseDistributionMutation.mutate({ goalId, monthKey, amountToReverse });
   };
 
   // Get the remaining savings for a specific month (total - distributed)
@@ -444,8 +341,7 @@ export function useSavingGoals(userId: string | undefined) {
     toggleSavingGoal,
     deleteSavingGoal,
     distributeSavings,
-    reverseDistribution, // New function exposed
     getRecoveredSavings,
-    getRemainingMonthSavings, // Method to get remaining savings
+    getRemainingMonthSavings, // New method to get remaining savings
   };
 }

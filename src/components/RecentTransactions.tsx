@@ -19,10 +19,8 @@ interface RecentTransactionsProps {
   onToggleSavingGoal: (id: string, achieved: boolean) => void;
   onDeleteSavingGoal: (id: string) => void;
   onDistributeSavings: (amount: number, goalId: string, monthKey: string) => void;
-  onReverseDistribution?: (goalId: string, monthKey: string) => void;
   getRemainingMonthSavings?: (monthKey: string, totalSavings: number) => number;
   monthEndSavings: number;
-  recoveredSavings?: number;
   limit?: number;
 }
 
@@ -37,10 +35,8 @@ export function RecentTransactions({
   onToggleSavingGoal,
   onDeleteSavingGoal,
   onDistributeSavings,
-  onReverseDistribution,
   getRemainingMonthSavings,
   monthEndSavings,
-  recoveredSavings = 0,
   limit = 3
 }: RecentTransactionsProps) {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -116,10 +112,9 @@ export function RecentTransactions({
           onToggleGoal={onToggleSavingGoal}
           onDeleteGoal={onDeleteSavingGoal}
           onDistributeSavings={onDistributeSavings}
-          onReverseDistribution={onReverseDistribution}
           getRemainingMonthSavings={getRemainingMonthSavings}
           monthEndSavings={monthEndSavings}
-          recoveredSavings={recoveredSavings}
+          recoveredSavings={0}
         />
       </div>
 
