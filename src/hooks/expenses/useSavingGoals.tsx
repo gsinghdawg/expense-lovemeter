@@ -182,7 +182,7 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
-  // Delete saving goal mutation
+  // Delete saving goal mutation - updated to recover progress for a specific month
   const deleteSavingGoalMutation = useMutation({
     mutationFn: async ({ id, monthKey }: { id: string, monthKey?: string }) => {
       if (!userId) throw new Error("User not authenticated");
@@ -206,10 +206,11 @@ export function useSavingGoals(userId: string | undefined) {
       return { 
         id, 
         recoveredAmount: progressAmount,
-        monthKey: monthKey || ''
+        monthKey: monthKey || '',
+        purpose: goalToDelete.purpose // Include purpose for toast notification
       };
     },
-    onSuccess: ({ id, recoveredAmount, monthKey }) => {
+    onSuccess: ({ id, recoveredAmount, monthKey, purpose }) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
       // Save the recovered amount to state for other components to use
@@ -231,8 +232,8 @@ export function useSavingGoals(userId: string | undefined) {
       toast({
         title: "Saving goal deleted",
         description: recoveredAmount > 0 
-          ? `Your saving goal has been removed and $${recoveredAmount.toFixed(2)} has been returned to your available savings`
-          : "Your saving goal has been removed",
+          ? `Your saving goal "${purpose}" has been removed and $${recoveredAmount.toFixed(2)} has been returned to your available savings for ${monthKey.replace('-', '/')}`
+          : `Your saving goal "${purpose}" has been removed`,
       });
     },
     onError: (error: any) => {

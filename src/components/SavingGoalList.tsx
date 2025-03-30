@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SavingGoal } from "@/types/expense";
 import { Button } from "@/components/ui/button";
@@ -156,6 +157,7 @@ function GoalItem({
 }: GoalItemProps) {
   const [showMonthsPopover, setShowMonthsPopover] = useState(false);
   const [showUnachieveDialog, setShowUnachieveDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [currentMonthKey, setCurrentMonthKey] = useState('');
   
   const now = new Date();
@@ -203,6 +205,22 @@ function GoalItem({
   const handleConfirmUnachieve = () => {
     onToggle(goal.id, false, currentMonthKey);
     setShowUnachieveDialog(false);
+  };
+
+  const handleDelete = () => {
+    // For goals with progress, show a confirmation dialog
+    if (progress > 0) {
+      setCurrentMonthKey(thisMonthKey);
+      setShowDeleteDialog(true);
+    } else {
+      // For goals without progress, delete immediately
+      onDelete(goal.id);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete(goal.id, currentMonthKey);
+    setShowDeleteDialog(false);
   };
 
   return (
@@ -310,7 +328,7 @@ function GoalItem({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(goal.id, thisMonthKey)}
+            onClick={handleDelete}
             className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
           >
             <Trash2 className="h-4 w-4" />
@@ -355,6 +373,27 @@ function GoalItem({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmUnachieve}>
               Reactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Goal with Savings</AlertDialogTitle>
+            <AlertDialogDescription>
+              This goal has ${progress.toFixed(2)} in savings. Deleting will return 
+              these funds to your available savings. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
