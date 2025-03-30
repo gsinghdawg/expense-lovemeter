@@ -6,8 +6,8 @@ import { SavingGoalList } from "@/components/SavingGoalList";
 interface SavingGoalSectionProps {
   goals: SavingGoal[];
   onAddGoal: (goal: { amount: number; purpose: string }) => void;
-  onToggleGoal: (id: string, achieved: boolean) => void;
-  onDeleteGoal: (id: string) => void;
+  onToggleGoal: (id: string, achieved: boolean, monthKey?: string) => void;
+  onDeleteGoal: (id: string, monthKey?: string) => void;
   onDistributeSavings: (amount: number, goalId: string, monthKey: string) => void;
   getRemainingMonthSavings?: (monthKey: string, totalSavings: number) => number;
   monthEndSavings: number;

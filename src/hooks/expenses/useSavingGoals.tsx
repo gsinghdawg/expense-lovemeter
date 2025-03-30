@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { SavingGoal } from '@/types/expense';
@@ -96,7 +95,7 @@ export function useSavingGoals(userId: string | undefined) {
 
   // Toggle saving goal achievement mutation - updated to restore progress on unachieved
   const toggleSavingGoalMutation = useMutation({
-    mutationFn: async ({ id, achieved }: { id: string, achieved: boolean }) => {
+    mutationFn: async ({ id, achieved, monthKey }: { id: string, achieved: boolean, monthKey?: string }) => {
       if (!userId) throw new Error("User not authenticated");
       
       // Find the current goal to get its progress
@@ -139,8 +138,9 @@ export function useSavingGoals(userId: string | undefined) {
         id: data.id,
         created: new Date(data.created),
         previousProgress: currentGoal.progress || 0, // Store current progress value
-        recoveredAmount: !achieved ? recoveredAmount : 0 // Amount to add back to available savings
-      } as SavingGoal & { recoveredAmount: number };
+        recoveredAmount: !achieved ? recoveredAmount : 0, // Amount to add back to available savings
+        monthKey: monthKey || '' // Pass the monthKey to identify which month's distribution to revert
+      } as SavingGoal & { recoveredAmount: number, monthKey: string };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
@@ -148,6 +148,19 @@ export function useSavingGoals(userId: string | undefined) {
       // If unmarking as achieved, add the recovered amount to available savings
       if (!data.achieved && data.recoveredAmount > 0) {
         setRecoveredSavings(prev => prev + data.recoveredAmount);
+        
+        // If we have a specific monthKey, update that month's distributed savings
+        if (data.monthKey) {
+          setDistributedSavings(prev => {
+            const currentDistributed = prev[data.monthKey] || 0;
+            const newDistributed = Math.max(0, currentDistributed - data.recoveredAmount);
+            
+            return {
+              ...prev,
+              [data.monthKey]: newDistributed
+            };
+          });
+        }
         
         toast({
           title: "Goal reactivated",
@@ -171,7 +184,7 @@ export function useSavingGoals(userId: string | undefined) {
 
   // Delete saving goal mutation
   const deleteSavingGoalMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, monthKey }: { id: string, monthKey?: string }) => {
       if (!userId) throw new Error("User not authenticated");
       
       // First, get the goal to recover its progress amount
@@ -189,17 +202,31 @@ export function useSavingGoals(userId: string | undefined) {
         
       if (error) throw error;
       
-      // Return both the deleted ID and the amount to recover
+      // Return both the deleted ID and the amount to recover, plus the monthKey
       return { 
         id, 
-        recoveredAmount: progressAmount 
+        recoveredAmount: progressAmount,
+        monthKey: monthKey || ''
       };
     },
-    onSuccess: ({ id, recoveredAmount }) => {
+    onSuccess: ({ id, recoveredAmount, monthKey }) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
       // Save the recovered amount to state for other components to use
       setRecoveredSavings(prev => prev + recoveredAmount);
+      
+      // If we have a specific monthKey, update that month's distributed savings
+      if (monthKey) {
+        setDistributedSavings(prev => {
+          const currentDistributed = prev[monthKey] || 0;
+          const newDistributed = Math.max(0, currentDistributed - recoveredAmount);
+          
+          return {
+            ...prev,
+            [monthKey]: newDistributed
+          };
+        });
+      }
       
       toast({
         title: "Saving goal deleted",
@@ -314,12 +341,12 @@ export function useSavingGoals(userId: string | undefined) {
     addSavingGoalMutation.mutate(goal);
   };
 
-  const toggleSavingGoal = (id: string, achieved: boolean) => {
-    toggleSavingGoalMutation.mutate({ id, achieved });
+  const toggleSavingGoal = (id: string, achieved: boolean, monthKey?: string) => {
+    toggleSavingGoalMutation.mutate({ id, achieved, monthKey });
   };
 
-  const deleteSavingGoal = (id: string) => {
-    deleteSavingGoalMutation.mutate(id);
+  const deleteSavingGoal = (id: string, monthKey?: string) => {
+    deleteSavingGoalMutation.mutate({ id, monthKey });
   };
 
   const distributeSavings = (amount: number, goalId: string, monthKey: string) => {

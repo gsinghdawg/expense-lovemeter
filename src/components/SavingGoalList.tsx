@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SavingGoal } from "@/types/expense";
 import { Button } from "@/components/ui/button";
@@ -31,8 +30,8 @@ import {
 
 interface SavingGoalListProps {
   goals: SavingGoal[];
-  onToggleGoal: (id: string, achieved: boolean) => void;
-  onDeleteGoal: (id: string) => void;
+  onToggleGoal: (id: string, achieved: boolean, monthKey?: string) => void;
+  onDeleteGoal: (id: string, monthKey?: string) => void;
   onDistributeSavings?: (availableSavings: number, goalId: string, monthKey: string) => void;
   getRemainingMonthSavings?: (monthKey: string, totalSavings: number) => number;
   monthEndSavings?: number;
@@ -66,11 +65,9 @@ export function SavingGoalList({
     );
   }
 
-  // Group goals by status (achieved or not)
   const activeGoals = goals.filter(goal => !goal.achieved);
   const achievedGoals = goals.filter(goal => goal.achieved);
 
-  // Calculate total available savings by combining month-end and recovered savings
   const totalAvailableSavings = monthEndSavings + recoveredSavings;
 
   return (
@@ -142,8 +139,8 @@ export function SavingGoalList({
 
 interface GoalItemProps {
   goal: SavingGoal;
-  onToggle: (id: string, achieved: boolean) => void;
-  onDelete: (id: string) => void;
+  onToggle: (id: string, achieved: boolean, monthKey?: string) => void;
+  onDelete: (id: string, monthKey?: string) => void;
   onDistributeSavings?: (availableSavings: number, goalId: string, monthKey: string) => void;
   getRemainingMonthSavings?: (monthKey: string, totalSavings: number) => number;
   availableSavings?: number;
@@ -159,10 +156,10 @@ function GoalItem({
 }: GoalItemProps) {
   const [showMonthsPopover, setShowMonthsPopover] = useState(false);
   const [showUnachieveDialog, setShowUnachieveDialog] = useState(false);
+  const [currentMonthKey, setCurrentMonthKey] = useState('');
   
-  // Generate list of months since goal creation until today
   const now = new Date();
-  const past6Months = subMonths(now, 6); // Show at most 6 months back
+  const past6Months = subMonths(now, 6);
   const startDate = goal.created > past6Months ? goal.created : past6Months;
   
   const monthsSinceCreation = eachMonthOfInterval({
@@ -170,48 +167,41 @@ function GoalItem({
     end: now
   });
   
-  // For mock savings data per month (in a real app, this would be actual data)
   const mockMonthlySavings = new Map<string, number>();
   
-  // Generate mock savings for demonstration
   monthsSinceCreation.forEach((month, index) => {
-    // Generate random savings between $5 and $30 for each month except current
     if (!isSameMonth(month, now)) {
       const randomSaving = Math.floor(Math.random() * 26) + 5;
       mockMonthlySavings.set(format(month, 'yyyy-MM'), randomSaving);
     }
   });
   
-  // For current month, use the actual available savings
-  const currentMonthKey = format(now, 'yyyy-MM');
+  const thisMonthKey = format(now, 'yyyy-MM');
   if (availableSavings > 0) {
     const remainingSavings = getRemainingMonthSavings 
-      ? getRemainingMonthSavings(currentMonthKey, availableSavings) 
+      ? getRemainingMonthSavings(thisMonthKey, availableSavings) 
       : availableSavings;
     
     if (remainingSavings > 0) {
-      mockMonthlySavings.set(currentMonthKey, remainingSavings);
+      mockMonthlySavings.set(thisMonthKey, remainingSavings);
     }
   }
 
-  // Calculate remaining amount needed to complete the goal
   const progress = typeof goal.progress === 'number' ? goal.progress : 0;
   const remaining = goal.amount - progress;
-  const showDistributeButton = !goal.achieved && mockMonthlySavings.get(currentMonthKey) > 0;
+  const showDistributeButton = !goal.achieved && mockMonthlySavings.get(thisMonthKey) > 0;
 
-  // Handle toggling achieved status with confirmation dialog for achieved goals
   const handleToggle = () => {
     if (goal.achieved) {
-      // If the goal is currently achieved, show confirmation dialog before unmarking
+      setCurrentMonthKey(thisMonthKey);
       setShowUnachieveDialog(true);
     } else {
-      // If the goal is currently not achieved, mark it as achieved directly
       onToggle(goal.id, true);
     }
   };
 
   const handleConfirmUnachieve = () => {
-    onToggle(goal.id, false);
+    onToggle(goal.id, false, currentMonthKey);
     setShowUnachieveDialog(false);
   };
 
@@ -264,12 +254,10 @@ function GoalItem({
                 <div className="space-y-1 max-h-60 overflow-y-auto">
                   {Array.from(mockMonthlySavings.entries())
                     .filter(([monthKey, availableSaving]) => {
-                      // Current month is handled separately, and only show if there are savings
-                      const isCurrentMonth = monthKey === currentMonthKey;
+                      const isCurrentMonth = monthKey === thisMonthKey;
                       if (isCurrentMonth) {
-                        return false; // Skip current month in the popover
+                        return false;
                       }
-                      // For previous months, check if we have savings to distribute
                       const remainingSavings = getRemainingMonthSavings 
                         ? getRemainingMonthSavings(monthKey, availableSaving)
                         : availableSaving;
@@ -277,7 +265,6 @@ function GoalItem({
                     })
                     .map(([monthKey, availableSaving]) => {
                       const monthDate = new Date(monthKey + '-01');
-                      // Use getRemainingMonthSavings if available
                       const remainingSavings = getRemainingMonthSavings 
                         ? getRemainingMonthSavings(monthKey, availableSaving)
                         : availableSaving;
@@ -305,7 +292,7 @@ function GoalItem({
                     })}
                   
                   {(mockMonthlySavings.size === 0 || Array.from(mockMonthlySavings.entries())
-                      .filter(([monthKey]) => monthKey !== currentMonthKey)
+                      .filter(([monthKey]) => monthKey !== thisMonthKey)
                       .every(([monthKey, availableSaving]) => {
                         const remainingSavings = getRemainingMonthSavings 
                           ? getRemainingMonthSavings(monthKey, availableSaving)
@@ -323,7 +310,7 @@ function GoalItem({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(goal.id)}
+            onClick={() => onDelete(goal.id, thisMonthKey)}
             className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
           >
             <Trash2 className="h-4 w-4" />
@@ -341,21 +328,20 @@ function GoalItem({
               onClick={() => {
                 if (onDistributeSavings) {
                   const remainingSavings = getRemainingMonthSavings 
-                    ? getRemainingMonthSavings(currentMonthKey, availableSavings)
+                    ? getRemainingMonthSavings(thisMonthKey, availableSavings)
                     : availableSavings;
-                  onDistributeSavings(remainingSavings, goal.id, currentMonthKey);
+                  onDistributeSavings(remainingSavings, goal.id, thisMonthKey);
                 }
               }}
               variant="outline"
               size="sm"
             >
-              Distribute ${mockMonthlySavings.get(currentMonthKey)?.toFixed(2)} from {format(now, "MMMM")} to this goal
+              Distribute ${mockMonthlySavings.get(thisMonthKey)?.toFixed(2)} from {format(now, "MMMM")} to this goal
             </Button>
           )}
         </div>
       )}
 
-      {/* Confirmation Dialog for unchecking achieved goals */}
       <AlertDialog open={showUnachieveDialog} onOpenChange={setShowUnachieveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
