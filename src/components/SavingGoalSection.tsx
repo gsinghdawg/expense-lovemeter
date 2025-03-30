@@ -9,6 +9,7 @@ interface SavingGoalSectionProps {
   onToggleGoal: (id: string, achieved: boolean) => void;
   onDeleteGoal: (id: string) => void;
   onDistributeSavings: (amount: number, goalId: string, monthKey: string) => void;
+  onReverseDistribution?: (goalId: string, monthKey: string) => void;
   getRemainingMonthSavings?: (monthKey: string, totalSavings: number) => number;
   monthEndSavings: number;
   recoveredSavings?: number;
@@ -20,6 +21,7 @@ export function SavingGoalSection({
   onToggleGoal,
   onDeleteGoal,
   onDistributeSavings,
+  onReverseDistribution,
   getRemainingMonthSavings,
   monthEndSavings,
   recoveredSavings = 0
@@ -32,6 +34,7 @@ export function SavingGoalSection({
         onToggleGoal={onToggleGoal} 
         onDeleteGoal={onDeleteGoal}
         onDistributeSavings={onDistributeSavings}
+        onReverseDistribution={onReverseDistribution}
         getRemainingMonthSavings={getRemainingMonthSavings}
         monthEndSavings={monthEndSavings}
         recoveredSavings={recoveredSavings}

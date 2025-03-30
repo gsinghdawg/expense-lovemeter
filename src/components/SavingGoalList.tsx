@@ -3,7 +3,7 @@ import { useState } from "react";
 import { SavingGoal } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon } from "lucide-react";
+import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, eachMonthOfInterval, isSameMonth, subMonths } from "date-fns";
 import { SavingGoalProgress } from "@/components/SavingGoalProgress";
@@ -18,14 +18,25 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SavingGoalListProps {
   goals: SavingGoal[];
   onToggleGoal: (id: string, achieved: boolean) => void;
   onDeleteGoal: (id: string) => void;
   onDistributeSavings?: (availableSavings: number, goalId: string, monthKey: string) => void;
+  onReverseDistribution?: (goalId: string, monthKey: string) => void;
   getRemainingMonthSavings?: (monthKey: string, totalSavings: number) => number;
-  monthEndSavings?: number;
+  monthEndSavings: number;
   recoveredSavings?: number;
 }
 
@@ -34,6 +45,7 @@ export function SavingGoalList({
   onToggleGoal,
   onDeleteGoal,
   onDistributeSavings,
+  onReverseDistribution,
   getRemainingMonthSavings,
   monthEndSavings = 0,
   recoveredSavings = 0
@@ -102,6 +114,7 @@ export function SavingGoalList({
                   onToggle={onToggleGoal}
                   onDelete={onDeleteGoal}
                   onDistributeSavings={onDistributeSavings}
+                  onReverseDistribution={onReverseDistribution}
                   getRemainingMonthSavings={getRemainingMonthSavings}
                   availableSavings={totalAvailableSavings}
                 />
@@ -120,6 +133,7 @@ export function SavingGoalList({
                   goal={goal}
                   onToggle={onToggleGoal}
                   onDelete={onDeleteGoal}
+                  onReverseDistribution={onReverseDistribution}
                 />
               ))}
             </div>
@@ -135,6 +149,7 @@ interface GoalItemProps {
   onToggle: (id: string, achieved: boolean) => void;
   onDelete: (id: string) => void;
   onDistributeSavings?: (availableSavings: number, goalId: string, monthKey: string) => void;
+  onReverseDistribution?: (goalId: string, monthKey: string) => void;
   getRemainingMonthSavings?: (monthKey: string, totalSavings: number) => number;
   availableSavings?: number;
 }
@@ -144,10 +159,12 @@ function GoalItem({
   onToggle, 
   onDelete, 
   onDistributeSavings, 
+  onReverseDistribution,
   getRemainingMonthSavings,
   availableSavings = 0 
 }: GoalItemProps) {
   const [showMonthsPopover, setShowMonthsPopover] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   // Generate list of months since goal creation until today
   const now = new Date();
@@ -186,7 +203,20 @@ function GoalItem({
   // Calculate remaining amount needed to complete the goal
   const progress = typeof goal.progress === 'number' ? goal.progress : 0;
   const remaining = goal.amount - progress;
+  
+  // Only show distribute button if there are remaining savings and the goal isn't achieved
   const showDistributeButton = !goal.achieved && mockMonthlySavings.get(currentMonthKey) > 0;
+  
+  // Only show reverse button if there's progress made and not achieved yet (or achieved)
+  const showReverseButton = progress > 0 && onReverseDistribution;
+
+  const handleDelete = () => {
+    // Close the dialog
+    setShowDeleteDialog(false);
+    
+    // Call the delete function
+    onDelete(goal.id);
+  };
 
   return (
     <div 
@@ -293,14 +323,61 @@ function GoalItem({
               </PopoverContent>
             </Popover>
           )}
+          
+          {/* Show reverse button if there's progress */}
+          {showReverseButton && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (onReverseDistribution) {
+                        // Use the current month key for simplicity
+                        onReverseDistribution(goal.id, currentMonthKey);
+                      }
+                    }}
+                    className="h-8 w-8 mr-1 text-amber-500 hover:text-amber-600 hover:bg-amber-100/50 dark:hover:bg-amber-900/20"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reverse contributions to this goal</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
+          {/* Delete button with confirmation dialog */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(goal.id)}
+            onClick={() => setShowDeleteDialog(true)}
             className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
+          
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this saving goal?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {progress > 0 
+                    ? `This will delete your goal "${goal.purpose}" and return $${progress.toFixed(2)} to your available savings.` 
+                    : `This will permanently delete your goal "${goal.purpose}".`}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction variant="destructive" onClick={handleDelete}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       
