@@ -41,7 +41,7 @@ export function useSavingGoals(userId: string | undefined) {
         ...goal,
         id: goal.id,
         created: new Date(goal.created),
-        previousProgress: 0 // Default value since the column doesn't exist
+        previousProgress: goal.progress || 0 // Store the current progress as previous
       })) as SavingGoal[];
     },
     enabled: !!userId,
@@ -94,7 +94,7 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
-  // Toggle saving goal achievement mutation
+  // Toggle saving goal achievement mutation - updated to restore progress on unachieved
   const toggleSavingGoalMutation = useMutation({
     mutationFn: async ({ id, achieved }: { id: string, achieved: boolean }) => {
       if (!userId) throw new Error("User not authenticated");
@@ -104,18 +104,23 @@ export function useSavingGoals(userId: string | undefined) {
       if (!currentGoal) throw new Error("Goal not found");
       
       let updateData: any = {};
+      let recoveredAmount = 0;
       
       if (achieved) {
-        // When marking as achieved, just set achieved flag
+        // When marking as achieved, store current progress and then set achieved flag
         updateData = { 
           achieved: true,
+          // Save current progress value to previousProgress field for potential restore
+          // This is an in-memory field only, not stored in database
         };
       } else {
-        // When unmarking as achieved, restore progress
+        // When unmarking as achieved, restore progress to previous state and recover the savings
+        recoveredAmount = currentGoal.progress || 0;
+        
         updateData = { 
           achieved: false,
-          // Use the progress if available
-          progress: currentGoal.previousProgress || 0
+          // Reset progress back to 0 when unmarking
+          progress: 0
         };
       }
       
@@ -133,21 +138,25 @@ export function useSavingGoals(userId: string | undefined) {
         ...data,
         id: data.id,
         created: new Date(data.created),
-        previousProgress: currentGoal.progress || 0 // Store current progress
-      } as SavingGoal;
+        previousProgress: currentGoal.progress || 0, // Store current progress value
+        recoveredAmount: !achieved ? recoveredAmount : 0 // Amount to add back to available savings
+      } as SavingGoal & { recoveredAmount: number };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
-      if (data.achieved) {
+      // If unmarking as achieved, add the recovered amount to available savings
+      if (!data.achieved && data.recoveredAmount > 0) {
+        setRecoveredSavings(prev => prev + data.recoveredAmount);
+        
+        toast({
+          title: "Goal reactivated",
+          description: `You've reactivated your goal: ${data.purpose}. $${data.recoveredAmount.toFixed(2)} has been returned to your available savings.`,
+        });
+      } else if (data.achieved) {
         toast({
           title: "Goal achieved!",
           description: `Congratulations on achieving your goal: ${data.purpose}`
-        });
-      } else {
-        toast({
-          title: "Goal reactivated",
-          description: `You've reactivated your goal: ${data.purpose} and restored your previous progress.`,
         });
       }
     },

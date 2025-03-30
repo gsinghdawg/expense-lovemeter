@@ -18,6 +18,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SavingGoalListProps {
   goals: SavingGoal[];
@@ -148,6 +158,7 @@ function GoalItem({
   availableSavings = 0 
 }: GoalItemProps) {
   const [showMonthsPopover, setShowMonthsPopover] = useState(false);
+  const [showUnachieveDialog, setShowUnachieveDialog] = useState(false);
   
   // Generate list of months since goal creation until today
   const now = new Date();
@@ -188,6 +199,22 @@ function GoalItem({
   const remaining = goal.amount - progress;
   const showDistributeButton = !goal.achieved && mockMonthlySavings.get(currentMonthKey) > 0;
 
+  // Handle toggling achieved status with confirmation dialog for achieved goals
+  const handleToggle = () => {
+    if (goal.achieved) {
+      // If the goal is currently achieved, show confirmation dialog before unmarking
+      setShowUnachieveDialog(true);
+    } else {
+      // If the goal is currently not achieved, mark it as achieved directly
+      onToggle(goal.id, true);
+    }
+  };
+
+  const handleConfirmUnachieve = () => {
+    onToggle(goal.id, false);
+    setShowUnachieveDialog(false);
+  };
+
   return (
     <div 
       className={cn(
@@ -200,7 +227,7 @@ function GoalItem({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onToggle(goal.id, !goal.achieved)}
+            onClick={handleToggle}
             className="h-8 w-8"
           >
             {goal.achieved ? (
@@ -327,6 +354,25 @@ function GoalItem({
           )}
         </div>
       )}
+
+      {/* Confirmation Dialog for unchecking achieved goals */}
+      <AlertDialog open={showUnachieveDialog} onOpenChange={setShowUnachieveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reactivate Goal</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will revert the goal back to active status and return any distributed 
+              savings back to your available savings. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmUnachieve}>
+              Reactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
