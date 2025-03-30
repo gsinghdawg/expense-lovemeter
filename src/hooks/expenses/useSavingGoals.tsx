@@ -183,8 +183,9 @@ export function useSavingGoals(userId: string | undefined) {
   });
 
   // Delete saving goal mutation - updated to recover progress for a specific month
+  // This mutation is now also used for the "reverse contributions" functionality
   const deleteSavingGoalMutation = useMutation({
-    mutationFn: async ({ id, monthKey }: { id: string, monthKey?: string }) => {
+    mutationFn: async ({ id, monthKey, keepGoal = false }: { id: string, monthKey?: string, keepGoal?: boolean }) => {
       if (!userId) throw new Error("User not authenticated");
       
       // First, get the goal to recover its progress amount
@@ -194,23 +195,39 @@ export function useSavingGoals(userId: string | undefined) {
       // Store the progress amount to return to available savings
       const progressAmount = goalToDelete.progress || 0;
       
-      const { error } = await supabase
-        .from('saving_goals')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', userId);
-        
-      if (error) throw error;
+      // If we're just reversing contributions (keepGoal=true), update goal instead of deleting
+      if (keepGoal) {
+        const { error } = await supabase
+          .from('saving_goals')
+          .update({
+            progress: 0,  // Reset progress to 0
+            achieved: false // Ensure it's not marked as achieved
+          })
+          .eq('id', id)
+          .eq('user_id', userId);
+          
+        if (error) throw error;
+      } else {
+        // Otherwise, delete the goal
+        const { error } = await supabase
+          .from('saving_goals')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', userId);
+          
+        if (error) throw error;
+      }
       
-      // Return both the deleted ID and the amount to recover, plus the monthKey
+      // Return both the deleted/updated ID and the amount to recover, plus the monthKey
       return { 
         id, 
         recoveredAmount: progressAmount,
         monthKey: monthKey || '',
-        purpose: goalToDelete.purpose // Include purpose for toast notification
+        purpose: goalToDelete.purpose, // Include purpose for toast notification
+        keepGoal: keepGoal // Track if we're keeping the goal
       };
     },
-    onSuccess: ({ id, recoveredAmount, monthKey, purpose }) => {
+    onSuccess: ({ id, recoveredAmount, monthKey, purpose, keepGoal }) => {
       queryClient.invalidateQueries({ queryKey: ['saving-goals', userId] });
       
       // Save the recovered amount to state for other components to use
@@ -229,23 +246,32 @@ export function useSavingGoals(userId: string | undefined) {
         });
       }
       
-      toast({
-        title: "Saving goal deleted",
-        description: recoveredAmount > 0 
-          ? `Your saving goal "${purpose}" has been removed and $${recoveredAmount.toFixed(2)} has been returned to your available savings for ${monthKey.replace('-', '/')}`
-          : `Your saving goal "${purpose}" has been removed`,
-      });
+      if (keepGoal) {
+        toast({
+          title: "Contributions reversed",
+          description: recoveredAmount > 0 
+            ? `$${recoveredAmount.toFixed(2)} has been returned to your available savings for ${monthKey.replace('-', '/')} while keeping your "${purpose}" goal active.`
+            : `Your goal "${purpose}" had no contributions to reverse.`,
+        });
+      } else {
+        toast({
+          title: "Saving goal deleted",
+          description: recoveredAmount > 0 
+            ? `Your saving goal "${purpose}" has been removed and $${recoveredAmount.toFixed(2)} has been returned to your available savings for ${monthKey.replace('-', '/')}`
+            : `Your saving goal "${purpose}" has been removed`,
+        });
+      }
     },
     onError: (error: any) => {
       toast({
-        title: "Error deleting goal",
-        description: error.message || "Failed to delete saving goal",
+        title: "Error with goal",
+        description: error.message || "Failed to process your request",
         variant: "destructive",
       });
     },
   });
 
-  // Distribute savings mutation - modified to track remaining savings
+  // Distribute savings mutation
   const distributeSavingsMutation = useMutation({
     mutationFn: async ({ amount, goalId, monthKey }: { amount: number; goalId: string; monthKey: string }) => {
       if (!userId) throw new Error("User not authenticated");
@@ -346,8 +372,13 @@ export function useSavingGoals(userId: string | undefined) {
     toggleSavingGoalMutation.mutate({ id, achieved, monthKey });
   };
 
-  const deleteSavingGoal = (id: string, monthKey?: string) => {
-    deleteSavingGoalMutation.mutate({ id, monthKey });
+  const deleteSavingGoal = (id: string, monthKey?: string, keepGoal: boolean = false) => {
+    deleteSavingGoalMutation.mutate({ id, monthKey, keepGoal });
+  };
+
+  const reverseSavingGoal = (id: string, monthKey?: string) => {
+    // Use the delete mutation but pass keepGoal=true
+    deleteSavingGoalMutation.mutate({ id, monthKey, keepGoal: true });
   };
 
   const distributeSavings = (amount: number, goalId: string, monthKey: string) => {
@@ -377,8 +408,9 @@ export function useSavingGoals(userId: string | undefined) {
     addSavingGoal,
     toggleSavingGoal,
     deleteSavingGoal,
+    reverseSavingGoal,
     distributeSavings,
     getRecoveredSavings,
-    getRemainingMonthSavings, // New method to get remaining savings
+    getRemainingMonthSavings,
   };
 }

@@ -1,4 +1,3 @@
-
 import { SavingGoal } from "@/types/expense";
 import { SavingGoalForm } from "@/components/SavingGoalForm";
 import { SavingGoalList } from "@/components/SavingGoalList";
@@ -24,6 +23,10 @@ export function SavingGoalSection({
   monthEndSavings,
   recoveredSavings = 0
 }: SavingGoalSectionProps) {
+  const handleReverseGoal = (id: string, monthKey?: string) => {
+    onDeleteGoal(id, monthKey, true);
+  };
+
   return (
     <div className="space-y-6">
       <SavingGoalForm onSubmit={onAddGoal} />
