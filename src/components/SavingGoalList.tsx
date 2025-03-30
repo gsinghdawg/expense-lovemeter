@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { SavingGoal } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon, RotateCcw } from "lucide-react";
+import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, eachMonthOfInterval, isSameMonth, subMonths } from "date-fns";
 import { SavingGoalProgress } from "@/components/SavingGoalProgress";
@@ -157,7 +158,6 @@ function GoalItem({
   const [showMonthsPopover, setShowMonthsPopover] = useState(false);
   const [showUnachieveDialog, setShowUnachieveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showReverseDialog, setShowReverseDialog] = useState(false);
   const [currentMonthKey, setCurrentMonthKey] = useState('');
   
   const now = new Date();
@@ -208,10 +208,12 @@ function GoalItem({
   };
 
   const handleDelete = () => {
+    // For goals with progress, show a confirmation dialog
     if (progress > 0) {
       setCurrentMonthKey(thisMonthKey);
       setShowDeleteDialog(true);
     } else {
+      // For goals without progress, delete immediately
       onDelete(goal.id);
     }
   };
@@ -219,18 +221,6 @@ function GoalItem({
   const handleConfirmDelete = () => {
     onDelete(goal.id, currentMonthKey);
     setShowDeleteDialog(false);
-  };
-
-  const handleReverse = () => {
-    if (progress > 0) {
-      setCurrentMonthKey(thisMonthKey);
-      setShowReverseDialog(true);
-    }
-  };
-
-  const handleConfirmReverse = () => {
-    onDelete(goal.id, currentMonthKey);
-    setShowReverseDialog(false);
   };
 
   return (
@@ -335,17 +325,6 @@ function GoalItem({
               </PopoverContent>
             </Popover>
           )}
-          {(progress > 0) && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleReverse}
-              className="h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-50"
-              title="Reverse savings contributions"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-          )}
           <Button
             variant="ghost"
             size="icon"
@@ -415,28 +394,6 @@ function GoalItem({
               className="bg-destructive hover:bg-destructive/90"
             >
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={showReverseDialog} onOpenChange={setShowReverseDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reverse Savings Contributions</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will return ${progress.toFixed(2)} in contributions back to your 
-              available savings for {format(new Date(currentMonthKey + '-01'), "MMMM yyyy")}, 
-              while keeping the goal active. Continue?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmReverse}
-              className="bg-amber-500 hover:bg-amber-600"
-            >
-              Reverse Contributions
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
