@@ -172,7 +172,7 @@ function GoalItem({
   
   const mockMonthlySavings = new Map<string, number>();
   
-  monthsSinceCreation.forEach((month) => {
+  monthsSinceCreation.forEach((month, index) => {
     if (!isSameMonth(month, now)) {
       const randomSaving = Math.floor(Math.random() * 26) + 5;
       mockMonthlySavings.set(format(month, 'yyyy-MM'), randomSaving);
@@ -193,27 +193,11 @@ function GoalItem({
   const progress = typeof goal.progress === 'number' ? goal.progress : 0;
   const remaining = goal.amount - progress;
   
-  // Determine if a month has ended (current date is after the end of that month)
-  const isMonthEnded = (monthKey: string) => {
-    const monthDate = new Date(monthKey + '-01');
-    const monthEndDate = endOfMonth(monthDate);
-    return isAfter(now, monthEndDate);
-  };
+  // Only show distribute button if the current month has just ended
+  // We'll consider the current month as distributable on the first day of next month
+  const isCurrentMonthEnded = now.getDate() === 1; // First day of the month
+  const showDistributeButton = !goal.achieved && mockMonthlySavings.get(thisMonthKey) > 0 && isCurrentMonthEnded;
 
-  // Function to check if current month is a new month (first day of the month)
-  const isFirstDayOfMonth = now.getDate() === 1;
-  
-  // For current month, only allow distribution on the first day of the next month
-  const canDistributeCurrentMonth = isFirstDayOfMonth;
-  
-  // For completed months, enable the distribution button
-  const canDistributePastMonth = (monthKey: string) => {
-    return isMonthEnded(monthKey);
-  };
-
-  // Get the name of the current month for display
-  const currentMonthName = format(now, 'MMMM');
-  
   const handleToggle = () => {
     // Only allow toggling from achieved to not achieved
     if (goal.achieved) {
@@ -256,6 +240,13 @@ function GoalItem({
     // This will reset progress without deleting the goal
     onToggle(goal.id, false, currentMonthKey);
     setShowReverseDialog(false);
+  };
+
+  // Determine if a month has ended (current date is after the end of that month)
+  const isMonthEnded = (monthKey: string) => {
+    const monthDate = new Date(monthKey + '-01');
+    const monthEndDate = endOfMonth(monthDate);
+    return isAfter(now, monthEndDate);
   };
 
   return (
@@ -307,19 +298,29 @@ function GoalItem({
                 </div>
                 <div className="space-y-1 max-h-60 overflow-y-auto">
                   {Array.from(mockMonthlySavings.entries())
+                    .filter(([monthKey, availableSaving]) => {
+                      // Only show months that have ended
+                      if (!isMonthEnded(monthKey)) {
+                        return false;
+                      }
+                      
+                      const isCurrentMonth = monthKey === thisMonthKey;
+                      if (isCurrentMonth && !isCurrentMonthEnded) {
+                        return false;
+                      }
+                      
+                      const remainingSavings = getRemainingMonthSavings 
+                        ? getRemainingMonthSavings(monthKey, availableSaving)
+                        : availableSaving;
+                      return remainingSavings > 0;
+                    })
                     .map(([monthKey, availableSaving]) => {
                       const monthDate = new Date(monthKey + '-01');
-                      const monthName = format(monthDate, "MMMM yyyy");
                       const remainingSavings = getRemainingMonthSavings 
                         ? getRemainingMonthSavings(monthKey, availableSaving)
                         : availableSaving;
                       
                       if (remainingSavings <= 0) return null;
-                      
-                      // Determine if this month can be distributed
-                      const canDistribute = monthKey === thisMonthKey 
-                        ? canDistributeCurrentMonth 
-                        : canDistributePastMonth(monthKey);
                       
                       return (
                         <Button 
@@ -327,29 +328,23 @@ function GoalItem({
                           variant="outline"
                           size="sm"
                           className="w-full justify-start"
-                          disabled={!canDistribute}
                           onClick={() => {
-                            if (onDistributeSavings && canDistribute) {
+                            if (onDistributeSavings) {
                               onDistributeSavings(remainingSavings, goal.id, monthKey);
                               setShowMonthsPopover(false);
                             }
                           }}
                         >
                           <Calendar className="h-3.5 w-3.5 mr-2" />
-                          {monthName} distribution
+                          {format(monthDate, "MMMM yyyy")} distribution
                           <span className="ml-auto font-medium">${remainingSavings.toFixed(2)}</span>
-                          {!canDistribute && (
-                            <span className="absolute inset-0 flex items-center justify-center bg-background/80 text-xs font-medium text-muted-foreground">
-                              Month in progress
-                            </span>
-                          )}
                         </Button>
                       );
-                    }).filter(Boolean)}
+                    })}
                   
                   {(mockMonthlySavings.size === 0 || Array.from(mockMonthlySavings.entries())
                       .filter(([monthKey]) => {
-                        return isMonthEnded(monthKey) || (monthKey === thisMonthKey && canDistributeCurrentMonth);
+                        return isMonthEnded(monthKey) && (monthKey !== thisMonthKey || isCurrentMonthEnded);
                       })
                       .every(([monthKey, availableSaving]) => {
                         const remainingSavings = getRemainingMonthSavings 
@@ -394,12 +389,11 @@ function GoalItem({
         <div className="mt-3 pl-11 space-y-3">
           <SavingGoalProgress goal={goal} />
           
-          {/* Always show the distribution button for current month, but disable if not on first day of next month */}
-          {mockMonthlySavings.has(thisMonthKey) && (
+          {showDistributeButton && (
             <Button 
-              className="w-full relative"
+              className="w-full"
               onClick={() => {
-                if (onDistributeSavings && canDistributeCurrentMonth) {
+                if (onDistributeSavings) {
                   const remainingSavings = getRemainingMonthSavings 
                     ? getRemainingMonthSavings(thisMonthKey, availableSavings)
                     : availableSavings;
@@ -408,14 +402,8 @@ function GoalItem({
               }}
               variant="outline"
               size="sm"
-              disabled={!canDistributeCurrentMonth}
             >
-              Distribute ${mockMonthlySavings.get(thisMonthKey)?.toFixed(2)} from {currentMonthName} to this goal
-              {!canDistributeCurrentMonth && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-md text-xs">
-                  Available on the first day of next month
-                </div>
-              )}
+              Distribute ${mockMonthlySavings.get(thisMonthKey)?.toFixed(2)} from {format(now, "MMMM")} to this goal
             </Button>
           )}
         </div>
