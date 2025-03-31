@@ -3,7 +3,7 @@ import { useState } from "react";
 import { SavingGoal } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon } from "lucide-react";
+import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, eachMonthOfInterval, isSameMonth, subMonths } from "date-fns";
 import { SavingGoalProgress } from "@/components/SavingGoalProgress";
@@ -158,6 +158,7 @@ function GoalItem({
   const [showMonthsPopover, setShowMonthsPopover] = useState(false);
   const [showUnachieveDialog, setShowUnachieveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showReverseDialog, setShowReverseDialog] = useState(false);
   const [currentMonthKey, setCurrentMonthKey] = useState('');
   
   const now = new Date();
@@ -194,12 +195,12 @@ function GoalItem({
   const showDistributeButton = !goal.achieved && mockMonthlySavings.get(thisMonthKey) > 0;
 
   const handleToggle = () => {
+    // Only allow toggling from achieved to not achieved
     if (goal.achieved) {
       setCurrentMonthKey(thisMonthKey);
       setShowUnachieveDialog(true);
-    } else {
-      onToggle(goal.id, true);
     }
+    // Do nothing when clicking on an incomplete goal - users must distribute savings
   };
 
   const handleConfirmUnachieve = () => {
@@ -223,6 +224,20 @@ function GoalItem({
     setShowDeleteDialog(false);
   };
 
+  const handleReverse = () => {
+    // Only show reverse dialog for goals with progress
+    if (progress > 0) {
+      setCurrentMonthKey(thisMonthKey);
+      setShowReverseDialog(true);
+    }
+  };
+
+  const handleConfirmReverse = () => {
+    // This will reset progress without deleting the goal
+    onToggle(goal.id, false, currentMonthKey);
+    setShowReverseDialog(false);
+  };
+
   return (
     <div 
       className={cn(
@@ -237,6 +252,7 @@ function GoalItem({
             size="icon"
             onClick={handleToggle}
             className="h-8 w-8"
+            disabled={!goal.achieved} // Disable the button for non-achieved goals
           >
             {goal.achieved ? (
               <CheckCircle className="h-5 w-5 text-green-500" />
@@ -325,6 +341,20 @@ function GoalItem({
               </PopoverContent>
             </Popover>
           )}
+          
+          {/* Add the Reverse button if there's progress */}
+          {progress > 0 && !goal.achieved && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleReverse}
+              className="h-8 w-8 mr-1 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+              title="Reverse savings contribution"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
+          
           <Button
             variant="ghost"
             size="icon"
@@ -394,6 +424,27 @@ function GoalItem({
               className="bg-destructive hover:bg-destructive/90"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AlertDialog open={showReverseDialog} onOpenChange={setShowReverseDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reverse Savings Contribution</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will return ${progress.toFixed(2)} to your available savings while keeping 
+              the goal active. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmReverse}
+              className="bg-yellow-600 hover:bg-yellow-700"
+            >
+              Reverse
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

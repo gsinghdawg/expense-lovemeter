@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { SavingGoal } from '@/types/expense';
@@ -113,7 +114,7 @@ export function useSavingGoals(userId: string | undefined) {
           // This is an in-memory field only, not stored in database
         };
       } else {
-        // When unmarking as achieved, restore progress to previous state and recover the savings
+        // When unmarking as achieved or resetting progress, restore progress to previous state and recover the savings
         recoveredAmount = currentGoal.progress || 0;
         
         updateData = { 
@@ -245,7 +246,7 @@ export function useSavingGoals(userId: string | undefined) {
     },
   });
 
-  // Distribute savings mutation - modified to track remaining savings
+  // Distribute savings mutation - modified to track remaining savings and auto-achieve goals
   const distributeSavingsMutation = useMutation({
     mutationFn: async ({ amount, goalId, monthKey }: { amount: number; goalId: string; monthKey: string }) => {
       if (!userId) throw new Error("User not authenticated");
@@ -263,12 +264,14 @@ export function useSavingGoals(userId: string | undefined) {
       const roundedAmount = Math.round(amountToAdd * 100) / 100;
       
       const newProgress = goal.progress + roundedAmount;
+      
+      // Automatically mark as achieved if goal is met or exceeded
       const achieved = newProgress >= goal.amount;
       
       // Update data object
       const updateData: any = {
         progress: newProgress,
-        achieved: achieved
+        achieved: achieved // Automatically set to achieved when progress meets/exceeds goal amount
       };
       
       // Update the goal in the database
