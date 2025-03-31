@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { Expense } from "@/types/expense";
 import { toast } from "@/hooks/use-toast";
-import { endOfMonth, isAfter, isValid } from "date-fns";
+import { endOfMonth, isAfter } from "date-fns";
 
 type MonthlySavingsChartProps = {
   expenses: Expense[];
@@ -38,8 +38,6 @@ export function MonthlySavingsChart({
     
     // Organize expenses by month
     currentYearExpenses.forEach((expense) => {
-      if (!isValid(expense.date)) return;
-      
       const month = expense.date.getMonth();
       const monthKey = `${month}`;
       spendingByMonth[monthKey] = (spendingByMonth[monthKey] || 0) + expense.amount;
@@ -56,24 +54,13 @@ export function MonthlySavingsChart({
       const monthBudget = getBudgetForMonth(month, currentYear);
       const monthSpending = spendingByMonth[`${month}`] || 0;
       
-      // Calculate if the month has expenses
-      const hasExpenses = !!spendingByMonth[`${month}`];
-      
       // Only calculate savings if the budget is explicitly set
       const savings = monthBudget !== null ? monthBudget - monthSpending : null;
       
-      // Check if month has ended (today is after end of month or it's the first day of next month)
+      // Check if month has ended
       const monthDate = new Date(currentYear, month, 1);
       const monthEndDate = endOfMonth(monthDate);
       const isMonthEnded = isAfter(now, monthEndDate);
-      
-      // For the first day of the next month, we also consider the previous month as ended
-      const isFirstDayOfNextMonth = 
-        now.getDate() === 1 && 
-        now.getMonth() === (month + 1) % 12 &&
-        (month === 11 ? now.getFullYear() === currentYear + 1 : now.getFullYear() === currentYear);
-      
-      const monthIsComplete = isMonthEnded || isFirstDayOfNextMonth;
       
       monthlyData.push({
         month: monthNames[month],
@@ -83,9 +70,7 @@ export function MonthlySavingsChart({
         budget: monthBudget,
         fullMonth: new Date(currentYear, month).toLocaleString('default', { month: 'long' }),
         year: currentYear,
-        isMonthEnded: monthIsComplete,  // Flag to indicate if month has ended
-        hasExpenses: hasExpenses,       // Flag to indicate if month has expenses
-        hasBudget: monthBudget !== null // Flag to indicate if month has a budget set
+        isMonthEnded: isMonthEnded  // Flag to indicate if month has ended
       });
     }
 
@@ -94,7 +79,7 @@ export function MonthlySavingsChart({
 
   const handleBarClick = (data: any) => {
     if (data && data.payload) {
-      const { fullMonth, year, budget, spending, savings, isMonthEnded, hasExpenses, hasBudget } = data.payload;
+      const { fullMonth, year, budget, spending, savings, isMonthEnded } = data.payload;
       
       let statusMessage = "";
       if (isMonthEnded) {
@@ -103,26 +88,24 @@ export function MonthlySavingsChart({
         statusMessage = " (Month in progress)";
       }
       
-      const budgetMessage = hasBudget 
-        ? `Budget $${budget.toFixed(2)}, Spent $${spending.toFixed(2)}, ${
+      const message = budget === null 
+        ? `${fullMonth} ${year}${statusMessage}: No budget set. Spent $${spending.toFixed(2)}`
+        : `${fullMonth} ${year}${statusMessage}: Budget $${budget.toFixed(2)}, Spent $${spending.toFixed(2)}, ${
             savings >= 0 
               ? `Saved $${savings.toFixed(2)}` 
               : `Overspent $${Math.abs(savings).toFixed(2)}`
-          }`
-        : `No budget set. ${hasExpenses ? `Spent $${spending.toFixed(2)}` : 'No expenses recorded'}`;
-      
-      const message = `${fullMonth} ${year}${statusMessage}: ${budgetMessage}`;
-      
+          }`;
+          
       console.log(message);
       toast({
         title: `${fullMonth} ${year}${statusMessage}`,
-        description: hasBudget 
-          ? `Budget: $${budget.toFixed(2)}\nSpent: $${spending.toFixed(2)}\n${
+        description: budget === null 
+          ? `No budget set. Spent $${spending.toFixed(2)}`
+          : `Budget: $${budget.toFixed(2)}\nSpent: $${spending.toFixed(2)}\n${
               savings >= 0 
                 ? `Saved: $${savings.toFixed(2)}` 
                 : `Overspent: $${Math.abs(savings).toFixed(2)}`
-            }`
-          : `No budget set. ${hasExpenses ? `Spent $${spending.toFixed(2)}` : 'No expenses recorded'}`,
+            }`,
         duration: 5000,
       });
     }

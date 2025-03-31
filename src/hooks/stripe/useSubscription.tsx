@@ -1,50 +1,44 @@
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
 
-// This is a mock implementation for development
+// Simple mock implementation
 export function useSubscription() {
-  const [isLoading, setIsLoading] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
-  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    const fetchSubscription = async () => {
       setIsLoading(true);
-      console.log(`Simulating subscription check for user: ${user.id}`);
-      
-      // Simulate fetching subscription data
-      setTimeout(() => {
-        const mockSubscription = {
-          id: 'sub_mock123',
-          status: 'active',
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          items: {
-            data: [
-              {
-                price: {
-                  id: 'price_mock123',
-                  product: 'prod_mock123',
-                  unit_amount: 999,
-                  currency: 'usd',
-                  recurring: {
-                    interval: 'month'
-                  }
-                }
-              }
-            ]
-          }
-        };
-        
-        setSubscription(mockSubscription);
+      try {
+        // This is just a mock implementation
+        // In a real implementation, this would fetch the actual subscription data
+        setSubscription({
+          status: "active",
+          current_period_end: new Date().getTime() + 30 * 24 * 60 * 60 * 1000, // 30 days from now
+          plan: {
+            name: "Pro Plan",
+            amount: 1999, // $19.99
+            interval: "month",
+          },
+        });
+      } catch (error) {
+        console.error("Error fetching subscription:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch subscription data.",
+          variant: "destructive",
+        });
+      } finally {
         setIsLoading(false);
-        console.log("User subscription status:", mockSubscription.status, "isActive:", mockSubscription.status === 'active');
-      }, 500);
-    }
-  }, [user]);
+      }
+    };
+
+    fetchSubscription();
+  }, []);
 
   return {
     subscription,
-    isLoading
+    isLoading,
   };
 }
