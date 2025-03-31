@@ -11,7 +11,6 @@ import {
 } from "recharts";
 import { Expense } from "@/types/expense";
 import { toast } from "@/hooks/use-toast";
-import { endOfMonth, isAfter } from "date-fns";
 
 type MonthlySavingsChartProps = {
   expenses: Expense[];
@@ -29,7 +28,6 @@ export function MonthlySavingsChart({
   const monthlySavings = useMemo(() => {
     const spendingByMonth: Record<string, number> = {};
     const currentYear = new Date().getFullYear();
-    const now = new Date();
     
     // Filter expenses for the current year
     const currentYearExpenses = expenses.filter(expense => 
@@ -57,11 +55,6 @@ export function MonthlySavingsChart({
       // Only calculate savings if the budget is explicitly set
       const savings = monthBudget !== null ? monthBudget - monthSpending : null;
       
-      // Check if month has ended
-      const monthDate = new Date(currentYear, month, 1);
-      const monthEndDate = endOfMonth(monthDate);
-      const isMonthEnded = isAfter(now, monthEndDate);
-      
       monthlyData.push({
         month: monthNames[month],
         monthIndex: month,
@@ -69,8 +62,7 @@ export function MonthlySavingsChart({
         spending: monthSpending,
         budget: monthBudget,
         fullMonth: new Date(currentYear, month).toLocaleString('default', { month: 'long' }),
-        year: currentYear,
-        isMonthEnded: isMonthEnded  // Flag to indicate if month has ended
+        year: currentYear
       });
     }
 
@@ -79,18 +71,10 @@ export function MonthlySavingsChart({
 
   const handleBarClick = (data: any) => {
     if (data && data.payload) {
-      const { fullMonth, year, budget, spending, savings, isMonthEnded } = data.payload;
-      
-      let statusMessage = "";
-      if (isMonthEnded) {
-        statusMessage = " (Month completed)";
-      } else {
-        statusMessage = " (Month in progress)";
-      }
-      
+      const { fullMonth, year, budget, spending, savings } = data.payload;
       const message = budget === null 
-        ? `${fullMonth} ${year}${statusMessage}: No budget set. Spent $${spending.toFixed(2)}`
-        : `${fullMonth} ${year}${statusMessage}: Budget $${budget.toFixed(2)}, Spent $${spending.toFixed(2)}, ${
+        ? `${fullMonth} ${year}: No budget set. Spent $${spending.toFixed(2)}`
+        : `${fullMonth} ${year}: Budget $${budget.toFixed(2)}, Spent $${spending.toFixed(2)}, ${
             savings >= 0 
               ? `Saved $${savings.toFixed(2)}` 
               : `Overspent $${Math.abs(savings).toFixed(2)}`
@@ -98,7 +82,7 @@ export function MonthlySavingsChart({
           
       console.log(message);
       toast({
-        title: `${fullMonth} ${year}${statusMessage}`,
+        title: `${fullMonth} ${year}`,
         description: budget === null 
           ? `No budget set. Spent $${spending.toFixed(2)}`
           : `Budget: $${budget.toFixed(2)}\nSpent: $${spending.toFixed(2)}\n${
@@ -145,11 +129,7 @@ export function MonthlySavingsChart({
             }}
             labelFormatter={(label: string, items: any[]) => {
               const item = items[0]?.payload;
-              if (!item) return label;
-              
-              return item.isMonthEnded
-                ? `${item.fullMonth} ${item.year} (Month completed)`
-                : `${item.fullMonth} ${item.year} (Month in progress)`;
+              return item ? `${item.fullMonth} ${item.year}` : label;
             }}
             contentStyle={{ fontSize: 12 }}
           />
