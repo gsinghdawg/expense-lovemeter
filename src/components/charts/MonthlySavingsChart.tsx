@@ -62,11 +62,6 @@ export function MonthlySavingsChart({
       const monthEndDate = endOfMonth(monthDate);
       const isMonthEnded = isAfter(now, monthEndDate);
       
-      // Check if it's the first day of the next month
-      const isFirstDayOfNextMonth = month < 11 
-        ? now.getMonth() === month + 1 && now.getDate() === 1 
-        : now.getMonth() === 0 && now.getDate() === 1 && now.getFullYear() === currentYear + 1;
-      
       monthlyData.push({
         month: monthNames[month],
         monthIndex: month,
@@ -75,9 +70,7 @@ export function MonthlySavingsChart({
         budget: monthBudget,
         fullMonth: new Date(currentYear, month).toLocaleString('default', { month: 'long' }),
         year: currentYear,
-        isMonthEnded,
-        isFirstDayOfNextMonth, // Flag to indicate if it's the first day of the next month
-        canDistribute: isMonthEnded || isFirstDayOfNextMonth  // Can distribute if month has ended or it's the first day of next month
+        isMonthEnded: isMonthEnded  // Flag to indicate if month has ended
       });
     }
 
@@ -86,7 +79,7 @@ export function MonthlySavingsChart({
 
   const handleBarClick = (data: any) => {
     if (data && data.payload) {
-      const { fullMonth, year, budget, spending, savings, isMonthEnded, canDistribute } = data.payload;
+      const { fullMonth, year, budget, spending, savings, isMonthEnded } = data.payload;
       
       let statusMessage = "";
       if (isMonthEnded) {
@@ -95,28 +88,24 @@ export function MonthlySavingsChart({
         statusMessage = " (Month in progress)";
       }
       
-      const distributionStatus = canDistribute 
-        ? " - Savings can be distributed" 
-        : " - Wait until the month ends to distribute savings";
-        
       const message = budget === null 
-        ? `${fullMonth} ${year}${statusMessage}: No budget set. Spent $${spending.toFixed(2)}${distributionStatus}`
+        ? `${fullMonth} ${year}${statusMessage}: No budget set. Spent $${spending.toFixed(2)}`
         : `${fullMonth} ${year}${statusMessage}: Budget $${budget.toFixed(2)}, Spent $${spending.toFixed(2)}, ${
             savings >= 0 
               ? `Saved $${savings.toFixed(2)}` 
               : `Overspent $${Math.abs(savings).toFixed(2)}`
-          }${distributionStatus}`;
+          }`;
           
       console.log(message);
       toast({
         title: `${fullMonth} ${year}${statusMessage}`,
         description: budget === null 
-          ? `No budget set. Spent $${spending.toFixed(2)}${distributionStatus}`
+          ? `No budget set. Spent $${spending.toFixed(2)}`
           : `Budget: $${budget.toFixed(2)}\nSpent: $${spending.toFixed(2)}\n${
               savings >= 0 
                 ? `Saved: $${savings.toFixed(2)}` 
                 : `Overspent: $${Math.abs(savings).toFixed(2)}`
-            }${distributionStatus}`,
+            }`,
         duration: 5000,
       });
     }
@@ -158,15 +147,9 @@ export function MonthlySavingsChart({
               const item = items[0]?.payload;
               if (!item) return label;
               
-              const status = item.isMonthEnded 
-                ? "Month completed" 
-                : "Month in progress";
-                
-              const distributionStatus = item.canDistribute 
-                ? "Savings can be distributed" 
-                : "Wait until month ends to distribute savings";
-                
-              return `${item.fullMonth} ${item.year} (${status}, ${distributionStatus})`;
+              return item.isMonthEnded
+                ? `${item.fullMonth} ${item.year} (Month completed)`
+                : `${item.fullMonth} ${item.year} (Month in progress)`;
             }}
             contentStyle={{ fontSize: 12 }}
           />
@@ -181,15 +164,7 @@ export function MonthlySavingsChart({
               if (data && data.payload) {
                 const value = data.payload.savings;
                 if (value !== null) {
-                  // Use different colors based on savings value and whether distribution is possible
-                  let color = "#4B5563"; // Default gray
-                  
-                  if (data.payload.canDistribute) {
-                    color = value >= 0 ? "#4ade80" : "#ef4444";
-                  } else {
-                    color = value >= 0 ? "#86efac" : "#fca5a5"; // Lighter colors for non-distributable months
-                  }
-                  
+                  const color = value >= 0 ? "#4ade80" : "#ef4444";
                   if (data.element) {
                     data.element.style.fill = color;
                   }
