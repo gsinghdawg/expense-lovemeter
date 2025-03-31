@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCustomerPortal } from "@/hooks/stripe/useCustomerPortal";
@@ -9,17 +8,27 @@ import { Spinner } from "@/components/ui/spinner";
 
 export function SubscriptionManager() {
   const { user } = useAuth();
-  const { openCustomerPortal, isLoading: isPortalLoading } = useCustomerPortal();
+  const { customerPortalUrl, fetchCustomerPortalUrl } = useCustomerPortal();
   
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const { 
-    subscription, 
-    isLoading: isSubscriptionLoading
-  } = useSubscription();
+    subscriptionDetails, 
+    fetchSubscriptionDetails,
+    cancelSubscription,
+    reactivateSubscription,
+    isLoading: isSubscriptionLoading,
+    error: subscriptionError
+  } = useSubscription(user?.id);
 
-  const subscriptionId = subscription?.id;
-  const subscriptionStatus = subscription?.status;
+  useEffect(() => {
+    if (user?.id && !subscriptionDetails) {
+      fetchSubscriptionDetails();
+    }
+  }, [user?.id, subscriptionDetails, fetchSubscriptionDetails]);
+
+  const subscriptionId = subscriptionDetails?.id;
+  const subscriptionStatus = subscriptionDetails?.status;
   const isSubscribed = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
 
   const handleCancelSubscription = async () => {
@@ -27,8 +36,11 @@ export function SubscriptionManager() {
     
     try {
       setIsCancelling(true);
-      // Mock implementation
-      console.log("Canceling subscription", subscriptionId);
+      await cancelSubscription(); // Remove the parameter here
+      
+      if (fetchSubscriptionDetails) { // Change this to if statement instead of testing the return value
+        fetchSubscriptionDetails();
+      }
       
       toast({
         title: "Subscription cancelled",
@@ -51,13 +63,16 @@ export function SubscriptionManager() {
     
     try {
       setIsReactivating(true);
-      // Mock implementation
-      console.log("Reactivating subscription", subscriptionId);
+      await reactivateSubscription(); // Remove the parameter here
       
       toast({
         title: "Subscription reactivated",
         description: "Your subscription has been reactivated.",
       });
+      
+      if (fetchSubscriptionDetails) {
+        fetchSubscriptionDetails();
+      }
     } catch (error) {
       console.error("Error reactivating subscription:", error);
       toast({
@@ -81,9 +96,18 @@ export function SubscriptionManager() {
     }
 
     try {
-      await openCustomerPortal();
+      const portalUrl = await fetchCustomerPortalUrl();
+      if (portalUrl) {
+        window.location.href = portalUrl;
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to open customer portal. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error("Error opening customer portal:", error);
+      console.error("Error fetching customer portal URL:", error);
       toast({
         title: "Error",
         description: "Failed to open customer portal. Please try again.",
@@ -96,6 +120,14 @@ export function SubscriptionManager() {
     return (
       <div className="flex items-center justify-center">
         <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (subscriptionError) {
+    return (
+      <div className="text-red-500">
+        Error loading subscription details. Please try again later.
       </div>
     );
   }
