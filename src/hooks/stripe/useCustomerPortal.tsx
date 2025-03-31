@@ -1,35 +1,22 @@
 
-import { useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { useState } from 'react';
 
-// Simple mock implementation
+// This is a mock implementation for development
 export function useCustomerPortal() {
   const [isLoading, setIsLoading] = useState(false);
 
   const openCustomerPortal = async () => {
     setIsLoading(true);
-    try {
-      // This is just a mock implementation
-      console.log("Opening customer portal");
-      // In a real implementation, this would redirect to the Stripe Customer Portal
-      toast({
-        title: "Customer Portal",
-        description: "This is a mock implementation.",
-      });
-    } catch (error) {
-      console.error("Error opening customer portal:", error);
-      toast({
-        title: "Error",
-        description: "Failed to open customer portal.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    console.log("Simulating opening customer portal");
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    // In a real implementation, this would redirect to Stripe's customer portal
+    window.open('https://dashboard.stripe.com', '_blank');
+    setIsLoading(false);
   };
 
   return {
     openCustomerPortal,
-    isLoading,
+    isLoading
   };
 }
