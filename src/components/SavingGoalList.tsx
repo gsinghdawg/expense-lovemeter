@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Circle, Trash2, Wallet, Calendar, InfoIcon, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, eachMonthOfInterval, isSameMonth, subMonths } from "date-fns";
+import { format, eachMonthOfInterval, isSameMonth, subMonths, isAfter, endOfMonth } from "date-fns";
 import { SavingGoalProgress } from "@/components/SavingGoalProgress";
 import { 
   Popover,
@@ -192,7 +192,11 @@ function GoalItem({
 
   const progress = typeof goal.progress === 'number' ? goal.progress : 0;
   const remaining = goal.amount - progress;
-  const showDistributeButton = !goal.achieved && mockMonthlySavings.get(thisMonthKey) > 0;
+  
+  // Only show distribute button if the current month has just ended
+  // We'll consider the current month as distributable on the first day of next month
+  const isCurrentMonthEnded = now.getDate() === 1; // First day of the month
+  const showDistributeButton = !goal.achieved && mockMonthlySavings.get(thisMonthKey) > 0 && isCurrentMonthEnded;
 
   const handleToggle = () => {
     // Only allow toggling from achieved to not achieved
@@ -236,6 +240,13 @@ function GoalItem({
     // This will reset progress without deleting the goal
     onToggle(goal.id, false, currentMonthKey);
     setShowReverseDialog(false);
+  };
+
+  // Determine if a month has ended (current date is after the end of that month)
+  const isMonthEnded = (monthKey: string) => {
+    const monthDate = new Date(monthKey + '-01');
+    const monthEndDate = endOfMonth(monthDate);
+    return isAfter(now, monthEndDate);
   };
 
   return (
@@ -288,10 +299,16 @@ function GoalItem({
                 <div className="space-y-1 max-h-60 overflow-y-auto">
                   {Array.from(mockMonthlySavings.entries())
                     .filter(([monthKey, availableSaving]) => {
-                      const isCurrentMonth = monthKey === thisMonthKey;
-                      if (isCurrentMonth) {
+                      // Only show months that have ended
+                      if (!isMonthEnded(monthKey)) {
                         return false;
                       }
+                      
+                      const isCurrentMonth = monthKey === thisMonthKey;
+                      if (isCurrentMonth && !isCurrentMonthEnded) {
+                        return false;
+                      }
+                      
                       const remainingSavings = getRemainingMonthSavings 
                         ? getRemainingMonthSavings(monthKey, availableSaving)
                         : availableSaving;
@@ -326,7 +343,9 @@ function GoalItem({
                     })}
                   
                   {(mockMonthlySavings.size === 0 || Array.from(mockMonthlySavings.entries())
-                      .filter(([monthKey]) => monthKey !== thisMonthKey)
+                      .filter(([monthKey]) => {
+                        return isMonthEnded(monthKey) && (monthKey !== thisMonthKey || isCurrentMonthEnded);
+                      })
                       .every(([monthKey, availableSaving]) => {
                         const remainingSavings = getRemainingMonthSavings 
                           ? getRemainingMonthSavings(monthKey, availableSaving)
@@ -334,7 +353,7 @@ function GoalItem({
                         return remainingSavings <= 0;
                       })) && (
                     <div className="text-xs text-muted-foreground text-center mt-2">
-                      No previous months available
+                      No completed months available
                     </div>
                   )}
                 </div>
