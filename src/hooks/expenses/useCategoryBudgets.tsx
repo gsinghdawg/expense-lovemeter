@@ -35,7 +35,7 @@ export function useCategoryBudgets(userId: string | undefined) {
         return [];
       }
       
-      return data.map(budget => ({
+      return data.map((budget: any) => ({
         id: budget.id,
         categoryId: budget.category_id,
         amount: budget.amount,
