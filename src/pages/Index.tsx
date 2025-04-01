@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useExpenses } from "@/hooks/useExpenses";
 import { ExpenseForm } from "@/components/ExpenseForm";
@@ -7,7 +7,6 @@ import { ExpenseList } from "@/components/ExpenseList";
 import { ExpenseSummary } from "@/components/ExpenseSummary";
 import { CategoryManager } from "@/components/CategoryManager";
 import { BudgetForm } from "@/components/BudgetForm";
-import { CategoryBudgetForm } from "@/components/budget/CategoryBudgetForm";
 import { RecentTransactions } from "@/components/RecentTransactions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles } from "lucide-react";
@@ -33,32 +32,13 @@ const Index = () => {
     getCategoryById,
     updateBudgetGoal,
     getCurrentMonthTotal,
-    getCurrentMonthExpenses,
     getBudgetForMonth,
     calculateAverageMonthlyExpense,
     getTotalSavings,
-    // Category budget properties and methods
-    categoryBudgets,
-    setCategoryBudget,
-    deleteCategoryBudget,
-    totalCategoryBudget,
   } = useExpenses();
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const { signOut, user } = useAuth();
-
-  // Calculate expenses by category for the current month
-  const currentMonthExpensesByCategory = useMemo(() => {
-    const currentMonthExpenses = getCurrentMonthExpenses();
-    const expensesByCategory: Record<string, number> = {};
-    
-    currentMonthExpenses.forEach(expense => {
-      const categoryId = expense.categoryId;
-      expensesByCategory[categoryId] = (expensesByCategory[categoryId] || 0) + expense.amount;
-    });
-    
-    return expensesByCategory;
-  }, [expenses, getCurrentMonthExpenses]);
 
   if (isLoading) {
     return (
@@ -113,17 +93,6 @@ const Index = () => {
                   budgetGoalsData={budgetGoalsData}
                   onUpdateBudget={updateBudgetGoal}
                 />
-                {budgetGoal.amount !== null && (
-                  <CategoryBudgetForm
-                    categories={categories}
-                    categoryBudgets={categoryBudgets}
-                    setCategoryBudget={setCategoryBudget}
-                    deleteCategoryBudget={deleteCategoryBudget}
-                    budgetGoal={budgetGoal}
-                    currentMonthExpensesByCategory={currentMonthExpensesByCategory}
-                    totalCategoryBudget={totalCategoryBudget}
-                  />
-                )}
                 <RecentTransactions
                   expenses={expenses}
                   categories={categories}
