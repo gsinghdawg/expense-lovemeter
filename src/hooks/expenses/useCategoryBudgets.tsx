@@ -106,7 +106,11 @@ export function useCategoryBudgets(userId: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['category-budgets', userId] });
     },
     onError: (error: any) => {
-      toast({
+      console.error("Error in updateCategoryBudgetMutation:", error);
+      // Use a non-hook way to show toast to avoid the React hooks error
+      // We're using a function that doesn't rely on React hooks internally
+      const { toast: toastFn } = require("@/hooks/use-toast");
+      toastFn({
         title: "Error updating category budget",
         description: error.message || "Failed to update category budget",
         variant: "destructive",
@@ -133,7 +137,10 @@ export function useCategoryBudgets(userId: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['category-budgets', userId] });
     },
     onError: (error: any) => {
-      toast({
+      console.error("Error in deleteCategoryBudgetMutation:", error);
+      // Use a non-hook way to show toast
+      const { toast: toastFn } = require("@/hooks/use-toast");
+      toastFn({
         title: "Error deleting category budget",
         description: error.message || "Failed to delete category budget",
         variant: "destructive",
@@ -147,7 +154,10 @@ export function useCategoryBudgets(userId: string | undefined) {
     monthlyBudget: number | null
   ) => {
     if (!userId) {
-      toast({
+      console.error("No user ID provided for bulkUpdateCategoryBudgets");
+      // Use a non-hook way to show toast
+      const { toast: toastFn } = require("@/hooks/use-toast");
+      toastFn({
         title: "Error",
         description: "You must be logged in to update category budgets",
         variant: "destructive",
@@ -156,7 +166,10 @@ export function useCategoryBudgets(userId: string | undefined) {
     }
 
     if (monthlyBudget === null) {
-      toast({
+      console.error("No monthly budget provided for bulkUpdateCategoryBudgets");
+      // Use a non-hook way to show toast
+      const { toast: toastFn } = require("@/hooks/use-toast");
+      toastFn({
         title: "Error",
         description: "You must set a monthly budget goal first",
         variant: "destructive",
@@ -172,7 +185,10 @@ export function useCategoryBudgets(userId: string | undefined) {
       
       // Validate total equals monthly budget
       if (Math.abs(totalAllocated - monthlyBudget) > 0.01) {
-        toast({
+        console.error(`Allocation mismatch: ${totalAllocated} vs ${monthlyBudget}`);
+        // Use a non-hook way to show toast
+        const { toast: toastFn } = require("@/hooks/use-toast");
+        toastFn({
           title: "Budget allocation error",
           description: `The total allocated amount ($${totalAllocated.toFixed(2)}) must equal the monthly budget ($${monthlyBudget.toFixed(2)})`,
           variant: "destructive",
@@ -185,7 +201,10 @@ export function useCategoryBudgets(userId: string | undefined) {
         await updateCategoryBudgetMutation.mutateAsync(budget);
       }
       
-      toast({
+      console.log("Budget allocated successfully");
+      // Use a non-hook way to show toast
+      const { toast: toastFn } = require("@/hooks/use-toast");
+      toastFn({
         title: "Budget allocated successfully",
         description: `Your monthly budget of $${monthlyBudget.toFixed(2)} has been allocated across categories.`,
       });
@@ -193,7 +212,9 @@ export function useCategoryBudgets(userId: string | undefined) {
       return true;
     } catch (error: any) {
       console.error("Error updating category budgets:", error);
-      toast({
+      // Use a non-hook way to show toast
+      const { toast: toastFn } = require("@/hooks/use-toast");
+      toastFn({
         title: "Error allocating budget",
         description: error.message || "Failed to update category budgets",
         variant: "destructive",

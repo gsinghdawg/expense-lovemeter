@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { ExpenseCategory, CategoryBudget } from "@/types/expense";
-import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -74,6 +73,7 @@ export function CategoryBudgetForm({
   // Save all category budgets
   const handleSaveBudgets = async () => {
     if (monthlyBudget === null) {
+      const { toast } = require("@/hooks/use-toast");
       toast({
         title: "Error",
         description: "Please set a monthly budget goal first",
@@ -83,6 +83,7 @@ export function CategoryBudgetForm({
     }
 
     if (Math.abs(totalAllocated - monthlyBudget) > 0.01) {
+      const { toast } = require("@/hooks/use-toast");
       toast({
         title: "Allocation mismatch",
         description: `The total allocated amount ($${totalAllocated.toFixed(2)}) must equal the monthly budget ($${monthlyBudget.toFixed(2)})`,
@@ -112,6 +113,7 @@ export function CategoryBudgetForm({
     if (categoryBudgets[selectedCategory] === undefined) {
       setCategoryBudgets(prev => ({
         ...prev,
+        // Always start with 0 amount for new categories
         [selectedCategory]: 0
       }));
     }
