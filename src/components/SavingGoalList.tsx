@@ -201,14 +201,25 @@ function GoalItem({
   };
 
   // Function to check if current month is a new month (first day of the month)
-  const isFirstDayOfMonth = now.getDate() === 1;
+  const isFirstDayOfCurrentMonth = now.getDate() === 1;
   
-  // For current month, only allow distribution on the first day of the next month
-  const canDistributeCurrentMonth = isFirstDayOfMonth;
+  // Get the previous month's key (for first day of current month access)
+  const previousMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const previousMonthKey = format(previousMonthDate, 'yyyy-MM');
   
-  // For completed months, enable the distribution button
-  const canDistributePastMonth = (monthKey: string) => {
-    return isMonthEnded(monthKey);
+  // For each month, determine if it can be distributed
+  const canDistributeMonth = (monthKey: string) => {
+    // Case 1: Month has fully ended
+    if (isMonthEnded(monthKey)) {
+      return true;
+    }
+    
+    // Case 2: It's the first day of current month and this is the previous month
+    if (isFirstDayOfCurrentMonth && monthKey === previousMonthKey) {
+      return true;
+    }
+    
+    return false;
   };
 
   // Get the name of the current month for display
@@ -394,12 +405,12 @@ function GoalItem({
         <div className="mt-3 pl-11 space-y-3">
           <SavingGoalProgress goal={goal} />
           
-          {/* Always show the distribution button for current month, but disable if not on first day of next month */}
+          {/* Show distribution button for the current month, but enable it only if it meets the criteria */}
           {mockMonthlySavings.has(thisMonthKey) && (
             <Button 
               className="w-full relative"
               onClick={() => {
-                if (onDistributeSavings && canDistributeCurrentMonth) {
+                if (onDistributeSavings && canDistributeMonth(thisMonthKey)) {
                   const remainingSavings = getRemainingMonthSavings 
                     ? getRemainingMonthSavings(thisMonthKey, availableSavings)
                     : availableSavings;
@@ -408,14 +419,35 @@ function GoalItem({
               }}
               variant="outline"
               size="sm"
-              disabled={!canDistributeCurrentMonth}
+              disabled={!canDistributeMonth(thisMonthKey)}
             >
               Distribute ${mockMonthlySavings.get(thisMonthKey)?.toFixed(2)} from {currentMonthName} to this goal
-              {!canDistributeCurrentMonth && (
+              {!canDistributeMonth(thisMonthKey) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-md text-xs">
-                  Available on the first day of next month
+                  {isFirstDayOfCurrentMonth 
+                    ? "Available for previous month only" 
+                    : "Available on the first day of next month"}
                 </div>
               )}
+            </Button>
+          )}
+          
+          {/* Create button for previous month distribution when it's the first day of the current month */}
+          {isFirstDayOfCurrentMonth && mockMonthlySavings.has(previousMonthKey) && (
+            <Button 
+              className="w-full"
+              onClick={() => {
+                if (onDistributeSavings) {
+                  const remainingSavings = getRemainingMonthSavings 
+                    ? getRemainingMonthSavings(previousMonthKey, mockMonthlySavings.get(previousMonthKey) || 0)
+                    : mockMonthlySavings.get(previousMonthKey) || 0;
+                  onDistributeSavings(remainingSavings, goal.id, previousMonthKey);
+                }
+              }}
+              variant="outline"
+              size="sm"
+            >
+              Distribute ${mockMonthlySavings.get(previousMonthKey)?.toFixed(2)} from {format(previousMonthDate, 'MMMM')} to this goal
             </Button>
           )}
         </div>

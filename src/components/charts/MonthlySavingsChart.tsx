@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { Expense } from "@/types/expense";
 import { toast } from "@/hooks/use-toast";
-import { endOfMonth, isAfter } from "date-fns";
+import { endOfMonth, isAfter, subMonths, startOfMonth, isWithinInterval } from "date-fns";
 
 type MonthlySavingsChartProps = {
   expenses: Expense[];
@@ -62,10 +62,18 @@ export function MonthlySavingsChart({
       const monthEndDate = endOfMonth(monthDate);
       const isMonthEnded = isAfter(now, monthEndDate);
       
-      // Check if it's the first day of the next month
-      const isFirstDayOfNextMonth = month < 11 
-        ? now.getMonth() === month + 1 && now.getDate() === 1 
-        : now.getMonth() === 0 && now.getDate() === 1 && now.getFullYear() === currentYear + 1;
+      // Check if it's the first day of the current month 
+      // (allow distribution of previous month's savings)
+      const today = now.getDate();
+      const currentMonth = now.getMonth();
+      const isFirstDayOfCurrentMonth = today === 1;
+      
+      // If it's the first day of the current month, enable distribution for the previous month
+      const isPreviousMonth = month === ((currentMonth - 1 + 12) % 12);
+      const canDistributePreviousMonth = isFirstDayOfCurrentMonth && isPreviousMonth;
+      
+      // For consistent year handling when dealing with December of previous year
+      const isPreviousYearDecember = currentMonth === 0 && month === 11 && currentYear > monthDate.getFullYear();
       
       monthlyData.push({
         month: monthNames[month],
@@ -76,8 +84,7 @@ export function MonthlySavingsChart({
         fullMonth: new Date(currentYear, month).toLocaleString('default', { month: 'long' }),
         year: currentYear,
         isMonthEnded,
-        isFirstDayOfNextMonth, // Flag to indicate if it's the first day of the next month
-        canDistribute: isMonthEnded || isFirstDayOfNextMonth  // Can distribute if month has ended or it's the first day of next month
+        canDistribute: isMonthEnded || canDistributePreviousMonth || isPreviousYearDecember
       });
     }
 
