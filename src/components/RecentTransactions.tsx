@@ -1,42 +1,27 @@
 
 import { useState } from "react";
-import { Expense, ExpenseCategory, SavingGoal } from "@/types/expense";
+import { Expense, ExpenseCategory } from "@/types/expense";
 import { ExpenseItem } from "@/components/ExpenseItem";
 import { ExpenseForm } from "@/components/ExpenseForm";
-import { SavingGoalSection } from "@/components/SavingGoalSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface RecentTransactionsProps {
   expenses: Expense[];
-  savingGoals: SavingGoal[];
   categories: ExpenseCategory[];
   getCategoryById: (id: string) => ExpenseCategory;
   onEditExpense: (expense: Expense) => void;
   onDeleteExpense: (id: string) => void;
-  onAddSavingGoal: (goal: { amount: number; purpose: string }) => void;
-  onToggleSavingGoal: (id: string, achieved: boolean) => void;
-  onDeleteSavingGoal: (id: string) => void;
-  onDistributeSavings: (amount: number, goalId: string, monthKey: string) => void;
-  getRemainingMonthSavings?: (monthKey: string, totalSavings: number) => number;
-  monthEndSavings: number;
   limit?: number;
 }
 
 export function RecentTransactions({
   expenses,
-  savingGoals,
   categories,
   getCategoryById,
   onEditExpense,
   onDeleteExpense,
-  onAddSavingGoal,
-  onToggleSavingGoal,
-  onDeleteSavingGoal,
-  onDistributeSavings,
-  getRemainingMonthSavings,
-  monthEndSavings,
   limit = 3
 }: RecentTransactionsProps) {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -103,20 +88,6 @@ export function RecentTransactions({
           )}
         </CardContent>
       </Card>
-
-      {/* Saving Goals Section */}
-      <div className="mt-6">
-        <SavingGoalSection
-          goals={savingGoals}
-          onAddGoal={onAddSavingGoal}
-          onToggleGoal={onToggleSavingGoal}
-          onDeleteGoal={onDeleteSavingGoal}
-          onDistributeSavings={onDistributeSavings}
-          getRemainingMonthSavings={getRemainingMonthSavings}
-          monthEndSavings={monthEndSavings}
-          recoveredSavings={0}
-        />
-      </div>
 
       <Dialog open={!!editingExpense} onOpenChange={(open) => !open && handleCloseDialog()}>
         <DialogContent className="sm:max-w-[425px]">

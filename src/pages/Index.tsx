@@ -22,7 +22,6 @@ const Index = () => {
     categories,
     budgetGoal,
     budgetGoalsData,
-    savingGoals,
     isLoading,
     addExpense,
     updateExpense,
@@ -32,28 +31,14 @@ const Index = () => {
     deleteCategory,
     getCategoryById,
     updateBudgetGoal,
-    addSavingGoal,
-    toggleSavingGoal,
-    deleteSavingGoal,
-    distributeSavings,
-    getRemainingMonthSavings,
     getCurrentMonthTotal,
     getBudgetForMonth,
     calculateAverageMonthlyExpense,
     getTotalSavings,
-    getCurrentMonthSavings,
   } = useExpenses();
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const { signOut, user } = useAuth();
-
-  // Get the current month's available savings
-  const monthEndSavings = getCurrentMonthSavings();
-
-  // Create a wrapper for the distributeSavings function to match expected signature
-  const handleDistributeSavings = (amount: number, goalId: string, monthKey: string) => {
-    distributeSavings(amount, goalId, monthKey);
-  };
 
   if (isLoading) {
     return (
@@ -110,17 +95,10 @@ const Index = () => {
                 />
                 <RecentTransactions
                   expenses={expenses}
-                  savingGoals={savingGoals}
                   categories={categories}
                   getCategoryById={getCategoryById}
                   onEditExpense={updateExpense}
                   onDeleteExpense={deleteExpense}
-                  onAddSavingGoal={addSavingGoal}
-                  onToggleSavingGoal={toggleSavingGoal}
-                  onDeleteSavingGoal={deleteSavingGoal}
-                  onDistributeSavings={handleDistributeSavings}
-                  getRemainingMonthSavings={getRemainingMonthSavings}
-                  monthEndSavings={monthEndSavings}
                   limit={3}
                 />
               </div>
