@@ -19,6 +19,15 @@ export type BudgetGoal = {
   year: number;
 };
 
+// New type for category budget allocation
+export type CategoryBudget = {
+  id: string;
+  categoryId: string;
+  amount: number;
+  month: number;
+  year: number;
+};
+
 // History of budget goals
 export type BudgetGoalHistory = {
   amount: number | null;
@@ -42,6 +51,12 @@ export interface DatabaseCategory extends Omit<ExpenseCategory, 'id'> {
 
 // Extending DatabaseBudgetGoal interface for database interaction
 export interface DatabaseBudgetGoal extends BudgetGoal {
+  id?: string;
+  user_id: string;
+}
+
+// New database interface for category budget
+export interface DatabaseCategoryBudget extends Omit<CategoryBudget, 'id'> {
   id?: string;
   user_id: string;
 }
