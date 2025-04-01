@@ -93,6 +93,36 @@ export type Database = {
         }
         Relationships: []
       }
+      category_budgets: {
+        Row: {
+          amount: number
+          category_id: string
+          created_at: string
+          id: string
+          month: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          category_id: string
+          created_at?: string
+          id?: string
+          month: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          category_id?: string
+          created_at?: string
+          id?: string
+          month?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -159,6 +189,36 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      saving_goals: {
+        Row: {
+          achieved: boolean
+          amount: number
+          created: string
+          id: string
+          progress: number | null
+          purpose: string
+          user_id: string
+        }
+        Insert: {
+          achieved?: boolean
+          amount: number
+          created?: string
+          id?: string
+          progress?: number | null
+          purpose: string
+          user_id: string
+        }
+        Update: {
+          achieved?: boolean
+          amount?: number
+          created?: string
+          id?: string
+          progress?: number | null
+          purpose?: string
+          user_id?: string
         }
         Relationships: []
       }

@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useExpenseData } from "./useExpenseData";
 import { useCategories } from "./useCategories";
 import { useBudgetGoals } from "./useBudgetGoals";
+import { useCategoryBudgets } from "./useCategoryBudgets";
 import { defaultCategories } from "@/data/categories";
 
 export function useExpenses() {
@@ -39,6 +40,17 @@ export function useExpenses() {
     updateBudgetGoal,
     getBudgetForMonth
   } = useBudgetGoals(userId);
+  
+  const {
+    categoryBudgets,
+    isLoadingCategoryBudgets,
+    isAllocating,
+    updateCategoryBudget,
+    deleteCategoryBudget,
+    bulkUpdateCategoryBudgets,
+    getCategoryBudgetsForMonth,
+    getCategoryBudgetForMonth
+  } = useCategoryBudgets(userId);
 
   // Always ensure we have categories available
   // If userCategories is undefined, empty, or still loading, use defaultCategories
@@ -46,7 +58,8 @@ export function useExpenses() {
     ? defaultCategories 
     : userCategories;
 
-  const isLoading = isLoadingExpenses || isLoadingBudgetGoal || isLoadingBudgetHistory;
+  const isLoading = isLoadingExpenses || isLoadingBudgetGoal || 
+                   isLoadingBudgetHistory || isLoadingCategoryBudgets;
 
   const getTotalSavings = () => {
     return calculateTotalSavings(getBudgetForMonth);
@@ -79,6 +92,15 @@ export function useExpenses() {
     budgetHistory,
     updateBudgetGoal,
     getBudgetForMonth,
+    
+    // Category budget data and methods
+    categoryBudgets,
+    isAllocating,
+    updateCategoryBudget,
+    deleteCategoryBudget,
+    bulkUpdateCategoryBudgets,
+    getCategoryBudgetsForMonth,
+    getCategoryBudgetForMonth,
     
     // Loading state
     isLoading,

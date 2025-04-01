@@ -7,6 +7,8 @@ import { ExpenseList } from "@/components/ExpenseList";
 import { ExpenseSummary } from "@/components/ExpenseSummary";
 import { CategoryManager } from "@/components/CategoryManager";
 import { BudgetForm } from "@/components/BudgetForm";
+import { CategoryBudgetForm } from "@/components/CategoryBudgetForm";
+import { CategoryBudgetChart } from "@/components/charts/CategoryBudgetChart";
 import { RecentTransactions } from "@/components/RecentTransactions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles } from "lucide-react";
@@ -22,7 +24,9 @@ const Index = () => {
     categories,
     budgetGoal,
     budgetGoalsData,
+    categoryBudgets,
     isLoading,
+    isAllocating,
     addExpense,
     updateExpense,
     deleteExpense,
@@ -31,6 +35,10 @@ const Index = () => {
     deleteCategory,
     getCategoryById,
     updateBudgetGoal,
+    updateCategoryBudget,
+    deleteCategoryBudget,
+    bulkUpdateCategoryBudgets,
+    getCategoryBudgetsForMonth,
     getCurrentMonthTotal,
     getBudgetForMonth,
     calculateAverageMonthlyExpense,
@@ -47,6 +55,12 @@ const Index = () => {
       </div>
     );
   }
+
+  // Get current month and year for category budgets
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const currentMonthCategoryBudgets = getCategoryBudgetsForMonth(currentMonth, currentYear);
 
   return (
     <div className="py-8 px-4 sm:px-6">
@@ -93,6 +107,33 @@ const Index = () => {
                   budgetGoalsData={budgetGoalsData}
                   onUpdateBudget={updateBudgetGoal}
                 />
+                
+                {/* Category Budget Form */}
+                <CategoryBudgetForm
+                  categories={categories}
+                  monthlyBudget={budgetGoal.amount}
+                  month={currentMonth}
+                  year={currentYear}
+                  existingCategoryBudgets={currentMonthCategoryBudgets}
+                  onSaveBudgets={(budgets) => bulkUpdateCategoryBudgets(budgets, budgetGoal.amount)}
+                  isLoading={isAllocating}
+                />
+                
+                {/* Category Budget Chart */}
+                {currentMonthCategoryBudgets.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium mb-2">Category Budget Usage</h3>
+                    <CategoryBudgetChart
+                      categoryBudgets={currentMonthCategoryBudgets}
+                      categories={categories}
+                      expenses={expenses}
+                      month={currentMonth}
+                      year={currentYear}
+                      getCategoryById={getCategoryById}
+                    />
+                  </div>
+                )}
+                
                 <RecentTransactions
                   expenses={expenses}
                   categories={categories}
