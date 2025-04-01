@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCustomerPortal } from "@/hooks/stripe/useCustomerPortal";
@@ -36,9 +37,9 @@ export function SubscriptionManager() {
     
     try {
       setIsCancelling(true);
-      await cancelSubscription(); // Remove the parameter here
+      await cancelSubscription();
       
-      if (fetchSubscriptionDetails) { // Change this to if statement instead of testing the return value
+      if (fetchSubscriptionDetails) {
         fetchSubscriptionDetails();
       }
       
@@ -63,7 +64,7 @@ export function SubscriptionManager() {
     
     try {
       setIsReactivating(true);
-      await reactivateSubscription(); // Remove the parameter here
+      await reactivateSubscription();
       
       toast({
         title: "Subscription reactivated",

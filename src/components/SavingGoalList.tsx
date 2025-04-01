@@ -328,9 +328,7 @@ function GoalItem({
                       if (remainingSavings <= 0) return null;
                       
                       // Determine if this month can be distributed
-                      const canDistribute = monthKey === thisMonthKey 
-                        ? canDistributeCurrentMonth 
-                        : canDistributePastMonth(monthKey);
+                      const canDistribute = canDistributeMonth(monthKey);
                       
                       return (
                         <Button 
@@ -360,7 +358,7 @@ function GoalItem({
                   
                   {(mockMonthlySavings.size === 0 || Array.from(mockMonthlySavings.entries())
                       .filter(([monthKey]) => {
-                        return isMonthEnded(monthKey) || (monthKey === thisMonthKey && canDistributeCurrentMonth);
+                        return isMonthEnded(monthKey) || (monthKey === previousMonthKey && isFirstDayOfCurrentMonth);
                       })
                       .every(([monthKey, availableSaving]) => {
                         const remainingSavings = getRemainingMonthSavings 

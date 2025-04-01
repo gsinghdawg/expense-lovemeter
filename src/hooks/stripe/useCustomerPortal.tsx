@@ -6,5 +6,6 @@ export function useCustomerPortal() {
     isLoading: false,
     error: null,
     getCustomerPortal: () => Promise.resolve(),
+    fetchCustomerPortalUrl: () => Promise.resolve()
   };
 }
