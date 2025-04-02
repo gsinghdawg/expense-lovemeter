@@ -15,7 +15,7 @@ import { ExpenseCategory, CategoryBudget } from "@/types/expense";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { PlusCircle, MonthIcon } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { YearSelector } from "./charts/YearSelector";
 
 type CategoryBudgetFormProps = {
