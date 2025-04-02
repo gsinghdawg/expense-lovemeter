@@ -46,23 +46,16 @@ export function CategoryBudgetChart({
       spendingByCategory[categoryId] = (spendingByCategory[categoryId] || 0) + expense.amount;
     });
 
-    // Get categories with budgets for this month/year
-    const budgetedCategories = categoryBudgets
-      .filter(budget => budget.month === month && budget.year === year)
-      .map(budget => budget.categoryId);
-    
-    // Only include expense categories that either:
-    // 1. Have a budget for the selected month/year
-    // 2. Have expenses for the selected month/year but no budget
-    const categoryIdsToShow = new Set([
-      ...budgetedCategories,
-      ...filteredExpenses
-          .filter(expense => !budgetedCategories.includes(expense.categoryId))
-          .map(expense => expense.categoryId)
+    // Get unique category IDs that have either a budget or expenses
+    const categoryIds = new Set([
+      ...categoryBudgets
+        .filter(budget => budget.month === month && budget.year === year)
+        .map(budget => budget.categoryId),
+      ...filteredExpenses.map(expense => expense.categoryId)
     ]);
 
-    // Create data for the chart
-    return Array.from(categoryIdsToShow).map(categoryId => {
+    // Create data for the chart including all categories with spending
+    return Array.from(categoryIds).map(categoryId => {
       const category = getCategoryById(categoryId);
       const spent = spendingByCategory[categoryId] || 0;
       
@@ -88,13 +81,9 @@ export function CategoryBudgetChart({
       };
     })
     .sort((a, b) => {
-      // First sort by budget status (budgeted categories first)
-      if (a.hasBudget !== b.hasBudget) return a.hasBudget ? -1 : 1;
-      
-      // Then sort by budget amount for budgeted categories
-      if (a.hasBudget && b.hasBudget && a.budget !== b.budget) return b.budget - a.budget;
-      
-      // Then sort by spending for unbudgeted categories
+      // Sort by budget first (higher budgets on top)
+      if (b.budget !== a.budget) return b.budget - a.budget;
+      // Then by spending amount for categories without budget
       return b.spent - a.spent;
     });
   }, [categoryBudgets, expenses, month, year, getCategoryById]);
@@ -161,8 +150,6 @@ export function CategoryBudgetChart({
             type="number" 
             domain={[0, maxValue * 1.1]} // Add 10% padding to the max value
             tickFormatter={(value) => `$${Math.round(value)}`} // Round to whole numbers
-            ticks={Array.from({ length: 5 }, (_, i) => Math.round(maxValue * i / 4))} // Generate whole number ticks
-            allowDecimals={false}
           />
           <YAxis 
             type="category" 
