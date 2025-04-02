@@ -46,16 +46,22 @@ export function CategoryBudgetChart({
       spendingByCategory[categoryId] = (spendingByCategory[categoryId] || 0) + expense.amount;
     });
 
-    // Get unique category IDs that have either a budget or expenses
-    const categoryIds = new Set([
-      ...categoryBudgets
-        .filter(budget => budget.month === month && budget.year === year)
-        .map(budget => budget.categoryId),
-      ...filteredExpenses.map(expense => expense.categoryId)
+    // Get categories with budgets for this month/year
+    const budgetedCategories = categoryBudgets
+      .filter(budget => budget.month === month && budget.year === year)
+      .map(budget => budget.categoryId);
+    
+    // Get categories with expenses for this month/year
+    const categoriesWithExpenses = filteredExpenses.map(expense => expense.categoryId);
+    
+    // Combine both sets to get all categories we need to display
+    const categoryIdsToShow = new Set([
+      ...budgetedCategories,
+      ...categoriesWithExpenses
     ]);
 
-    // Create data for the chart including all categories with spending
-    return Array.from(categoryIds).map(categoryId => {
+    // Create data for the chart
+    return Array.from(categoryIdsToShow).map(categoryId => {
       const category = getCategoryById(categoryId);
       const spent = spendingByCategory[categoryId] || 0;
       
@@ -81,9 +87,13 @@ export function CategoryBudgetChart({
       };
     })
     .sort((a, b) => {
-      // Sort by budget first (higher budgets on top)
-      if (b.budget !== a.budget) return b.budget - a.budget;
-      // Then by spending amount for categories without budget
+      // First sort by budget status (budgeted categories first)
+      if (a.hasBudget !== b.hasBudget) return a.hasBudget ? -1 : 1;
+      
+      // Then sort by budget amount for budgeted categories
+      if (a.hasBudget && b.hasBudget && a.budget !== b.budget) return b.budget - a.budget;
+      
+      // Then sort by spending for unbudgeted categories
       return b.spent - a.spent;
     });
   }, [categoryBudgets, expenses, month, year, getCategoryById]);
@@ -150,6 +160,8 @@ export function CategoryBudgetChart({
             type="number" 
             domain={[0, maxValue * 1.1]} // Add 10% padding to the max value
             tickFormatter={(value) => `$${Math.round(value)}`} // Round to whole numbers
+            ticks={Array.from({ length: 5 }, (_, i) => Math.round(maxValue * i / 4))} // Generate whole number ticks
+            allowDecimals={false}
           />
           <YAxis 
             type="category" 
