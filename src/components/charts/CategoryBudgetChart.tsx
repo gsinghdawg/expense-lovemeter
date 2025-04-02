@@ -46,33 +46,52 @@ export function CategoryBudgetChart({
       spendingByCategory[categoryId] = (spendingByCategory[categoryId] || 0) + expense.amount;
     });
 
-    // Create data for the chart
-    return categoryBudgets
-      .filter(budget => budget.amount > 0) // Only show categories with allocated budget
-      .map(budget => {
-        const category = getCategoryById(budget.categoryId);
-        const spent = spendingByCategory[budget.categoryId] || 0;
-        const remaining = Math.max(0, budget.amount - spent);
-        const overspent = spent > budget.amount ? spent - budget.amount : 0;
-        
-        return {
-          name: category.name,
-          budget: budget.amount,
-          spent: spent,
-          remaining: remaining,
-          overspent: overspent,
-          percentUsed: budget.amount > 0 ? (spent / budget.amount) * 100 : 0,
-          color: category.color,
-          categoryId: budget.categoryId
-        };
-      })
-      .sort((a, b) => b.budget - a.budget); // Sort by budget amount descending
+    // Get unique category IDs that have either a budget or expenses
+    const categoryIds = new Set([
+      ...categoryBudgets
+        .filter(budget => budget.month === month && budget.year === year)
+        .map(budget => budget.categoryId),
+      ...filteredExpenses.map(expense => expense.categoryId)
+    ]);
+
+    // Create data for the chart including all categories with spending
+    return Array.from(categoryIds).map(categoryId => {
+      const category = getCategoryById(categoryId);
+      const spent = spendingByCategory[categoryId] || 0;
+      
+      // Find budget for this category (if exists)
+      const budget = categoryBudgets.find(
+        b => b.categoryId === categoryId && b.month === month && b.year === year
+      );
+      const budgetAmount = budget ? budget.amount : 0;
+      
+      const remaining = Math.max(0, budgetAmount - spent);
+      const overspent = spent > budgetAmount && budgetAmount > 0 ? spent - budgetAmount : 0;
+      
+      return {
+        name: category?.name || "Unknown Category",
+        budget: budgetAmount,
+        spent: spent,
+        remaining: remaining,
+        overspent: overspent,
+        percentUsed: budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0,
+        color: category?.color || "#888888",
+        categoryId: categoryId,
+        hasBudget: budgetAmount > 0
+      };
+    })
+    .sort((a, b) => {
+      // Sort by budget first (higher budgets on top)
+      if (b.budget !== a.budget) return b.budget - a.budget;
+      // Then by spending amount for categories without budget
+      return b.spent - a.spent;
+    });
   }, [categoryBudgets, expenses, month, year, getCategoryById]);
 
   if (chartData.length === 0) {
     return (
       <div className="flex justify-center items-center h-[200px] text-muted-foreground">
-        No category budgets set for this month
+        No expenses or budgets for this month
       </div>
     );
   }
@@ -80,15 +99,19 @@ export function CategoryBudgetChart({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
-      const spentPercentage = ((data.spent / data.budget) * 100).toFixed(1);
-      const status = data.spent <= data.budget ? "Within budget" : "Over budget";
-      const statusColor = data.spent <= data.budget ? "text-green-500" : "text-red-500";
+      const spentPercentage = data.budget > 0 ? ((data.spent / data.budget) * 100).toFixed(1) : "N/A";
+      const status = data.budget > 0 
+        ? (data.spent <= data.budget ? "Within budget" : "Over budget") 
+        : "No budget set";
+      const statusColor = data.budget > 0 
+        ? (data.spent <= data.budget ? "text-green-500" : "text-red-500")
+        : "text-yellow-500";
       
       return (
         <div className="p-3 bg-background border border-border rounded-md shadow-md">
           <p className="font-medium">{data.name}</p>
-          <p className="text-sm">Budget: ${data.budget.toFixed(2)}</p>
-          <p className="text-sm">Spent: ${data.spent.toFixed(2)} ({spentPercentage}%)</p>
+          <p className="text-sm">Budget: ${data.budget > 0 ? data.budget.toFixed(2) : "Not set"}</p>
+          <p className="text-sm">Spent: ${data.spent.toFixed(2)} {spentPercentage !== "N/A" && `(${spentPercentage}%)`}</p>
           <p className={`text-sm font-medium ${statusColor}`}>{status}</p>
           {data.remaining > 0 && (
             <p className="text-sm text-green-500">
@@ -113,12 +136,12 @@ export function CategoryBudgetChart({
   );
 
   return (
-    <div className="h-[300px] w-full mt-4">
+    <div className="h-[400px] w-full mt-4">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
           layout="vertical"
-          margin={{ top: 10, right: 30, left: 80, bottom: 10 }}
+          margin={{ top: 20, right: 50, left: 90, bottom: 10 }}
           barGap={5}
           barSize={16}
         >
@@ -126,12 +149,12 @@ export function CategoryBudgetChart({
           <XAxis 
             type="number" 
             domain={[0, maxValue * 1.1]} // Add 10% padding to the max value
-            tickFormatter={(value) => `$${value}`}
+            tickFormatter={(value) => `$${Math.round(value)}`} // Round to whole numbers
           />
           <YAxis 
             type="category" 
             dataKey="name" 
-            width={80}
+            width={90}
             tick={{ fontSize: 12 }}
           />
           <Tooltip content={<CustomTooltip />} />
@@ -154,12 +177,20 @@ export function CategoryBudgetChart({
             <LabelList 
               dataKey="spent" 
               position="right" 
-              formatter={(value: number) => `$${value.toFixed(0)}`}
-              style={{ fontSize: '10px', fill: '#888' }}
+              formatter={(value: number) => `$${Math.round(value)}`}
+              style={{ fontSize: '11px', fill: '#444', fontWeight: 'bold' }}
             />
             {chartData.map((entry, index) => {
-              // Change color based on whether over budget or not
-              const barColor = entry.spent > entry.budget ? '#ea384c' : '#0EA5E9';
+              // Color logic:
+              // - Red if over budget
+              // - Blue if within budget
+              // - Orange if no budget set
+              let barColor = '#F97316'; // Default orange for categories without budget
+              
+              if (entry.budget > 0) {
+                barColor = entry.spent > entry.budget ? '#ea384c' : '#0EA5E9';
+              }
+              
               return <Cell key={`cell-${index}`} fill={barColor} />;
             })}
           </Bar>
