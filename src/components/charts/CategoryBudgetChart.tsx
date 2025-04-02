@@ -51,13 +51,14 @@ export function CategoryBudgetChart({
       .filter(budget => budget.month === month && budget.year === year)
       .map(budget => budget.categoryId);
     
-    // Get categories with expenses for this month/year
-    const categoriesWithExpenses = filteredExpenses.map(expense => expense.categoryId);
-    
-    // Combine both sets to get all categories we need to display
+    // Only include expense categories that either:
+    // 1. Have a budget for the selected month/year
+    // 2. Have expenses for the selected month/year but no budget
     const categoryIdsToShow = new Set([
       ...budgetedCategories,
-      ...categoriesWithExpenses
+      ...filteredExpenses
+          .filter(expense => !budgetedCategories.includes(expense.categoryId))
+          .map(expense => expense.categoryId)
     ]);
 
     // Create data for the chart
