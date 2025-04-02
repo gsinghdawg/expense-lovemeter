@@ -48,6 +48,10 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { signOut, user } = useAuth();
 
+  // State for category budget allocation month/year
+  const [categoryBudgetMonth, setCategoryBudgetMonth] = useState<number>(new Date().getMonth());
+  const [categoryBudgetYear, setCategoryBudgetYear] = useState<number>(new Date().getFullYear());
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
@@ -60,7 +64,9 @@ const Index = () => {
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
-  const currentMonthCategoryBudgets = getCategoryBudgetsForMonth(currentMonth, currentYear);
+  
+  // Get category budgets for the selected month and year
+  const selectedMonthCategoryBudgets = getCategoryBudgetsForMonth(categoryBudgetMonth, categoryBudgetYear);
 
   return (
     <div className="py-8 px-4 sm:px-6">
@@ -108,27 +114,30 @@ const Index = () => {
                   onUpdateBudget={updateBudgetGoal}
                 />
                 
-                {/* Category Budget Form */}
+                {/* Category Budget Form with month/year selection */}
                 <CategoryBudgetForm
                   categories={categories}
-                  monthlyBudget={budgetGoal.amount}
-                  month={currentMonth}
-                  year={currentYear}
-                  existingCategoryBudgets={currentMonthCategoryBudgets}
-                  onSaveBudgets={(budgets) => bulkUpdateCategoryBudgets(budgets, budgetGoal.amount)}
+                  monthlyBudget={getBudgetForMonth(categoryBudgetMonth, categoryBudgetYear)}
+                  month={categoryBudgetMonth}
+                  year={categoryBudgetYear}
+                  existingCategoryBudgets={selectedMonthCategoryBudgets}
+                  onSaveBudgets={(budgets) => bulkUpdateCategoryBudgets(budgets, getBudgetForMonth(categoryBudgetMonth, categoryBudgetYear))}
                   isLoading={isAllocating}
+                  getBudgetForMonth={getBudgetForMonth}
+                  setFormMonth={setCategoryBudgetMonth}
+                  setFormYear={setCategoryBudgetYear}
                 />
                 
                 {/* Category Budget Chart */}
-                {currentMonthCategoryBudgets.length > 0 && (
+                {selectedMonthCategoryBudgets.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-lg font-medium mb-2">Category Budget Usage</h3>
                     <CategoryBudgetChart
-                      categoryBudgets={currentMonthCategoryBudgets}
+                      categoryBudgets={selectedMonthCategoryBudgets}
                       categories={categories}
                       expenses={expenses}
-                      month={currentMonth}
-                      year={currentYear}
+                      month={categoryBudgetMonth}
+                      year={categoryBudgetYear}
                       getCategoryById={getCategoryById}
                     />
                   </div>

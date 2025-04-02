@@ -15,7 +15,8 @@ import { ExpenseCategory, CategoryBudget } from "@/types/expense";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, MonthIcon } from "lucide-react";
+import { YearSelector } from "./charts/YearSelector";
 
 type CategoryBudgetFormProps = {
   categories: ExpenseCategory[];
@@ -25,6 +26,9 @@ type CategoryBudgetFormProps = {
   existingCategoryBudgets: CategoryBudget[];
   onSaveBudgets: (budgets: Omit<CategoryBudget, 'id'>[]) => Promise<boolean>;
   isLoading: boolean;
+  getBudgetForMonth: (month: number, year: number) => number | null;
+  setFormMonth: (month: number) => void;
+  setFormYear: (year: number) => void;
 };
 
 export function CategoryBudgetForm({
@@ -34,12 +38,16 @@ export function CategoryBudgetForm({
   year,
   existingCategoryBudgets,
   onSaveBudgets,
-  isLoading
+  isLoading,
+  getBudgetForMonth,
+  setFormMonth,
+  setFormYear
 }: CategoryBudgetFormProps) {
   const [categoryBudgets, setCategoryBudgets] = useState<Record<string, number>>({});
   const [totalAllocated, setTotalAllocated] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [localMonthBudget, setLocalMonthBudget] = useState<number | null>(monthlyBudget);
   
   // Initialize with existing category budgets
   useEffect(() => {
@@ -54,6 +62,12 @@ export function CategoryBudgetForm({
     setCategoryBudgets(initialBudgets);
     setTotalAllocated(allocatedTotal);
   }, [existingCategoryBudgets]);
+
+  // Update the local month budget when month/year changes or when monthlyBudget changes
+  useEffect(() => {
+    const budget = getBudgetForMonth(month, year);
+    setLocalMonthBudget(budget);
+  }, [month, year, getBudgetForMonth, monthlyBudget]);
 
   // Update a specific category budget
   const handleBudgetChange = (categoryId: string, value: number) => {
@@ -72,21 +86,21 @@ export function CategoryBudgetForm({
 
   // Save all category budgets
   const handleSaveBudgets = async () => {
-    if (monthlyBudget === null) {
+    if (localMonthBudget === null) {
       const { toast } = require("@/hooks/use-toast");
       toast({
         title: "Error",
-        description: "Please set a monthly budget goal first",
+        description: `Please set a monthly budget goal for ${monthNames[month]} ${year} first`,
         variant: "destructive",
       });
       return;
     }
 
-    if (Math.abs(totalAllocated - monthlyBudget) > 0.01) {
+    if (Math.abs(totalAllocated - localMonthBudget) > 0.01) {
       const { toast } = require("@/hooks/use-toast");
       toast({
         title: "Allocation mismatch",
-        description: `The total allocated amount ($${totalAllocated.toFixed(2)}) must equal the monthly budget ($${monthlyBudget.toFixed(2)})`,
+        description: `The total allocated amount ($${totalAllocated.toFixed(2)}) must equal the monthly budget ($${localMonthBudget.toFixed(2)})`,
         variant: "destructive",
       });
       return;
@@ -135,8 +149,8 @@ export function CategoryBudgetForm({
   };
 
   const getRemainingBudget = () => {
-    if (monthlyBudget === null) return 0;
-    return monthlyBudget - totalAllocated;
+    if (localMonthBudget === null) return 0;
+    return localMonthBudget - totalAllocated;
   };
 
   const getBudgetStatus = () => {
@@ -162,23 +176,9 @@ export function CategoryBudgetForm({
     category => categoryBudgets[category.id] === undefined
   );
 
-  if (monthlyBudget === null) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Category Budget Allocation</CardTitle>
-          <CardDescription>
-            Set budget limits for each expense category
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Please set a monthly budget goal first before allocating budget to categories.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleMonthChange = (value: string) => {
+    setFormMonth(parseInt(value));
+  };
 
   return (
     <Card>
@@ -202,7 +202,7 @@ export function CategoryBudgetForm({
               <div className="space-y-4 py-4">
                 <div className="flex justify-between items-center">
                   <div className="text-sm font-medium">
-                    Total: ${totalAllocated.toFixed(2)} / ${monthlyBudget.toFixed(2)}
+                    Total: ${totalAllocated.toFixed(2)} / ${localMonthBudget ? localMonthBudget.toFixed(2) : "0.00"}
                   </div>
                   <div className={`text-sm font-medium ${statusColorMap[getBudgetStatus()]}`}>
                     {getRemainingBudget() !== 0 && (
@@ -267,7 +267,7 @@ export function CategoryBudgetForm({
                               ${amount.toFixed(2)}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              ({monthlyBudget > 0 ? ((amount / monthlyBudget) * 100).toFixed(1) : 0}%)
+                              ({localMonthBudget ? ((amount / localMonthBudget) * 100).toFixed(1) : 0}%)
                             </span>
                             <Button 
                               variant="ghost" 
@@ -283,7 +283,7 @@ export function CategoryBudgetForm({
                         <div className="flex items-center gap-2">
                           <Slider
                             value={[amount]}
-                            max={monthlyBudget}
+                            max={localMonthBudget || 0}
                             step={1}
                             onValueChange={(values) => handleBudgetChange(categoryId, values[0])}
                             className="flex-1"
@@ -316,12 +316,45 @@ export function CategoryBudgetForm({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
+        {/* Month and year selector */}
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex gap-2">
+            <Select value={month.toString()} onValueChange={handleMonthChange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthNames.map((monthName, index) => (
+                  <SelectItem key={index} value={index.toString()}>
+                    {monthName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <YearSelector
+              value={year}
+              onChange={setFormYear}
+              minYear={new Date().getFullYear() - 2}
+              maxYear={new Date().getFullYear() + 2}
+              className="w-[120px]"
+            />
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {localMonthBudget === null ? (
+              <span className="text-yellow-500">No budget set for this month</span>
+            ) : (
+              <span>Budget: ${localMonthBudget.toFixed(2)}</span>
+            )}
+          </div>
+        </div>
+        
         {existingCategoryBudgets.length > 0 ? (
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm mb-2">
-              <span>Total allocated: ${totalAllocated.toFixed(2)} / ${monthlyBudget?.toFixed(2) || "0.00"}</span>
-              <span className={totalAllocated === monthlyBudget ? "text-green-500" : "text-yellow-500"}>
-                {totalAllocated === monthlyBudget ? "Budget fully allocated" : "Budget not fully allocated"}
+              <span>Total allocated: ${totalAllocated.toFixed(2)} / ${localMonthBudget?.toFixed(2) || "0.00"}</span>
+              <span className={totalAllocated === localMonthBudget ? "text-green-500" : "text-yellow-500"}>
+                {localMonthBudget !== null && totalAllocated === localMonthBudget ? "Budget fully allocated" : "Budget not fully allocated"}
               </span>
             </div>
             
@@ -339,7 +372,7 @@ export function CategoryBudgetForm({
                     <span className="truncate flex-1">{category.name}</span>
                     <span className="font-medium">${amount.toFixed(2)}</span>
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      ({monthlyBudget > 0 ? ((amount / monthlyBudget) * 100).toFixed(1) : 0}%)
+                      ({localMonthBudget ? ((amount / localMonthBudget) * 100).toFixed(1) : 0}%)
                     </span>
                   </div>
                 );
@@ -348,7 +381,11 @@ export function CategoryBudgetForm({
           </div>
         ) : (
           <div className="text-center py-2">
-            <p className="text-muted-foreground text-sm">No category budgets set</p>
+            <p className="text-muted-foreground text-sm">
+              {localMonthBudget === null 
+                ? `No budget set for ${monthNames[month]} ${year}` 
+                : `No category budgets set for ${monthNames[month]} ${year}`}
+            </p>
           </div>
         )}
       </CardContent>
