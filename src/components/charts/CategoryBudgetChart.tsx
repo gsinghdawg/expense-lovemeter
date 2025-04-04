@@ -183,7 +183,6 @@ export function CategoryBudgetChart({
           <Bar 
             name="Spent" 
             dataKey="spent" 
-            fill="#F97316" // Bright Orange - more visible
             radius={[0, 4, 4, 0]}
           >
             <LabelList 
@@ -192,19 +191,10 @@ export function CategoryBudgetChart({
               formatter={(value: number) => `$${Math.round(value)}`}
               style={{ fontSize: '11px', fill: '#444', fontWeight: 'bold' }}
             />
-            {chartData.map((entry, index) => {
-              // Color logic:
-              // - Red if over budget
-              // - Blue if within budget
-              // - Orange if no budget set
-              let barColor = '#F97316'; // Default orange for categories without budget
-              
-              if (entry.budget > 0) {
-                barColor = entry.spent > entry.budget ? '#ea384c' : '#0EA5E9';
-              }
-              
-              return <Cell key={`cell-${index}`} fill={barColor} />;
-            })}
+            {/* Use category colors for each bar */}
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
