@@ -184,6 +184,7 @@ export function CategoryBudgetChart({
             name="Spent" 
             dataKey="spent" 
             radius={[0, 4, 4, 0]}
+            legendType="none" // Remove the legend indicator box
           >
             <LabelList 
               dataKey="spent" 
