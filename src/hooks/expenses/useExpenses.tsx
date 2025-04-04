@@ -19,7 +19,8 @@ export function useExpenses() {
     getCurrentMonthExpenses,
     getCurrentMonthTotal,
     calculateAverageMonthlyExpense,
-    calculateTotalSavings
+    calculateTotalSavings,
+    calculateAverageMonthlySavings
   } = useExpenseData(userId);
 
   const {
@@ -66,6 +67,10 @@ export function useExpenses() {
   const getTotalSavings = () => {
     return calculateTotalSavings(getBudgetForMonth);
   };
+  
+  const getAverageMonthlySavings = () => {
+    return calculateAverageMonthlySavings(getBudgetForMonth);
+  };
 
   return {
     // Expense data and methods
@@ -77,6 +82,7 @@ export function useExpenses() {
     getCurrentMonthTotal,
     calculateAverageMonthlyExpense,
     getTotalSavings,
+    getAverageMonthlySavings,
     
     // Category data and methods
     categories,

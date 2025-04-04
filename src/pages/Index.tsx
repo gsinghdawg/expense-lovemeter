@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useExpenses } from "@/hooks/useExpenses";
@@ -45,6 +44,7 @@ const Index = () => {
     calculateAverageMonthlyExpense,
     calculateAverageBudget,
     getTotalSavings,
+    getAverageMonthlySavings,
   } = useExpenses();
 
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -165,6 +165,7 @@ const Index = () => {
                 calculateAverageMonthlyExpense={calculateAverageMonthlyExpense}
                 totalSavings={getTotalSavings()}
                 calculateAverageBudget={calculateAverageBudget}
+                getAverageMonthlySavings={getAverageMonthlySavings}
               />
             </div>
           </TabsContent>

@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import { Expense, ExpenseCategory, BudgetGoal } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +24,7 @@ type ExpenseSummaryProps = {
   calculateAverageMonthlyExpense: () => number;
   totalSavings: number;
   calculateAverageBudget?: () => number | null;
+  getAverageMonthlySavings?: () => number | null;
 };
 
 export function ExpenseSummary({
@@ -37,6 +37,7 @@ export function ExpenseSummary({
   calculateAverageMonthlyExpense,
   totalSavings,
   calculateAverageBudget,
+  getAverageMonthlySavings,
 }: ExpenseSummaryProps) {
   // State to store the selected month for the pie chart
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
@@ -92,10 +93,8 @@ export function ExpenseSummary({
   // Get average monthly budget
   const averageMonthlyBudget = calculateAverageBudget ? calculateAverageBudget() : null;
 
-  const averageMonthlySavings = useMemo(() => {
-    if (averageMonthlyBudget === null) return null;
-    return averageMonthlyBudget - averageMonthlyExpense;
-  }, [averageMonthlyBudget, averageMonthlyExpense]);
+  // Get average monthly savings
+  const averageMonthlySavings = getAverageMonthlySavings ? getAverageMonthlySavings() : null;
 
   // Get the min and max dates from expenses for the calendar
   const dateRange = useMemo(() => {

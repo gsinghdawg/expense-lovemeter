@@ -77,3 +77,45 @@ export function calculateTotalSavings(
   
   return totalSavings;
 }
+
+// Calculate average monthly savings
+export function calculateAverageMonthlySavings(
+  expenses: Expense[],
+  getBudgetForMonth: (month: number, year: number) => number | null
+): number | null {
+  if (expenses.length === 0) return 0;
+  
+  // Get unique month-year combinations in the data and calculate savings for each
+  const monthlyData: Record<string, { total: number, budget: number | null }> = {};
+  
+  // Populate monthly expenses
+  expenses.forEach(expense => {
+    const date = expense.date;
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    const key = `${year}-${month}`;
+    
+    if (!monthlyData[key]) {
+      monthlyData[key] = { 
+        total: 0, 
+        budget: getBudgetForMonth(month, year)
+      };
+    }
+    
+    monthlyData[key].total += expense.amount;
+  });
+  
+  // Calculate total savings and number of months with budget set
+  let totalSavings = 0;
+  let monthsWithBudget = 0;
+  
+  Object.values(monthlyData).forEach(({ total, budget }) => {
+    if (budget !== null) {
+      totalSavings += (budget - total);
+      monthsWithBudget++;
+    }
+  });
+  
+  // Return average monthly savings if there are months with budgets
+  return monthsWithBudget > 0 ? totalSavings / monthsWithBudget : null;
+}

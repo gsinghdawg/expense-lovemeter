@@ -6,7 +6,8 @@ import {
   getCurrentMonthExpenses, 
   getCurrentMonthTotal, 
   calculateAverageMonthlyExpense,
-  calculateTotalSavings
+  calculateTotalSavings,
+  calculateAverageMonthlySavings
 } from "./utils/expenseAnalytics";
 
 export function useExpenseData(userId: string | undefined) {
@@ -34,6 +35,8 @@ export function useExpenseData(userId: string | undefined) {
     getCurrentMonthTotal: () => getCurrentMonthTotal(expenses),
     calculateAverageMonthlyExpense: () => calculateAverageMonthlyExpense(expenses),
     calculateTotalSavings: (getBudgetForMonth: (month: number, year: number) => number | null) => 
-      calculateTotalSavings(expenses, getBudgetForMonth)
+      calculateTotalSavings(expenses, getBudgetForMonth),
+    calculateAverageMonthlySavings: (getBudgetForMonth: (month: number, year: number) => number | null) =>
+      calculateAverageMonthlySavings(expenses, getBudgetForMonth)
   };
 }
