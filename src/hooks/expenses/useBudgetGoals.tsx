@@ -173,8 +173,81 @@ export function useBudgetGoals(userId: string | undefined) {
     },
   });
 
+  // NEW: Delete budget goal mutation
+  const deleteBudgetGoalMutation = useMutation({
+    mutationFn: async ({ month, year }: { month: number; year: number }) => {
+      if (!userId) throw new Error("User not authenticated");
+      
+      // Find the budget goal to delete
+      const { data: existingBudget, error: checkError } = await supabase
+        .from('budget_goals')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('month', month)
+        .eq('year', year)
+        .maybeSingle();
+      
+      if (checkError) throw checkError;
+      
+      // If budget goal doesn't exist, nothing to delete
+      if (!existingBudget) {
+        return { success: true, message: "Budget was not set" };
+      }
+      
+      // Delete the budget goal
+      const { error } = await supabase
+        .from('budget_goals')
+        .delete()
+        .eq('id', existingBudget.id)
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      // Add a record in history that budget was reset
+      const now = new Date();
+      const { error: historyError } = await supabase
+        .from('budget_goal_history')
+        .insert({
+          amount: null,
+          month: month,
+          year: year,
+          start_date: now.toISOString(),
+          user_id: userId,
+        });
+      
+      if (historyError) {
+        console.error("Error adding budget reset to history:", historyError);
+      }
+      
+      return { 
+        success: true,
+        month,
+        year
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budget-goals', userId] });
+      queryClient.invalidateQueries({ queryKey: ['budget-history', userId] });
+      toast({
+        title: "Budget goal reset",
+        description: "Monthly budget goal has been reset successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error resetting budget goal",
+        description: error.message || "Failed to reset budget goal",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateBudgetGoal = (newBudget: BudgetGoal) => {
     updateBudgetGoalMutation.mutate(newBudget);
+  };
+
+  const resetBudgetGoal = (month: number, year: number) => {
+    deleteBudgetGoalMutation.mutate({ month, year });
   };
 
   // Modified getBudgetForMonth to only return explicitly set budgets
@@ -200,6 +273,7 @@ export function useBudgetGoals(userId: string | undefined) {
     isLoadingBudgetGoal: isLoadingBudgetGoals,
     isLoadingBudgetHistory,
     updateBudgetGoal,
+    resetBudgetGoal,
     getBudgetForMonth
   };
 }

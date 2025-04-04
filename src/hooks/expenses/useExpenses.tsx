@@ -38,6 +38,7 @@ export function useExpenses() {
     isLoadingBudgetGoal,
     isLoadingBudgetHistory,
     updateBudgetGoal,
+    resetBudgetGoal,
     getBudgetForMonth
   } = useBudgetGoals(userId);
   
@@ -88,6 +89,7 @@ export function useExpenses() {
     budgetGoalsData,
     budgetHistory,
     updateBudgetGoal,
+    resetBudgetGoal,
     getBudgetForMonth,
     
     // Category budget data and methods

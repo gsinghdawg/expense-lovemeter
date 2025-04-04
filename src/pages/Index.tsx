@@ -35,6 +35,7 @@ const Index = () => {
     deleteCategory,
     getCategoryById,
     updateBudgetGoal,
+    resetBudgetGoal,
     updateCategoryBudget,
     deleteCategoryBudget,
     bulkUpdateCategoryBudgets,
@@ -112,6 +113,7 @@ const Index = () => {
                   currentBudget={budgetGoal}
                   budgetGoalsData={budgetGoalsData}
                   onUpdateBudget={updateBudgetGoal}
+                  onResetBudget={resetBudgetGoal}
                 />
                 
                 {/* Category Budget Form with month/year selection */}

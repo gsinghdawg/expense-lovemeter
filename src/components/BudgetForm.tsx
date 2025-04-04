@@ -19,22 +19,39 @@ import {
   TabsTrigger 
 } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 interface BudgetFormProps {
   currentBudget: BudgetGoal;
   budgetGoalsData?: any[];
   onUpdateBudget: (budget: BudgetGoal) => void;
+  onResetBudget?: (month: number, year: number) => void;
 }
 
 export function BudgetForm({ 
   currentBudget, 
   budgetGoalsData = [],
-  onUpdateBudget 
+  onUpdateBudget,
+  onResetBudget 
 }: BudgetFormProps) {
   const [amount, setAmount] = useState<number | null>(currentBudget.amount);
   const [month, setMonth] = useState<number>(currentBudget.month);
   const [year, setYear] = useState<number>(currentBudget.year);
   const [activeTab, setActiveTab] = useState("current");
+  const [resetMonth, setResetMonth] = useState<number | null>(null);
+  const [resetYear, setResetYear] = useState<number | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -82,6 +99,19 @@ export function BudgetForm({
 
   const handleYearChange = (value: string) => {
     setYear(parseInt(value));
+  };
+
+  const handleResetClick = (month: number, year: number) => {
+    setResetMonth(month);
+    setResetYear(year);
+    setDialogOpen(true);
+  };
+
+  const handleResetConfirm = () => {
+    if (resetMonth !== null && resetYear !== null && onResetBudget) {
+      onResetBudget(resetMonth, resetYear);
+      setDialogOpen(false);
+    }
   };
 
   // Group budget goals by year for the overview
@@ -195,10 +225,12 @@ export function BudgetForm({
                       <div className="grid grid-cols-3 gap-2">
                         {months.map((monthName, monthIndex) => {
                           const monthBudget = budgets.find(b => b.month === monthIndex);
+                          const hasValue = !!monthBudget;
+                          
                           return (
                             <div 
                               key={monthIndex} 
-                              className="p-2 border rounded text-center"
+                              className="p-2 border rounded text-center relative"
                               onClick={() => {
                                 setYear(Number(year));
                                 setMonth(monthIndex);
@@ -206,11 +238,25 @@ export function BudgetForm({
                               }}
                             >
                               <div className="text-xs font-medium">{monthName}</div>
-                              <div className={`text-sm ${monthBudget ? 'font-medium' : 'text-muted-foreground'}`}>
+                              <div className={`text-sm ${hasValue ? 'font-medium' : 'text-muted-foreground'}`}>
                                 {monthBudget 
                                   ? `$${monthBudget.amount?.toFixed(2)}` 
                                   : 'Not set'}
                               </div>
+                              
+                              {hasValue && onResetBudget && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute top-0 right-0 h-6 w-6"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleResetClick(monthIndex, parseInt(year));
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3 text-muted-foreground" />
+                                </Button>
+                              )}
                             </div>
                           );
                         })}
@@ -226,6 +272,24 @@ export function BudgetForm({
           </CardContent>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Budget Goal</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reset the monthly budget goal for {resetMonth !== null && months[resetMonth]} {resetYear}?
+              This will remove the budget goal entirely.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetConfirm} className="bg-destructive text-destructive-foreground">
+              Reset Budget
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
