@@ -24,6 +24,7 @@ type ExpenseSummaryProps = {
   getBudgetForMonth: (month: number, year: number) => number | null;
   calculateAverageMonthlyExpense: () => number;
   totalSavings: number;
+  calculateAverageBudget?: () => number | null;
 };
 
 export function ExpenseSummary({
@@ -35,6 +36,7 @@ export function ExpenseSummary({
   getBudgetForMonth,
   calculateAverageMonthlyExpense,
   totalSavings,
+  calculateAverageBudget,
 }: ExpenseSummaryProps) {
   // State to store the selected month for the pie chart
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
@@ -86,12 +88,14 @@ export function ExpenseSummary({
   }, [selectedMonthExpenses, getCategoryById]);
 
   const averageMonthlyExpense = calculateAverageMonthlyExpense();
-  const currentMonthlyBudget = budgetGoal.amount;
+  
+  // Get average monthly budget
+  const averageMonthlyBudget = calculateAverageBudget ? calculateAverageBudget() : null;
 
   const averageMonthlySavings = useMemo(() => {
-    if (currentMonthlyBudget === null) return null;
-    return currentMonthlyBudget - averageMonthlyExpense;
-  }, [currentMonthlyBudget, averageMonthlyExpense]);
+    if (averageMonthlyBudget === null) return null;
+    return averageMonthlyBudget - averageMonthlyExpense;
+  }, [averageMonthlyBudget, averageMonthlyExpense]);
 
   // Get the min and max dates from expenses for the calendar
   const dateRange = useMemo(() => {
@@ -220,8 +224,8 @@ export function ExpenseSummary({
                     value: `$${averageMonthlyExpense.toFixed(2)}`
                   },
                   {
-                    label: "Current Monthly Budget",
-                    value: currentMonthlyBudget === null ? "Not set" : `$${currentMonthlyBudget.toFixed(2)}`
+                    label: "Average Monthly Budget",
+                    value: averageMonthlyBudget === null ? "Not set" : `$${averageMonthlyBudget.toFixed(2)}`
                   },
                   {
                     label: "Average Monthly Savings",

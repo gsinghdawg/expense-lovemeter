@@ -39,7 +39,8 @@ export function useExpenses() {
     isLoadingBudgetHistory,
     updateBudgetGoal,
     resetBudgetGoal,
-    getBudgetForMonth
+    getBudgetForMonth,
+    calculateAverageBudget
   } = useBudgetGoals(userId);
   
   const {
@@ -91,6 +92,7 @@ export function useExpenses() {
     updateBudgetGoal,
     resetBudgetGoal,
     getBudgetForMonth,
+    calculateAverageBudget,
     
     // Category budget data and methods
     categoryBudgets,

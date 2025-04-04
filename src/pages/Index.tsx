@@ -43,6 +43,7 @@ const Index = () => {
     getCurrentMonthTotal,
     getBudgetForMonth,
     calculateAverageMonthlyExpense,
+    calculateAverageBudget,
     getTotalSavings,
   } = useExpenses();
 
@@ -163,6 +164,7 @@ const Index = () => {
                 getBudgetForMonth={getBudgetForMonth}
                 calculateAverageMonthlyExpense={calculateAverageMonthlyExpense}
                 totalSavings={getTotalSavings()}
+                calculateAverageBudget={calculateAverageBudget}
               />
             </div>
           </TabsContent>

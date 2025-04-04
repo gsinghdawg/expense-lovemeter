@@ -59,6 +59,18 @@ export function useBudgetGoals(userId: string | undefined) {
         year: currentYear 
       };
 
+  // Calculate average budget
+  const calculateAverageBudget = () => {
+    if (!budgetGoalsData || budgetGoalsData.length === 0) return null;
+    
+    const budgetsWithAmount = budgetGoalsData.filter(goal => goal.amount !== null);
+    
+    if (budgetsWithAmount.length === 0) return null;
+    
+    const totalBudget = budgetsWithAmount.reduce((sum, goal) => sum + (goal.amount || 0), 0);
+    return totalBudget / budgetsWithAmount.length;
+  };
+
   // Fetch budget history from Supabase
   const { 
     data: budgetHistory = [], 
@@ -173,7 +185,7 @@ export function useBudgetGoals(userId: string | undefined) {
     },
   });
 
-  // NEW: Delete budget goal mutation
+  // Delete budget goal mutation
   const deleteBudgetGoalMutation = useMutation({
     mutationFn: async ({ month, year }: { month: number; year: number }) => {
       if (!userId) throw new Error("User not authenticated");
@@ -274,6 +286,7 @@ export function useBudgetGoals(userId: string | undefined) {
     isLoadingBudgetHistory,
     updateBudgetGoal,
     resetBudgetGoal,
-    getBudgetForMonth
+    getBudgetForMonth,
+    calculateAverageBudget
   };
 }
