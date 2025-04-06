@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -15,7 +14,7 @@ import { ExpenseCategory, CategoryBudget } from "@/types/expense";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, RotateCcw } from "lucide-react";
 import { YearSelector } from "./charts/YearSelector";
 
 type CategoryBudgetFormProps = {
@@ -81,6 +80,26 @@ export function CategoryBudgetForm({
       setTotalAllocated(newTotal);
       
       return newBudgets;
+    });
+  };
+
+  // Reset all category budgets
+  const handleResetAllocations = () => {
+    // Reset all allocations to 0
+    const resetBudgets: Record<string, number> = {};
+    
+    // Keep the same categories but set values to 0
+    Object.keys(categoryBudgets).forEach(categoryId => {
+      resetBudgets[categoryId] = 0;
+    });
+    
+    setCategoryBudgets(resetBudgets);
+    setTotalAllocated(0);
+    
+    const { toast } = require("@/hooks/use-toast");
+    toast({
+      title: "Allocations reset",
+      description: "All category allocations have been reset to zero",
     });
   };
 
@@ -303,7 +322,15 @@ export function CategoryBudgetForm({
                 </div>
               </div>
               
-              <div className="flex justify-end">
+              <div className="flex justify-between">
+                <Button 
+                  variant="outline"
+                  onClick={handleResetAllocations}
+                  disabled={isLoading || Object.keys(categoryBudgets).length === 0}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Reset
+                </Button>
                 <Button 
                   onClick={handleSaveBudgets} 
                   disabled={Math.abs(getRemainingBudget()) > 0.01 || isLoading}
