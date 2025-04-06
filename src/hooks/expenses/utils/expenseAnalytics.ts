@@ -83,39 +83,64 @@ export function calculateAverageMonthlySavings(
   expenses: Expense[],
   getBudgetForMonth: (month: number, year: number) => number | null
 ): number | null {
-  if (expenses.length === 0) return 0;
+  // Get all month-year combinations where budgets are set
+  const monthsWithBudget = new Set<string>();
+  const now = new Date();
+  const currentYear = now.getFullYear();
   
-  // Get unique month-year combinations in the data and calculate savings for each
-  const monthlyData: Record<string, { total: number, budget: number | null }> = {};
+  // Check each month of the current year for budget data
+  for (let month = 0; month < 12; month++) {
+    const budget = getBudgetForMonth(month, currentYear);
+    if (budget !== null) {
+      monthsWithBudget.add(`${currentYear}-${month}`);
+    }
+  }
   
-  // Populate monthly expenses
+  // Also check for any past year's months in expenses
   expenses.forEach(expense => {
     const date = expense.date;
     const month = date.getMonth();
     const year = date.getFullYear();
     const key = `${year}-${month}`;
     
-    if (!monthlyData[key]) {
-      monthlyData[key] = { 
-        total: 0, 
-        budget: getBudgetForMonth(month, year)
-      };
+    const budget = getBudgetForMonth(month, year);
+    if (budget !== null) {
+      monthsWithBudget.add(key);
+    }
+  });
+  
+  // If no months have budgets set, return null
+  if (monthsWithBudget.size === 0) return null;
+  
+  // Calculate monthly expense totals
+  const monthlyExpenses: Record<string, number> = {};
+  
+  expenses.forEach(expense => {
+    const date = expense.date;
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    const key = `${year}-${month}`;
+    
+    if (!monthlyExpenses[key]) {
+      monthlyExpenses[key] = 0;
     }
     
-    monthlyData[key].total += expense.amount;
+    monthlyExpenses[key] += expense.amount;
   });
   
-  // Calculate total savings and number of months with budget set
+  // Calculate total savings for all months with budgets
   let totalSavings = 0;
-  let monthsWithBudget = 0;
   
-  Object.values(monthlyData).forEach(({ total, budget }) => {
+  Array.from(monthsWithBudget).forEach(monthKey => {
+    const [year, month] = monthKey.split('-').map(Number);
+    const budget = getBudgetForMonth(month, year);
+    const expenses = monthlyExpenses[monthKey] || 0;
+    
     if (budget !== null) {
-      totalSavings += (budget - total);
-      monthsWithBudget++;
+      totalSavings += (budget - expenses);
     }
   });
   
-  // Return average monthly savings if there are months with budgets
-  return monthsWithBudget > 0 ? totalSavings / monthsWithBudget : null;
+  // Return average monthly savings
+  return totalSavings / monthsWithBudget.size;
 }
