@@ -7,7 +7,8 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  Cell
 } from "recharts";
 import { Expense } from "@/types/expense";
 import { toast } from "@/hooks/use-toast";
@@ -139,16 +140,16 @@ export function MonthlySavingsChart({
             onClick={handleBarClick}
             cursor="pointer"
             isAnimationActive={true}
-            fill={savingsColor}
-            // Remove the onMouseOver and onMouseOut handlers, we'll use a function for fill instead
-            fillOpacity={1}
-            // Use a function to determine the color based on the value
-            fill={(data) => {
-              const value = data.savings;
-              if (value === null) return savingsColor;
-              return value >= 0 ? "#4ade80" : "#ef4444"; // green for positive, red for negative
-            }}
-          />
+          >
+            {monthlySavings.map((entry, index) => {
+              // Determine color based on savings value
+              let color = savingsColor;
+              if (entry.savings !== null) {
+                color = entry.savings >= 0 ? "#4ade80" : "#ef4444"; // green for positive, red for negative
+              }
+              return <Cell key={`cell-${index}`} fill={color} />;
+            })}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
