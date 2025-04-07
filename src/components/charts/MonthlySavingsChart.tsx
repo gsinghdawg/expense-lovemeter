@@ -135,26 +135,18 @@ export function MonthlySavingsChart({
           />
           <Bar
             dataKey="savings"
-            fill={savingsColor}
             name="Monthly Savings"
             onClick={handleBarClick}
             cursor="pointer"
             isAnimationActive={true}
-            onMouseOver={(data) => {
-              if (data && data.payload) {
-                const value = data.payload.savings;
-                if (value !== null) {
-                  const color = value >= 0 ? "#4ade80" : "#ef4444";
-                  if (data.element) {
-                    data.element.style.fill = color;
-                  }
-                }
-              }
-            }}
-            onMouseOut={(data) => {
-              if (data && data.element) {
-                data.element.style.fill = savingsColor;
-              }
+            fill={savingsColor}
+            // Remove the onMouseOver and onMouseOut handlers, we'll use a function for fill instead
+            fillOpacity={1}
+            // Use a function to determine the color based on the value
+            fill={(data) => {
+              const value = data.savings;
+              if (value === null) return savingsColor;
+              return value >= 0 ? "#4ade80" : "#ef4444"; // green for positive, red for negative
             }}
           />
         </BarChart>
