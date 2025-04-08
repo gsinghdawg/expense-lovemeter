@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3, Quote, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -271,6 +270,15 @@ const Home = () => {
                     <img 
                       src="/lovable-uploads/26c41c96-6812-4c7c-8ad4-04e64f7a16db.png" 
                       alt="DatingLedger Monthly Spending History" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/aad48482-cbad-4fd2-ad5a-35b3be9ee01f.png" 
+                      alt="DatingLedger Monthly Savings" 
                       className="w-full h-auto"
                     />
                   </CardContent>
