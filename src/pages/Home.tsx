@@ -269,7 +269,7 @@ const Home = () => {
                 <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
                   <CardContent className="p-0">
                     <img 
-                      src="/lovable-uploads/b271dcf0-1c77-4093-bd2a-3e88e1f7a618.png" 
+                      src="/lovable-uploads/26c41c96-6812-4c7c-8ad4-04e64f7a16db.png" 
                       alt="DatingLedger Monthly Spending History" 
                       className="w-full h-auto"
                     />
