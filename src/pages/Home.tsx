@@ -226,7 +226,7 @@ const Home = () => {
                 <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
                   <CardContent className="p-0">
                     <img 
-                      src="/lovable-uploads/000af59b-b7ac-4f59-88d3-b1fa9fecf010.png" 
+                      src="/lovable-uploads/74e39270-ab94-4e49-8f56-90d509d7aaad.png" 
                       alt="DatingLedger Category Management" 
                       className="w-full h-auto"
                     />
