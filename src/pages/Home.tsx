@@ -283,6 +283,21 @@ const Home = () => {
                     />
                   </CardContent>
                 </Card>
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/a73a9c23-3f1c-4754-8963-f3917f04b61b.png" 
+                      alt="DatingLedger Daily Spending Chart" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                  <CardContent className="p-4 bg-muted/50">
+                    <h4 className="text-sm font-medium mb-1">Daily Spending Tracker</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Track your day-to-day expenses with our interactive daily spending chart. Visualize spending patterns throughout the month and identify high-spending days to adjust your habits for better financial health.
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
