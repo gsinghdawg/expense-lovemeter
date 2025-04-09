@@ -191,7 +191,7 @@ const Home = () => {
                 </CardContent>
               </Card>
               
-              {/* Add the Monthly Budget Goals image here */}
+              {/* Monthly Budget Goals image */}
               <Card className="overflow-hidden border-2 border-primary/20 shadow-xl mt-4">
                 <CardContent className="p-0">
                   <img 
@@ -201,6 +201,52 @@ const Home = () => {
                   />
                 </CardContent>
               </Card>
+            </div>
+          </div>
+        </div>
+        
+        {/* New section: Category Budget Allocation & Spending */}
+        <div className="my-16">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="md:w-1/2">
+              <h3 className="text-2xl font-semibold mb-4">Category Budget Allocation & Spending</h3>
+              <p className="text-lg mb-4">
+                Distribute your budget across categories and track your spending against category budgets.
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-6">
+                <li>Allocate your monthly budget across expense categories</li>
+                <li>Visualize budget distribution with percentage breakdowns</li>
+                <li>Track spending against category-specific budgets</li>
+                <li>Identify overspending by category at a glance</li>
+                <li>Adjust allocations monthly to optimize your spending</li>
+              </ul>
+              <Button asChild size="lg" className="w-full md:w-auto">
+                <Link to="/signup">Start Allocating Today</Link>
+              </Button>
+            </div>
+            <div className="md:w-1/2 mt-8 md:mt-0">
+              <div className="grid grid-cols-1 gap-4">
+                {/* Category Budget Allocation image */}
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/849edf6d-8984-43d4-a403-1f062ef4d42d.png" 
+                      alt="DatingLedger Category Budget Allocation" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
+                {/* Category Budget Usage image */}
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/783cfbd8-a275-40c0-83aa-065a2542e703.png" 
+                      alt="DatingLedger Category Budget Usage" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
