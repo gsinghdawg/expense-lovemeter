@@ -190,6 +190,17 @@ const Home = () => {
                   />
                 </CardContent>
               </Card>
+              
+              {/* Add the Monthly Budget Goals image here */}
+              <Card className="overflow-hidden border-2 border-primary/20 shadow-xl mt-4">
+                <CardContent className="p-0">
+                  <img 
+                    src="/lovable-uploads/b590e11a-add8-4729-b400-4258b40d71bd.png" 
+                    alt="DatingLedger Monthly Budget Goals" 
+                    className="w-full h-auto"
+                  />
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -284,7 +295,7 @@ const Home = () => {
                     />
                   </CardContent>
                 </Card>
-                {/* Adding the daily spending chart image here */}
+                {/* Daily spending chart image */}
                 <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
                   <CardContent className="p-0">
                     <img 
