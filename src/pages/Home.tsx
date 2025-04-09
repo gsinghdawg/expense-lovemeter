@@ -183,7 +183,7 @@ const Home = () => {
               <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
                 <CardContent className="p-0">
                   <img 
-                    src="/lovable-uploads/878930f3-7082-458d-b475-6c2ab13cc869.png" 
+                    src="/lovable-uploads/80630d08-dcc5-452d-847e-c21cefbdd204.png" 
                     alt="DatingLedger Budget Management" 
                     className="w-full h-auto"
                   />
