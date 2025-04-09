@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Sparkles, LogIn, LogOut, PieChart, LineChart, BarChart3, Quote, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -191,7 +190,6 @@ const Home = () => {
                 </CardContent>
               </Card>
               
-              {/* Monthly Budget Goals image */}
               <Card className="overflow-hidden border-2 border-primary/20 shadow-xl mt-4">
                 <CardContent className="p-0">
                   <img 
@@ -205,7 +203,6 @@ const Home = () => {
           </div>
         </div>
         
-        {/* New section: Category Budget Allocation & Spending */}
         <div className="my-16">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="md:w-1/2">
@@ -226,7 +223,6 @@ const Home = () => {
             </div>
             <div className="md:w-1/2 mt-8 md:mt-0">
               <div className="grid grid-cols-1 gap-4">
-                {/* Category Budget Allocation image */}
                 <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
                   <CardContent className="p-0">
                     <img 
@@ -236,12 +232,20 @@ const Home = () => {
                     />
                   </CardContent>
                 </Card>
-                {/* Category Budget Usage image */}
                 <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
                   <CardContent className="p-0">
                     <img 
                       src="/lovable-uploads/783cfbd8-a275-40c0-83aa-065a2542e703.png" 
                       alt="DatingLedger Category Budget Usage" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/c8f92521-51b5-4cb9-808b-31064f510f5f.png" 
+                      alt="DatingLedger Budget Allocation Dialog" 
                       className="w-full h-auto"
                     />
                   </CardContent>
@@ -341,7 +345,6 @@ const Home = () => {
                     />
                   </CardContent>
                 </Card>
-                {/* Daily spending chart image */}
                 <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
                   <CardContent className="p-0">
                     <img 
