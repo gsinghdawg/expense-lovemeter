@@ -321,6 +321,15 @@ const Home = () => {
                 <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
                   <CardContent className="p-0">
                     <img 
+                      src="/lovable-uploads/93adafa0-5434-4d33-b7dd-ce5da9e96509.png" 
+                      alt="DatingLedger Expense Summary with Category Breakdown" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
                       src="/lovable-uploads/26c41c96-6812-4c7c-8ad4-04e64f7a16db.png" 
                       alt="DatingLedger Monthly Spending History" 
                       className="w-full h-auto"
