@@ -354,6 +354,15 @@ const Home = () => {
                     />
                   </CardContent>
                 </Card>
+                <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <CardContent className="p-0">
+                    <img 
+                      src="/lovable-uploads/86fa1a13-f2e0-4a63-9009-7659c0351594.png" 
+                      alt="DatingLedger Top Spending By Categories" 
+                      className="w-full h-auto"
+                    />
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
