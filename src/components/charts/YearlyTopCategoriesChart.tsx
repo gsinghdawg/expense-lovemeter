@@ -53,7 +53,7 @@ export function YearlyTopCategoriesChart({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium">Top Categories ({selectedYear})</h4>
+        <h4 className="text-sm font-medium">Top Spending By Categories ({selectedYear})</h4>
         <YearSelector 
           value={selectedYear} 
           onChange={handleYearChange} 
